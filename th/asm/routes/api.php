@@ -45,7 +45,7 @@ Route::put('/products/{id}/toggle-noi-bat', [ProductController::class, 'toggleNo
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/users', [UserController::class, 'index']);
+Route::delete('/users/{id}', [UserController::class, 'destroy']);
 Route::get('/danh-muc-tin-tuc', [DanhMucTtController::class, 'show']);
-
-
 

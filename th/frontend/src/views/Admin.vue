@@ -100,7 +100,6 @@ const menu = [
   font-size: 14px;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
-
 /* Khi router-link active */
 .sidebar .nav-link.router-link-exact-active {
   background-color: #f0f0f0;

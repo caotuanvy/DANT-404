@@ -3,8 +3,7 @@ import Login from '../views/Login.vue';
 import Register from '../views/Register.vue';
 import Home from '../views/Home.vue';
 import AdminView from '../views/Admin.vue';
-
-import axios from 'axios'; 
+import axios from 'axios';
 
 const routes = [
   { path: '/', component: Home },
@@ -41,7 +40,7 @@ const routes = [
       //   component: () => import('../views/admin/orders/OrderDetail.vue'),
       //   meta: { requiresAuth: true, role: 'admin' }
       // }
-      
+
     ]
   },
   {
@@ -49,7 +48,7 @@ const routes = [
     name: 'SearchResult',
     component: () => import('../views/SearchResult.vue'),
   },
-  
+
   {
     path: '/admin/products/:id/edit',
     component: () => import('../views/admin/EditProduct.vue')
@@ -80,10 +79,10 @@ const routes = [
     name: 'EditCategory',
     component: () => import('../views/admin/categories/EditCategories.vue')
   }
-  
-  
-  
-  
+
+
+
+
 ];
 
 const router = createRouter({
