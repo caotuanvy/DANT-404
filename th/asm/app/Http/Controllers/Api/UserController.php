@@ -23,4 +23,19 @@ class UserController extends Controller
 
         return response()->json(['message' => 'Tài khoản đã bị xóa']);
     }
+    public function update(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        $request->validate([
+            'vai_tro_id' => 'required|integer|exists:vai_tro,vai_tro_id',
+            'trang_thai' => 'required|integer',
+        ]);
+
+        $user->vai_tro_id = $request->vai_tro_id;
+        $user->trang_thai = $request->trang_thai;
+        $user->save();
+
+        return response()->json(['message' => 'Cập nhật vai trò và trạng thái thành công', 'user' => $user]);
+    }
 }

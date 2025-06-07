@@ -25,7 +25,7 @@
           <td>
             <select v-model="user.vai_tro_id" @change="updateRole(user)" class="form-select form-select-sm">
               <option :value="1">Admin</option>
-              <option :value="2">User</option>
+              <option :value="0">User</option>
             </select>
           </td>
           <td class="text-center">
@@ -60,13 +60,48 @@ export default {
     async fetchUsers() {
       try {
         const response = await axios.get('http://localhost:8000/api/users');
-        this.users = response.data;
+        // Thêm trường trang_thai_checked cho checkbox
+        this.users = response.data.map(user => ({
+          ...user,
+          trang_thai_checked: user.trang_thai === 1
+        }));
       } catch (error) {
         console.error('Lỗi khi tải danh sách người dùng:', error);
       } finally {
         this.loading = false;
       }
     },
+
+    async updateRole(user) {
+      try {
+        await axios.put(`http://localhost:8000/api/users/${user.nguoi_dung_id}`, {
+          vai_tro_id: user.vai_tro_id,
+          trang_thai: user.trang_thai_checked ? 1 : 0
+        });
+        this.$toast && this.$toast.success('Cập nhật vai trò thành công'); // nếu dùng toast
+      } catch (error) {
+        console.error('Lỗi khi cập nhật vai trò:', error);
+        alert('Cập nhật vai trò thất bại');
+      }
+    },
+
+    async toggleUserStatus(user, checked) {
+      try {
+        await axios.put(`http://localhost:8000/api/users/${user.nguoi_dung_id}`, {
+          vai_tro_id: user.vai_tro_id,
+          trang_thai: checked ? 1 : 0
+        });
+        user.trang_thai_checked = checked;
+        this.$toast && this.$toast.success('Cập nhật trạng thái thành công');
+      } catch (error) {
+        console.error('Lỗi khi cập nhật trạng thái:', error);
+        alert('Cập nhật trạng thái thất bại');
+        // Nếu lỗi thì revert checkbox
+        user.trang_thai_checked = !checked;
+      }
+    },
+
+    // Giữ nguyên hàm deleteUser nếu cần
     async deleteUser(id) {
       if (confirm('Bạn có chắc chắn muốn xóa tài khoản này?')) {
         try {
