@@ -112,7 +112,7 @@ const removeImage = async (imageId) => {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
     });
-    // Xóa ảnh trong local state để không phải reload
+
     product.value.images = product.value.images.filter(img => img.image_id !== imageId);
     alert('Xóa ảnh thành công!');
   } catch (err) {
