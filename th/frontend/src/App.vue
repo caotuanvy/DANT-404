@@ -5,7 +5,6 @@
       <router-link  class="a" to="/login">Đăng nhập </router-link> 
       <router-link  class="a" to="/register">Đăng ký</router-link>
       <router-link  class="a" to="/admin">Quản trị</router-link>
-    
     </nav>
     <router-view />
   </div>

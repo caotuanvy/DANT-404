@@ -32,7 +32,7 @@ class AuthController extends Controller
         'email' => $request->email,
         'sdt' => $request->sdt,
         'mat_khau' => Hash::make($request->mat_khau),
-        'vai_tro_id' => 2, // mặc định là user
+        'vai_tro_id' => 0,
         'trang_thai' => 1,
         'ngay_tao' => now(),
     ]);

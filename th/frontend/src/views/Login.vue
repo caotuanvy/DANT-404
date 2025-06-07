@@ -38,9 +38,9 @@ const handleLogin = async () => {
 
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));
-    localStorage.setItem('vai_tro_id', user.vai_tro_id); // Sửa theo vai_tro_id thay vì role
+    localStorage.setItem('vai_tro_id', user.vai_tro_id);
 
-    // Điều hướng theo vai_tro_id (ví dụ: 1 là admin, 2 là user)
+    
     if (user.vai_tro_id === 1) {
       router.push('/admin');
     } else {
