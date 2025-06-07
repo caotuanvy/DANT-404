@@ -3,12 +3,14 @@ import Login from '../views/Login.vue';
 import Register from '../views/Register.vue';
 import Home from '../views/Home.vue';
 import AdminView from '../views/Admin.vue';
+
 import axios from 'axios'; 
 
 const routes = [
   { path: '/', component: Home },
   { path: '/login', component: Login },
   { path: '/register', component: Register },
+
   {
     path: '/admin',
     component: AdminView,
@@ -27,6 +29,11 @@ const routes = [
         component: () => import('../components/admin/CustomersList.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       },
+      {
+          path: 'danhmuctintuc', 
+           component: () => import('../components/admin/DmTinTuc.vue'),
+        meta: { requiresAuth: true, role: 'admin' }
+      }
 
       // {
       //   path: 'orders/:id',

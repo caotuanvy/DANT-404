@@ -6,9 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
 {
-    protected $table = 'don_hang'; // Tên bảng tương ứng trong DB
-    protected $primaryKey = 'id'; // Khóa chính
-    public $timestamps = false; // Tắt tự động timestamps nếu không dùng `created_at`/`updated_at`
+    protected $table = 'don_hang';
+    protected $primaryKey = 'id';
+    public $timestamps = false;
 
     protected $fillable = [
         'nguoi_dung_id',
@@ -22,7 +22,7 @@ class Order extends Model
         'ngay_sua',
     ];
 
-    // Quan hệ với người dùng
+
     public function user()
     {
         return $this->belongsTo(User::class, 'nguoi_dung_id', 'nguoi_dung_id');

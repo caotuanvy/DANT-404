@@ -12,7 +12,7 @@ class OrderController extends Controller
 {
     public function index()
     {
-        $orders = Order::with('user')->get(); // nếu bạn có quan hệ với User
+        $orders = Order::with('user')->get();
         return response()->json($orders);
     }
 
