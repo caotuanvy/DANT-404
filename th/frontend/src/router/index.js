@@ -86,12 +86,6 @@ const routes = [
   component: () => import('../views/admin/danhmuctt/Editdanhmuctt.vue'),
   meta: { requiresAuth: true, role: 'admin' }
   },
-  {
-    path: '/admin/danh-muc-tin-tuc/add',
-    name: 'AddDmTinTuc',
-    component: () => import('../views/admin/danhmuctt/Adddanhmuctt.vue'),
-    meta: { requiresAuth: true, role: 'admin' }
-  },
 
 
 

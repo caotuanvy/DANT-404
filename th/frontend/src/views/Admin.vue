@@ -65,10 +65,10 @@ import logo1 from '@/assets/images/image60.png';
 const router = useRouter();
 
 const logout = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('role');
-  router.push('/login');
-};
+  localStorage.removeItem('token')
+  localStorage.removeItem('role')
+  router.push('/')
+}
 
 const menu = [
   {
