@@ -110,21 +110,6 @@
   </script>
   
   <style scoped>
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-  }
-  th,
-  td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: center;
-  }
-  button {
-    margin: 0 4px;
-    padding: 5px 10px;
-    cursor: pointer;
-  }
+ 
   </style>
   

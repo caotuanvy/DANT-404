@@ -9,11 +9,11 @@ use App\Models\HinhAnhSanPham;
 
 class ProductController extends Controller
 {
-    // Lấy danh sách sản phẩm kèm biến thể
- public function index()
+
+public function index()
 {
     try {
-        $products = SanPham::with('danhMuc')->get();
+        $products = SanPham::with(['danhMuc', 'hinhAnhSanPham'])->get();
 
         $result = $products->map(function($item) {
             return [
@@ -26,7 +26,10 @@ class ProductController extends Controller
                 'danh_muc' => [
                     'category_id' => $item->danhMuc?->category_id,
                     'ten_danh_muc' => $item->danhMuc?->ten_danh_muc,
-                ]
+                ],
+                'images' => $item->hinhAnhSanPham->map(function($image) {
+                    return asset('storage/' . $image->duongdan);
+                }),
             ];
         });
 
@@ -36,6 +39,8 @@ class ProductController extends Controller
         return response()->json(['error' => $e->getMessage()], 500);
     }
 }
+
+
 public function toggleNoiBat($id, Request $request)
 {
     $product = SanPham::findOrFail($id);
@@ -90,20 +95,9 @@ public function show($id)
         return response()->json(['message' => 'Không tìm thấy sản phẩm'], 404);
     }
 
-    return response()->json([
-        'product_id' => $product->san_pham_id,
-        'product_name' => $product->ten_san_pham,
-        'price' => $product->gia ?? 0,
-        'description' => $product->mo_ta,
-        'category_id' => $product->ten_danh_muc_id,
-        'images' => $product->hinhAnhSanPham->map(function ($img) {
-            return [
-                'image_id' => $img->id,
-                'image_url' => '/storage/' . $img->duongdan,
-            ];
-        }),
-    ]);
+    return response()->json($product);
 }
+
 
 
     // // Xem chi tiết sản phẩm (có biến thể)
@@ -156,70 +150,7 @@ public function show($id)
 
 
 
-    // // ======== Quản lý biến thể sản phẩm ========
 
-    // // Lấy danh sách biến thể của sản phẩm
-    // public function variants($productId)
-    // {
-    //     $product = SanPham::find($productId);
-    //     if (!$product) return response()->json(['message' => 'Không tìm thấy sản phẩm'], 404);
-
-    //     return response()->json($product->variants);
-    // }
-
-    // // Thêm biến thể mới cho sản phẩm
-    // public function addVariant(Request $request, $productId)
-    // {
-    //     $product = SanPham::find($productId);
-    //     if (!$product) return response()->json(['message' => 'Không tìm thấy sản phẩm'], 404);
-
-    //     $validated = $request->validate([
-    //         'kich_thuoc' => 'nullable|string|max:100',
-    //         'mau_sac' => 'nullable|string|max:100',
-    //         'so_luong_ton_kho' => 'required|integer|min:0',
-    //         'gia' => 'required|numeric|min:0',
-    //     ]);
-
-    //     $variant = new SanPhamBienThe($validated);
-    //     $variant->san_pham_id = $productId;
-    //     $variant->save();
-
-    //     return response()->json([
-    //         'message' => 'Thêm biến thể thành công',
-    //         'data' => $variant
-    //     ], 201);
-    // }
-
-    // // Cập nhật biến thể
-    // public function updateVariant(Request $request, $productId, $variantId)
-    // {
-    //     $variant = SanPhamBienThe::where('san_pham_id', $productId)->find($variantId);
-    //     if (!$variant) return response()->json(['message' => 'Không tìm thấy biến thể'], 404);
-
-    //     $validated = $request->validate([
-    //         'kich_thuoc' => 'nullable|string|max:100',
-    //         'mau_sac' => 'nullable|string|max:100',
-    //         'so_luong_ton_kho' => 'nullable|integer|min:0',
-    //         'gia' => 'nullable|numeric|min:0',
-    //     ]);
-
-    //     $variant->update($validated);
-
-    //     return response()->json([
-    //         'message' => 'Cập nhật biến thể thành công',
-    //         'data' => $variant
-    //     ]);
-    // }
-
-    // // Xóa biến thể
-    // public function deleteVariant($productId, $variantId)
-    // {
-    //     $variant = SanPhamBienThe::where('san_pham_id', $productId)->find($variantId);
-    //     if (!$variant) return response()->json(['message' => 'Không tìm thấy biến thể'], 404);
-
-    //     $variant->delete();
-    //     return response()->json(['message' => 'Xóa biến thể thành công']);
-    // }
     public function variants($productId)
 {
     $product = SanPham::find($productId);

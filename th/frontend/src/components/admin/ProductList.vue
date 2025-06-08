@@ -22,15 +22,12 @@
     <tr v-for="(product, index) in products" :key="product.product_id">
       <td>{{ index + 1 }}</td>
       <td>{{ product.product_name }}</td>
-      <td>
-        <img 
-          :src="product.hinh_anh?.[0]?.duong_dan?.startsWith('http')
-  ? product.hinh_anh[0].duong_dan
-  : `http://localhost:8000/storage/${product.hinh_anh?.[0]?.duong_dan}` || 'https://via.placeholder.com/60'"
+      <img
+      :src="getImageUrl(product.images?.[0])"
+      alt="Ảnh sản phẩm"
+      style="width: 60px; height: auto; object-fit: cover;"
+      >
 
-          style="width: 60px; height: auto; object-fit: cover;" 
-        />
-      </td>
       <td>
         <label class="switch">
           <input 
@@ -48,13 +45,15 @@
         </router-link>
       </td>
       <td>
-        <router-link :to="`/admin/products/${product.product_id}`">Xem chi tiết</router-link>
+      <div class="action-buttons">
+        <router-link :to="`/admin/products/${product.product_id}`" class="btn-detail">Xem chi tiết</router-link>
+        <br>
         <router-link :to="`/admin/products/${product.product_id}/edit`" class="btn-edit">Sửa</router-link>
-        |
-        <button @click="deleteProduct(product.product_id)" class="btn-delete">
-          Xóa
-        </button>
-      </td>
+        <br>
+        <button @click="deleteProduct(product.product_id)" class="btn-delete">Xóa</button>
+      </div>
+    </td>
+
     </tr>
   </tbody>
 </table>
@@ -82,6 +81,7 @@ const getProducts = async () => {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
     });
+    // console.log('Dữ liệu sản phẩm từ API:', res.data); 
     products.value = res.data;
   } catch (error) {
     console.error('Lỗi khi lấy sản phẩm:', error);
@@ -90,6 +90,7 @@ const getProducts = async () => {
     loading.value = false;
   }
 };
+
 
 const formatPrice = (price) => {
   if (typeof price !== 'number') return '';
@@ -106,7 +107,7 @@ const toggleNoiBat = async (product) => {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
     });
-    product.noi_bat = newStatus; // Cập nhật trạng thái ngay trên UI
+    product.noi_bat = newStatus; 
   } catch (error) {
     console.error('Lỗi khi cập nhật trạng thái nổi bật:', error);
     alert('Cập nhật trạng thái nổi bật thất bại!');
@@ -128,6 +129,12 @@ const deleteProduct = async (id) => {
     alert('Xóa sản phẩm thất bại!');
   }
 };
+const getImageUrl = (url) => {
+  if (!url) return 'https://placehold.co/60x60?text=No+Image';
+  return url; 
+};
+
+
 
 onMounted(() => {
   getProducts();
@@ -143,12 +150,16 @@ onMounted(() => {
   display: inline-block;
   margin-bottom: 10px;
   padding: 6px 12px;
-  background-color: #4caf50;
+  background-color: #4FC3F7;
   color: white;
   border-radius: 4px;
   text-decoration: none;
+  transition: background-color 0.3s ease, transform 0.3s ease;
 }
-
+.btn-add:hover {
+  background-color: #039BE5;
+    transform: scale(1.05);
+}
 .btn-edit {
   color: #2196f3;
   text-decoration: none;
@@ -163,28 +174,6 @@ onMounted(() => {
   padding: 0;
   font-size: 1em;
 }
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-}
-
-th,
-td {
-  padding: 10px;
-  border: 1px solid #ccc;
-  text-align: left;
-}
-
-th {
-  background-color: #f3f4f6;
-}
-
-td {
-  background-color: #ffffff;
-}
-
 button:hover {
   text-decoration: underline;
 }

@@ -11,7 +11,7 @@ class SanPham extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'ten_san_pham', 'mo_ta', 'gia', 'ten_danh_muc_id', "mo_ta","noi_bat","khuyen_mai",
+        'ten_san_pham', 'gia', 'ten_danh_muc_id', "mo_ta","noi_bat","khuyen_mai",
     ];
 
    public function danhMuc()
