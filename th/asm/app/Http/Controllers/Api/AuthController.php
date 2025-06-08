@@ -33,7 +33,7 @@ class AuthController extends Controller
         'sdt' => $request->sdt,
         'mat_khau' => Hash::make($request->mat_khau),
         'vai_tro_id' => 0,
-        'trang_thai' => 1,
+        'trang_thai' => 0,
         'ngay_tao' => now(),
     ]);
 

@@ -78,9 +78,9 @@
         <div class="footer-section footer-contact">
           <h3>LIÊN HỆ</h3>
           <ul>
-            <li><a href="#">Facebook:</a></li>
-            <li><a href="#">Tik Tok</a></li>
-            <li><a href="#">Website</a></li>
+            <li>Facebook:<a href="#"></a>anpham</li>
+            <li>Tik Tok:<a href="#"></a>anpham</li>
+            <li>Website:<a href="#"></a>anpham</li>
           </ul>
         </div>
       </div>
@@ -144,7 +144,9 @@ body {
     flex-grow: 1; /* Cho phép nó mở rộng để chiếm không gian */
     margin-right: 20px;
 }
-
+.logo-search img{
+    box-shadow: none;
+}
 .top-bar .logo-404 {
     height: 40px; /* Kích thước logo */
     width: auto;
@@ -320,6 +322,9 @@ body {
     display: flex;
     align-items: center;
     gap: 16px;
+}
+.footer-top{
+    box-shadow: none;
 }
 
 .footer-info h3,
