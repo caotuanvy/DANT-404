@@ -4,13 +4,75 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\DanhMucTinTuc;
+use Illuminate\Http\Request;
 
 class DanhMucTtController extends Controller
 {
-    public function show()
+    public function index()
     {
         $danhMuc = DanhMucTinTuc::all();
-
         return response()->json($danhMuc);
+    }
+
+    public function show($id)
+    {
+        $danhMuc = DanhMucTinTuc::findOrFail($id);
+        return response()->json($danhMuc);
+    }
+
+     // Xóa danh mục tin tức
+    public function destroy($id)
+    {
+        $danhMuc = DanhMucTinTuc::findOrFail($id);
+        $danhMuc->delete();
+
+        return response()->json([
+            'message' => 'Xóa danh mục thành công'
+        ]);
+    }
+
+    // Sửa danh mục tin tức
+    public function update($id, Request $request)
+    {
+        $danhMuc = DanhMucTinTuc::findOrFail($id);
+
+        $validated = $request->validate([
+            'ten_danh_muc' => 'required|string|max:255',
+            'mo_ta' => 'nullable|string',
+            'hinh_anh' => 'nullable|string|max:100',
+        ]);
+
+        $danhMuc->ten_danh_muc = $validated['ten_danh_muc'];
+        $danhMuc->mo_ta = $validated['mo_ta'] ?? null;
+        $danhMuc->hinh_anh = $validated['hinh_anh'] ?? $danhMuc->hinh_anh;
+        $danhMuc->ngay_sua = now();
+        $danhMuc->save();
+
+        return response()->json([
+            'message' => 'Cập nhật danh mục thành công',
+            'data' => $danhMuc
+        ]);
+    }
+
+     // Thêm danh mục tin tức
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'ten_danh_muc' => 'required|string|max:255',
+            'mo_ta' => 'nullable|string',
+            'hinh_anh' => 'nullable|string|max:100',
+        ]);
+
+        $danhMuc = new DanhMucTinTuc();
+        $danhMuc->ten_danh_muc = $validated['ten_danh_muc'];
+        $danhMuc->mo_ta = $validated['mo_ta'] ?? null;
+        $danhMuc->hinh_anh = $validated['hinh_anh'] ?? null;
+        $danhMuc->ngay_tao = now();
+        $danhMuc->save();
+
+        return response()->json([
+            'message' => 'Thêm danh mục thành công',
+            'data' => $danhMuc
+        ], 201);
     }
 }

@@ -33,6 +33,7 @@ const routes = [
            component: () => import('../components/admin/DmTinTuc.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       }
+      
 
       // {
       //   path: 'orders/:id',
@@ -78,7 +79,19 @@ const routes = [
     path: '/admin/categories/:category_id/edit',
     name: 'EditCategory',
     component: () => import('../views/admin/categories/EditCategories.vue')
-  }
+  },
+  {
+  path: '/admin/danh-muc-tin-tuc/:id/edit',
+  name: 'EditDmTinTuc',
+  component: () => import('../views/admin/danhmuctt/Editdanhmuctt.vue'),
+  meta: { requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: '/admin/danh-muc-tin-tuc/add',
+    name: 'AddDmTinTuc',
+    component: () => import('../views/admin/danhmuctt/Adddanhmuctt.vue'),
+    meta: { requiresAuth: true, role: 'admin' }
+  },
 
 
 

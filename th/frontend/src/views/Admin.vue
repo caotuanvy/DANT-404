@@ -92,7 +92,7 @@ const menu = [
     items: [
       { to: '/admin/dichvu', label: 'Dịch vụ tiện ích', icon: 'bi bi-file-earmark-text' },
       { to: '/admin/album', label: 'Album', icon: 'bi bi-image' },
-      { to: '/admin/news', label: 'Tin tức', icon: 'bi bi-newspaper' },
+      { to: '/admin/danhmuctintuc', label: 'Danh Mục Tin tức', icon: 'bi bi-newspaper' },
       { to: '/admin/video', label: 'Video', icon: 'bi bi-camera-video' },
       { to: '/admin/payment', label: 'Hình thức thanh toán', icon: 'bi bi-cash' },
       { to: '/admin/notifications', label: 'Thông báo đẩy', icon: 'bi bi-bell' },

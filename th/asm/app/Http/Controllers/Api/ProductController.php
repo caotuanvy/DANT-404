@@ -112,18 +112,21 @@ public function show($id)
 
     // // Cập nhật sản phẩm
     public function update(Request $request, $id)
-{
-    $product = SanPham::find($id);
-    if (!$product) return response()->json(['message' => 'Không tìm thấy sản phẩm'], 404);
+ {
+        $product = SanPham::find($id);
+        if (!$product) return response()->json(['message' => 'Không tìm thấy sản phẩm'], 404);
 
-    $validated = $request->validate([
+        $validated = $request->validate([
         'ten_san_pham' => 'sometimes|required|string|max:255',
-        'gia' => 'nullable|numeric|min:0',
-        'ten_danh_muc_id' => 'nullable|integer|exists:danh_muc_san_pham,category_id',
         'mo_ta' => 'nullable|string',
-        'noi_bat' => 'nullable|integer',
-        'khuyen_mai' => 'nullable|integer',
-    ]);
+        'noi_bat' => 'nullable|boolean',
+        'khuyen_mai' => 'nullable|string',
+        'slug' => 'nullable|string|max:255',
+        'ten_danh_muc_id' => 'nullable|integer|exists:danh_muc_san_pham,category_id',
+ ]);
+
+    // Cập nhật ngày sửa
+    $validated['ngay_sua'] = now();
 
     $product->update($validated);
 
