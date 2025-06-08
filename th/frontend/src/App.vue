@@ -370,7 +370,7 @@ body {
         gap: 15px;
     }
     .top-bar .country-selector {
-        display: none; /* Có thể ẩn chọn quốc gia trên màn hình rất nhỏ */
+        display: none; 
     }
 }
 </style>
