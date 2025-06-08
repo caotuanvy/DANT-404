@@ -118,9 +118,9 @@ body {
     width: 100%;
     padding-right: 12px;
     padding-left: 12px;
-    margin-right: auto;
-    margin-left: auto;
-    max-width: 1500px; /* Điều chỉnh nếu bạn muốn rộng hơn/hẹp hơn */
+    margin-right: 100px;
+    /* margin-left: 100px; */
+    /* max-width: 1500px;  */
 }
 
 /* --- Top Bar (Header chính) --- */
