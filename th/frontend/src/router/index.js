@@ -7,8 +7,8 @@ import axios from 'axios';
 
 const routes = [
   { path: '/', component: Home },
-  { path: '/login', component: Login },
-  { path: '/register', component: Register },
+  // { path: '/login', component: Login },
+  // { path: '/register', component: Register },
 
   {
     path: '/admin',
@@ -78,10 +78,13 @@ const routes = [
     path: '/admin/categories/:category_id/edit',
     name: 'EditCategory',
     component: () => import('../views/admin/categories/EditCategories.vue')
+  },
+
+
+{
+    path: '/:pathMatch(.*)*',
+    redirect: '/'
   }
-
-
-
 
 ];
 
