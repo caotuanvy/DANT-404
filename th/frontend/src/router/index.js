@@ -7,8 +7,8 @@ import axios from 'axios';
 
 const routes = [
   { path: '/', component: Home },
-  // { path: '/login', component: Login },
-  // { path: '/register', component: Register },
+  { path: '/login', component: Login },
+  { path: '/register', component: Register },
 
   {
     path: '/admin',
@@ -33,6 +33,7 @@ const routes = [
            component: () => import('../components/admin/DmTinTuc.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       }
+      
 
       // {
       //   path: 'orders/:id',
@@ -79,12 +80,15 @@ const routes = [
     name: 'EditCategory',
     component: () => import('../views/admin/categories/EditCategories.vue')
   },
+  {
+  path: '/admin/danh-muc-tin-tuc/:id/edit',
+  name: 'EditDmTinTuc',
+  component: () => import('../views/admin/danhmuctt/Editdanhmuctt.vue'),
+  meta: { requiresAuth: true, role: 'admin' }
+  },
 
 
-{
-    path: '/:pathMatch(.*)*',
-    redirect: '/'
-  }
+
 
 ];
 

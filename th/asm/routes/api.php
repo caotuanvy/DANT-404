@@ -48,6 +48,9 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/users', [UserController::class, 'index']);
 Route::delete('/users/{id}', [UserController::class, 'destroy']);
 Route::put('/users/{id}', [UserController::class, 'update']);
-
 Route::get('/danh-muc-tin-tuc', [DanhMucTtController::class, 'show']);
-
+Route::get('/danh-muc-tin-tuc', [DanhMucTtController::class, 'index']);
+Route::get('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'show']);
+Route::put('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'update']);
+Route::delete('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'destroy']);
+Route::post('/danh-muc-tin-tuc', [DanhMucTtController::class, 'store']);
