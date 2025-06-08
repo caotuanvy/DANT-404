@@ -7,8 +7,8 @@ import axios from 'axios';
 
 const routes = [
   { path: '/', component: Home },
-  { path: '/login', component: Login },
-  { path: '/register', component: Register },
+  // { path: '/login', component: Login },
+  // { path: '/register', component: Register },
 
   {
     path: '/admin',
@@ -88,6 +88,10 @@ const routes = [
   },
 
 
+{
+  path: '/:pathMatch(.*)*',
+  redirect: '/'
+}
 
 
 ];

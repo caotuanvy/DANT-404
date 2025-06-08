@@ -201,7 +201,7 @@ const handleLogin = async () => {
         closeModal();
 
         if (user.vai_tro_id === 1) {
-            router.push('/admin');
+            router.push('/');
         } else {
             router.push('/');
         }
@@ -211,64 +211,79 @@ const handleLogin = async () => {
 };
 
 const handleRegister = async () => {
-  registerError.value = ''; // Reset lỗi trước mỗi lần submit
-  if (registerForm.password !== registerForm.confirmPassword) {
-    registerError.value = 'Mật khẩu và xác nhận mật khẩu không khớp.';
-    return;
-  }
+    registerError.value = ''; // Đặt lại lỗi trước mỗi lần gửi
 
-  try {
-    const res = await axios.post('/register', {
-      ho_ten: registerForm.username,
-      email: registerForm.email,
-      sdt: registerForm.sdt,
-      mat_khau: registerForm.password,
-      mat_khau_confirmation: registerForm.confirmPassword
-    });
-
-    localStorage.setItem('token', res.data.token);
-    alert('Đăng ký thành công! Vui lòng đăng nhập.');
-    changeView('login'); // Chuyển về form đăng nhập sau khi đăng ký thành công
-  } catch (err) {
-    console.error('Đăng ký thất bại:', err); // Luôn log lỗi ra console để debug
-
-    let errorMessage = 'Đăng ký thất bại. Vui lòng thử lại.';
-
-    if (err.response && err.response.data && err.response.data.errors) {
-      const errors = err.response.data.errors;
-
-      if (errors.email) {
-        if (errors.email.includes('The email has already been taken.')) {
-          errorMessage = 'Email này đã được sử dụng. Vui lòng chọn email khác.';
-        } else {
-          errorMessage = 'Email không hợp lệ: ' + errors.email[0];
-        }
-      } else if (errors.mat_khau) { // Hoặc errors.password nếu backend dùng 'password'
-        // --- Đã sửa lại điều kiện và thông báo cho 8 ký tự ---
-        if (errors.mat_khau.includes('The mat khau field must be at least 8 characters.')) {
-          errorMessage = 'Mật khẩu phải có ít nhất 8 ký tự.';
-        } else if (errors.mat_khau.includes('The password confirmation does not match.')) {
-          errorMessage = 'Mật khẩu xác nhận không khớp.';
-        } else {
-          errorMessage = 'Mật khẩu không hợp lệ: ' + errors.mat_khau[0];
-        }
-      } else if (errors.sdt) {
-        errorMessage = 'Số điện thoại không hợp lệ: ' + errors.sdt[0];
-      } else if (errors.ho_ten) { // Hoặc errors.username / errors.name
-        errorMessage = 'Họ tên không hợp lệ: ' + errors.ho_ten[0];
-      } else {
-          const firstErrorKey = Object.keys(errors)[0];
-          if (firstErrorKey) {
-              errorMessage = errors[firstErrorKey][0];
-          }
-      }
-
-    } else if (err.response && err.response.data && err.response.data.message) {
-      errorMessage = err.response.data.message;
+    // Kiểm tra mật khẩu và xác nhận mật khẩu
+    if (registerForm.password !== registerForm.confirmPassword) {
+        registerError.value = 'Mật khẩu và xác nhận mật khẩu không khớp.';
+        return;
     }
 
-    registerError.value = errorMessage;
-  }
+    // --- Bắt đầu: Logic để lấy tên người dùng từ email ---
+    const atIndex = registerForm.email.indexOf('@');
+    if (atIndex > -1) {
+        // Lấy phần trước '@' làm ho_ten
+        registerForm.ho_ten = registerForm.email.substring(0, atIndex);
+    } else {
+        // Xử lý trường hợp email không hợp lệ (không có '@')
+        // Bạn có thể hiển thị lỗi hoặc đặt một giá trị mặc định
+        registerError.value = 'Địa chỉ email không hợp lệ.';
+        return;
+    }
+    // --- Kết thúc: Logic để lấy tên người dùng từ email ---
+
+    try {
+        const res = await axios.post('/register', {
+            ho_ten: registerForm.ho_ten, // Bây giờ sẽ lấy từ email
+            email: registerForm.email,
+            sdt: registerForm.sdt || '', // Đặt giá trị mặc định cho sdt nếu không có trường nhập
+            mat_khau: registerForm.password,
+            mat_khau_confirmation: registerForm.confirmPassword
+        });
+
+        localStorage.setItem('token', res.data.token);
+        alert('Đăng ký thành công! Vui lòng đăng nhập.');
+        changeView('login'); // Chuyển về form đăng nhập sau khi đăng ký thành công
+
+    } catch (err) {
+        console.error('Đăng ký thất bại:', err); // Luôn ghi lỗi vào console để gỡ lỗi
+
+        let errorMessage = 'Đăng ký thất bại. Vui lòng thử lại.';
+
+        if (err.response && err.response.data && err.response.data.errors) {
+            const errors = err.response.data.errors;
+
+            if (errors.email) {
+                if (errors.email.includes('The email has already been taken.')) {
+                    errorMessage = 'Email này đã được sử dụng. Vui lòng chọn email khác.';
+                } else {
+                    errorMessage = 'Email không hợp lệ: ' + errors.email[0];
+                }
+            } else if (errors.mat_khau) {
+                if (errors.mat_khau.includes('The mat khau field must be at least 8 characters.')) {
+                    errorMessage = 'Mật khẩu phải có ít nhất 8 ký tự.';
+                } else if (errors.mat_khau.includes('The password confirmation does not match.')) {
+                    errorMessage = 'Mật khẩu xác nhận không khớp.';
+                } else {
+                    errorMessage = 'Mật khẩu không hợp lệ: ' + errors.mat_khau[0];
+                }
+            } else if (errors.sdt) {
+                errorMessage = 'Số điện thoại không hợp lệ: ' + errors.sdt[0];
+            } else if (errors.ho_ten) {
+                errorMessage = 'Họ tên không hợp lệ: ' + errors.ho_ten[0];
+            } else {
+                const firstErrorKey = Object.keys(errors)[0];
+                if (firstErrorKey) {
+                    errorMessage = errors[firstErrorKey][0];
+                }
+            }
+
+        } else if (err.response && err.response.data && err.response.data.message) {
+            errorMessage = err.response.data.message;
+        }
+
+        registerError.value = errorMessage;
+    }
 };
 
 const handleForgotPassword = async () => {
