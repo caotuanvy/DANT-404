@@ -81,7 +81,7 @@ const menu = [
   },
   {
     label: 'Quản lý Người dùng',
-    items: [{ to: '/admin/customers', label: 'Người Dùng', icon: 'bi bi-user' }],
+    items: [{ to: '/admin/customers', label: 'Người Dùng', icon: 'bi bi-person' }],
   },
   {
     label: 'Quản lý thuộc tính',
