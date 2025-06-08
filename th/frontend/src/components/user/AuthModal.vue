@@ -300,8 +300,6 @@ const handleForgotPassword = async () => {
 </script>
 
 <style scoped>
-/* Toàn bộ CSS đã được điều chỉnh cho modal, bạn sẽ dán vào đây */
-/* Global styles */
 body {
     margin: 0;
     font-family: Arial, sans-serif;
