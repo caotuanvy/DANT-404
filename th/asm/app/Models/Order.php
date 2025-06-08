@@ -34,11 +34,11 @@ class Order extends Model
 //         return $this->belongsTo(Address::class, 'dia_chi_id', 'id_dia_chi');
 //     }
 
-//     // Quan hệ với phương thức thanh toán
-//     public function paymentMethod()
-//     {
-//         return $this->belongsTo(PaymentMethod::class, 'phuong_thuc_thanh_toan_id', 'phuong_thuc_thanh_toan_id');
-//     }
+    // Quan hệ với phương thức thanh toán
+    public function paymentMethod()
+        {
+            return $this->belongsTo(PaymentMethod::class, 'phuong_thuc_thanh_toan_id', 'phuong_thuc_thanh_toan_id');
+        }
 
 //     // Quan hệ với mã giảm giá
 //     public function discount()

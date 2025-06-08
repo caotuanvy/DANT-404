@@ -12,7 +12,7 @@ class OrderController extends Controller
 {
     public function index()
     {
-        $orders = Order::with('user')->get();
+        $orders = Order::with('user', 'paymentMethod')->get();
         return response()->json($orders);
     }
 

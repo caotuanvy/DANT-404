@@ -211,14 +211,7 @@ const menu = [
 .myheader-logo{
   height: 30px;
 }
-.container-table{
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 10px;
-  background-color: #ffffff;
-  border-radius: 8px;
-}
+
 </style>
 <style>
 
