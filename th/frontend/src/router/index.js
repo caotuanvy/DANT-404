@@ -39,7 +39,15 @@ const routes = [
         name: 'AdminSlide',
         component: () => import('../components/admin/SlideList.vue'),
         meta: { requiresAuth: true, role: 'admin' },
-      }
+      },
+      {
+        path: '/admin/products/:id/variants',
+        name: 'ProductVariants',
+        component: () => import('../views/admin/sanphambt/ProductVariants.vue'), 
+        meta: { requiresAuth: true, role: 'admin' }
+      },
+
+      
     ]
   },
   {
