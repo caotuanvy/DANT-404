@@ -52,6 +52,8 @@
         <br>
         <router-link :to="`/admin/products/${product.product_id}/edit`" class="btn-edit">Sửa</router-link>
         <br>
+        <router-link :to="`/admin/products/${product.product_id}/variants`"  class="btn-variants"> Biến thể ({{ product.so_bien_the || 0 }})</router-link>
+        <br>
         <button @click="deleteProduct(product.product_id)" class="btn-delete">Xóa</button>
       </div>
     </td>
@@ -92,13 +94,6 @@ const getProducts = async () => {
     loading.value = false;
   }
 };
-
-
-const formatPrice = (price) => {
-  if (typeof price !== 'number') return '';
-  return price.toLocaleString('vi-VN') + ' đ';
-};
-
 const toggleNoiBat = async (product) => {
   const newStatus = product.noi_bat === 1 ? 2 : 1;
   try {
@@ -157,6 +152,7 @@ onMounted(() => {
   border-radius: 4px;
   text-decoration: none;
   transition: background-color 0.3s ease, transform 0.3s ease;
+  font-weight: bolder;
 }
 .btn-add:hover {
   background-color: #039BE5;
@@ -166,6 +162,7 @@ onMounted(() => {
   color: #2196f3;
   text-decoration: none;
   margin: 0 5px;
+  font-weight: bolder;
 }
 
 .btn-delete {
@@ -175,8 +172,19 @@ onMounted(() => {
   cursor: pointer;
   padding: 0;
   font-size: 1em;
+  font-weight: bolder;
 }
 button:hover {
   text-decoration: underline;
 }
+.btn-variants {
+  color: #673AB7;
+  text-decoration: none;
+  margin: 0 5px;
+  font-weight: bolder;
+}
+.btn-variants:hover {
+  text-decoration: underline;
+}
+
 </style>

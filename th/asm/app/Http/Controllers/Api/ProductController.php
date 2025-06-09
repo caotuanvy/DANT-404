@@ -13,16 +13,17 @@ class ProductController extends Controller
 public function index()
 {
     try {
-        $products = SanPham::with(['danhMuc', 'hinhAnhSanPham'])->get();
+        $products = SanPham::with(['danhMuc', 'hinhAnhSanPham'])->withCount('bienThe')->get();
 
         $result = $products->map(function($item) {
-            return [
+                    return [
                 'product_id' => $item->san_pham_id,
                 'product_name' => $item->ten_san_pham,
                 'price' => $item->gia ?? 0,
                 'description' => $item->mo_ta,
                 'noi_bat' => $item->noi_bat,
                 'khuyen_mai' => $item->khuyen_mai,
+                'so_bien_the' => $item->bien_the_count,
                 'danh_muc' => [
                     'category_id' => $item->danhMuc?->category_id,
                     'ten_danh_muc' => $item->danhMuc?->ten_danh_muc,

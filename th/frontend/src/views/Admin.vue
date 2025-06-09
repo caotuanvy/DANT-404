@@ -11,7 +11,7 @@
   </div>
 
   <div class="myheader-right">
-    <span class="myheader-version">VERSION 1.0.2</span>
+    <span class="myheader-version">VERSION 1.0.5</span>
     <i class="myheader-icon bi bi-person-circle"></i>
   </div>
 </header>
@@ -46,8 +46,9 @@
       <main class="flex-grow-1 p-4 bg-light">
         <br><br><br>
         <div class="d-flex justify-content-end mb-4">
-          <button class="btn btn-outline-danger btn-sm" @click="logout">Quay về trang chủ</button>
+          <button class="btn btn-outline-danger btn-sm" @click="logout">Đăng Xuất</button>
         </div>
+        
 
         <div class="container-table">
           <router-view />
@@ -65,8 +66,8 @@ import logo1 from '@/assets/images/image60.png';
 const router = useRouter();
 
 const logout = () => {
-  // localStorage.removeItem('token')
-  // localStorage.removeItem('role')
+  localStorage.removeItem('token')
+  localStorage.removeItem('role')
   router.push('/')
 }
 
