@@ -22,11 +22,13 @@
     <tr v-for="(product, index) in products" :key="product.product_id">
       <td>{{ index + 1 }}</td>
       <td>{{ product.product_name }}</td>
-      <img
+      <td>
+        <img
       :src="getImageUrl(product.images?.[0])"
       alt="Ảnh sản phẩm"
       style="width: 60px; height: auto; object-fit: cover;"
       >
+      </td>
 
       <td>
         <label class="switch">

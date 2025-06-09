@@ -101,7 +101,7 @@ const menu = [
   {
     label: 'Quản lý trang tĩnh',
     items: [
-      { to: '/admin/pages/weekly-program', label: 'Chương trình theo tuần', icon: 'bi bi-calendar-week' },
+      { to: '/admin/slide', label: 'Slide Show', icon: 'bi bi-calendar-week' },
     ],
   },
 ];
