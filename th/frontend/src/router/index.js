@@ -5,9 +5,10 @@ import Home from '../views/Home.vue';
 import AdminView from '../views/Admin.vue';
 import axios from 'axios';
 
+
 const routes = [
   { path: '/', component: Home },
-  // { path: '/login', component: Login },
+  // { path: '/login', component: Login },gi
   // { path: '/register', component: Register },
 
   {
@@ -32,16 +33,13 @@ const routes = [
           path: 'danhmuctintuc', 
            component: () => import('../components/admin/DmTinTuc.vue'),
         meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
+        path: '/admin/slide',
+        name: 'AdminSlide',
+        component: () => import('../components/admin/SlideList.vue'),
+        meta: { requiresAuth: true, role: 'admin' },
       }
-      
-
-      // {
-      //   path: 'orders/:id',
-      //   name: 'OrderDetail',
-      //   component: () => import('../views/admin/orders/OrderDetail.vue'),
-      //   meta: { requiresAuth: true, role: 'admin' }
-      // }
-
     ]
   },
   {
@@ -49,7 +47,6 @@ const routes = [
     name: 'SearchResult',
     component: () => import('../views/SearchResult.vue'),
   },
-
   {
     path: '/admin/products/:id/edit',
     component: () => import('../views/admin/EditProduct.vue')
@@ -86,16 +83,11 @@ const routes = [
   component: () => import('../views/admin/danhmuctt/Editdanhmuctt.vue'),
   meta: { requiresAuth: true, role: 'admin' }
   },
-
-
 {
   path: '/:pathMatch(.*)*',
   redirect: '/'
 }
-
-
 ];
-
 const router = createRouter({
   history: createWebHistory(),
   routes,
@@ -120,7 +112,7 @@ router.beforeEach(async (to, from, next) => {
 
       const user = response.data;
 
-      // Nếu route yêu cầu vai trò là 'admin', kiểm tra vai_tro_id == 1
+      
       if (to.meta.role === 'admin' && user.vai_tro_id !== 1) {
         return next('/');
       }

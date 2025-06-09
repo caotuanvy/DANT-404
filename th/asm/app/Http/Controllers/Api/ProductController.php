@@ -138,19 +138,18 @@ public function show($id)
 
 
     // // Xóa sản phẩm (cascades xóa biến thể)
-    public function destroy($id)
+
+public function destroy($id)
 {
-    $product = SanPham::find($id);
-    if (!$product) return response()->json(['message' => 'Không tìm thấy sản phẩm'], 404);
-
-    // Nếu bạn muốn cascade xóa biến thể:
-    $product->variants()->delete();
-
-    $product->delete();
+    $sanPham = SanPham::find($id);
+    if (!$sanPham) {
+        return response()->json(['message' => 'Sản phẩm không tồn tại'], 404);
+    }
+    $sanPham->hinhAnhSanPham()->delete();
+    $sanPham->delete();
 
     return response()->json(['message' => 'Xóa sản phẩm thành công']);
 }
-
 
 
 
