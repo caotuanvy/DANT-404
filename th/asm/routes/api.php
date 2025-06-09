@@ -60,7 +60,7 @@ Route::put('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'update']);
 Route::delete('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'destroy']);
 Route::post('/danh-muc-tin-tuc', [DanhMucTtController::class, 'store']);
 // vỹ
-
+Route::post('products/{id}/images', [ProductImageController::class, 'store']);
 
 Route::prefix('admin')->group(function () {
     Route::get('slide', [SlideShowController::class, 'index']);
@@ -71,6 +71,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/products/{id}/variants', [SanPhamBienTheController::class, 'index']);
     Route::post('/products/{id}/variants', [SanPhamBienTheController::class, 'store']);
     Route::delete('/variants/{id}', [SanPhamBienTheController::class, 'destroy']);
+    Route::delete('/product-images/{id}', [ProductImageController::class, 'destroy']);
 });
 
 //vỹ

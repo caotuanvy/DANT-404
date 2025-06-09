@@ -23,12 +23,16 @@
       <td>{{ index + 1 }}</td>
       <td>{{ product.product_name }}</td>
       <td>
-        <img
-      :src="getImageUrl(product.images?.[0])"
+  <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+    <img
+      v-for="(image, i) in product.images"
+      :key="i"
+      :src="getImageUrl(image)"
       alt="Ảnh sản phẩm"
-      style="width: 60px; height: auto; object-fit: cover;"
-      >
-      </td>
+      style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;"
+    />
+  </div>
+</td>
 
       <td>
         <label class="switch">

@@ -91,12 +91,28 @@ public function toggleNoiBat($id, Request $request)
 // Xem chi tiết sản phẩm
 public function show($id)
 {
-    $product = SanPham::with(['hinhAnhSanPham', 'danhMuc'])->find($id);
-    if (!$product) {
-        return response()->json(['message' => 'Không tìm thấy sản phẩm'], 404);
-    }
+    $product = SanPham::with(['danhMuc', 'hinhAnhSanPham'])->findOrFail($id);
 
-    return response()->json($product);
+    return response()->json([
+        'product_id' => $product->san_pham_id,
+        'product_name' => $product->ten_san_pham,
+        'price' => $product->gia,
+        'description' => $product->mo_ta,
+        'noi_bat' => $product->noi_bat,
+        'khuyen_mai' => $product->khuyen_mai,
+        'so_bien_the' => $product->bienThe->count(),
+        'danh_muc' => $product->danhMuc ? [
+            'category_id' => $product->danhMuc->category_id,
+            'ten_danh_muc' => $product->danhMuc->ten_danh_muc,
+        ] : null,
+        'images' => $product->hinhAnhSanPham->map(function ($img) {
+            return [
+                'id' => $img->hinh_anh_id,
+                'image_path' => $img->duongdan,
+                'url' => asset('storage/' . $img->duongdan),
+            ];
+        }),
+    ]);
 }
 
 

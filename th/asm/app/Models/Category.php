@@ -27,9 +27,5 @@ class Category extends Model
         return $this->hasMany(SanPham::class, 'ten_danh_muc_id', 'category_id');
 
     }
-
-    // public function children()
-    // {
-    //     return $this->hasMany(Category::class, 'parent_id')....;
-    // }
 }
+
