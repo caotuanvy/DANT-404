@@ -10,9 +10,19 @@ use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $orders = Order::with('user', 'paymentMethod')->get();
+        $query = Order::with('user', 'paymentMethod');
+
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where('id', 'like', "%$search%")
+                ->orWhereHas('user', function($q) use ($search) {
+                    $q->where('ho_ten', 'like', "%$search%");
+                });
+        }
+
+        $orders = $query->get();
         return response()->json($orders);
     }
 

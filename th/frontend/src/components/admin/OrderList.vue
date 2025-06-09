@@ -7,9 +7,8 @@
   <div class="box">
     <p class="section-title">Tìm kiếm mã đơn hàng</p>
     <div class="search-row">
-      <input placeholder="Tìm kiếm" class="input" />
-      <button class="btn search-btn">🔍</button>
-    </div>
+      <input v-model="searchQuery" placeholder="Tìm kiếm" class="input" @keyup.enter="fetchOrders" />
+      <button class="btn search-btn" @click="fetchOrders">🔍</button>    </div>
   </div>
 
   <!-- Bộ lọc -->
@@ -97,15 +96,16 @@ export default {
   methods: {
     async fetchOrders() {
       try {
-        const res = await axios.get('http://localhost:8000/api/orders', {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
-        this.orders = res.data;
-      } catch (err) {
-        console.error('Lỗi khi lấy đơn hàng:', err);
-      }
+      const res = await axios.get('http://localhost:8000/api/orders', {
+        params: { search: this.searchQuery },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      this.orders = res.data;
+    } catch (err) {
+      console.error('Lỗi khi lấy đơn hàng:', err);
+    }
     },
     async approveOrder(id) {
       await axios.patch(`http://localhost:8000/api/orders/${id}/approve`, {}, {
