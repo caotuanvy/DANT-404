@@ -3,12 +3,13 @@
     <h3>Biến thể sản phẩm</h3>
 
     <div v-if="loading">Đang tải biến thể...</div>
-    <table v-if="!loading && variants.length > 0">
+
+    <table v-if="!loading && variants.length > 0" class="variant-table">
       <thead>
         <tr>
           <th>Kích thước</th>
           <th>Màu sắc</th>
-          <th>Số lượng tồn kho</th>
+          <th>Tồn kho</th>
           <th>Giá</th>
           <th>Hành động</th>
         </tr>
@@ -20,7 +21,8 @@
           <td>{{ variant.so_luong_ton_kho }}</td>
           <td>{{ formatPrice(variant.gia) }}</td>
           <td>
-            <button @click="deleteVariant(variant.bien_the_id)">Xóa</button>
+            <button class="edit-btn" @click="startEditVariant(variant)">Sửa</button>
+            <button class="delete-btn" @click="deleteVariant(variant.bien_the_id)">Xóa</button>
           </td>
         </tr>
       </tbody>
@@ -29,18 +31,37 @@
 
     <hr />
 
-    <h4>Thêm biến thể mới</h4>
-    <form @submit.prevent="addVariant">
-      <input v-model="newVariant.kich_thuoc" placeholder="Kích thước" required />
-      <input v-model="newVariant.mau_sac" placeholder="Màu sắc" required />
-      <input v-model.number="newVariant.so_luong_ton_kho" placeholder="Tồn kho" type="number" required />
-      <input v-model.number="newVariant.gia" placeholder="Giá" type="number" required />
-      <button type="submit">Thêm</button>
-    </form>
+    <div class="form-wrapper">
+      <fieldset>
+        <legend>➕ Thêm biến thể mới</legend>
+        <form @submit.prevent="addVariant" class="form-layout">
+          <input v-model="newVariant.kich_thuoc" placeholder="Kích thước" required />
+          <input v-model="newVariant.mau_sac" placeholder="Màu sắc" required />
+          <input v-model.number="newVariant.so_luong_ton_kho" placeholder="Tồn kho" type="number" required />
+          <input v-model.number="newVariant.gia" placeholder="Giá" type="number" required />
+          <button type="submit" class="add-btn">Thêm</button>
+        </form>
+      </fieldset>
+
+      <fieldset v-if="editingVariantId">
+        <legend>✏️ Chỉnh sửa biến thể</legend>
+        <form @submit.prevent="updateVariant" class="form-layout">
+          <input v-model="editVariant.kich_thuoc" placeholder="Kích thước" required />
+          <input v-model="editVariant.mau_sac" placeholder="Màu sắc" required />
+          <input v-model.number="editVariant.so_luong_ton_kho" placeholder="Tồn kho" type="number" required />
+          <input v-model.number="editVariant.gia" placeholder="Giá" type="number" required />
+          <div class="btn-group">
+            <button type="submit" class="update-btn">Cập nhật</button>
+            <button type="button" @click="editingVariantId = null" class="cancel-btn">Hủy</button>
+          </div>
+        </form>
+      </fieldset>
+    </div>
 
     <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
   </section>
 </template>
+
 
 <script setup>
 import { ref, onMounted, watch } from 'vue';
@@ -49,6 +70,13 @@ import { useRoute } from 'vue-router';
 
 const route = useRoute();
 const productId = route.params.id;
+const editingVariantId = ref(null);
+const editVariant = ref({
+  kich_thuoc: '',
+  mau_sac: '',
+  so_luong_ton_kho: 0,
+  gia: 0,
+});
 
 const variants = ref([]);
 const loading = ref(false);
@@ -60,6 +88,10 @@ const newVariant = ref({
   so_luong_ton_kho: '',
   gia: '',
 });
+const startEditVariant = (variant) => {
+  editingVariantId.value = variant.bien_the_id;
+  editVariant.value = { ...variant }; 
+};
 
 const getVariants = async () => {
   loading.value = true;
@@ -75,6 +107,21 @@ const getVariants = async () => {
     errorMessage.value = 'Không thể tải biến thể.';
   } finally {
     loading.value = false;
+  }
+};
+const updateVariant = async () => {
+  try {
+    await axios.put(`http://localhost:8000/api/variants/${editingVariantId.value}`, editVariant.value, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    editingVariantId.value = null;
+    editVariant.value = { kich_thuoc: '', mau_sac: '', so_luong_ton_kho: 0, gia: 0 };
+    getVariants();
+  } catch (error) {
+    console.error('Lỗi khi cập nhật biến thể:', error);
+    errorMessage.value = 'Cập nhật biến thể thất bại.';
   }
 };
 
@@ -122,41 +169,105 @@ onMounted(() => {
 <style scoped>
 .variant-section {
   margin-top: 30px;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
 }
-table {
+
+.variant-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 10px;
 }
-th, td {
+
+.variant-table th,
+.variant-table td {
   border: 1px solid #ccc;
-  padding: 6px 10px;
-  text-align: left;
+  padding: 10px;
+  text-align: center;
 }
-form {
+
+.variant-table th {
+  background-color: #e0e0e0;
+}
+
+button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  margin: 2px;
+  cursor: pointer;
+}
+
+.edit-btn {
+  background-color: #1266b3;
+}
+
+.edit-btn:hover {
+  background-color: #1266b3;
+}
+
+.delete-btn {
+  background-color: #e53935;
+}
+
+.delete-btn:hover {
+  background-color: #c62828;
+}
+
+.add-btn {
+  background-color: #1266b3;
+}
+
+.update-btn {
+  background-color: #f9a825;
+}
+
+.cancel-btn {
+  background-color: #9e9e9e;
+}
+
+.form-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
   margin-top: 20px;
+}
+
+form.form-layout {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  align-items: center;
 }
+
 input {
-  padding: 6px;
+  padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;
+  flex: 1 1 200px;
 }
-button {
-  padding: 6px 12px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 4px;
+
+fieldset {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 15px;
+  background-color: #fff;
 }
-button:hover {
-  background-color: #388E3C;
-  cursor: pointer;
+
+legend {
+  font-weight: bold;
+  padding: 0 8px;
 }
+
+.btn-group {
+  display: flex;
+  gap: 10px;
+}
+
 .error {
   color: red;
-  margin-top: 10px;
+  margin-top: 15px;
 }
 </style>
