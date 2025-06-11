@@ -76,8 +76,14 @@ const menu = [
     items: [{ to: '/admin/products', label: 'Sản phẩm', icon: 'bi bi-box' }],
   },
   {
+    label: 'Quản lý Danh Mục',
+    items: [{ to: '/admin/categories', label: 'Danh Mục Sản Phẩm', icon: 'bi bi-newspaper' },
+            { to: '/admin/danhmuctintuc', label: 'Danh Mục Tin tức', icon: 'bi bi-newspaper' },
+    ],
+  },
+  {
     label: 'Quản lý đơn hàng',
-    items: [{ to: '/admin/orders', label: 'Đơn hàng', icon: 'bi bi-receipt' }],
+    items: [{ to: '/admin/orders', label: 'Đơn hàng', icon: 'bi bi-newspaper' }],
   },
   {
     label: 'Quản lý Người dùng',
@@ -92,7 +98,6 @@ const menu = [
     items: [
       { to: '/admin/dichvu', label: 'Dịch vụ tiện ích', icon: 'bi bi-file-earmark-text' },
       { to: '/admin/album', label: 'Album', icon: 'bi bi-image' },
-      { to: '/admin/danhmuctintuc', label: 'Danh Mục Tin tức', icon: 'bi bi-newspaper' },
       { to: '/admin/video', label: 'Video', icon: 'bi bi-camera-video' },
       { to: '/admin/payment', label: 'Hình thức thanh toán', icon: 'bi bi-cash' },
       { to: '/admin/notifications', label: 'Thông báo đẩy', icon: 'bi bi-bell' },
