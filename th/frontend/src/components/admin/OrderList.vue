@@ -7,15 +7,16 @@
   <div class="box">
     <p class="section-title">Tìm kiếm mã đơn hàng</p>
     <div class="search-row">
-      <input v-model="searchQuery" placeholder="Tìm kiếm" class="input" @keyup.enter="fetchOrders" />
-      <button class="btn search-btn" @click="fetchOrders">🔍</button>    </div>
-  </div>
+      <input
+        v-model="searchQuery" inputmode="numeric" pattern="[0-9]*" placeholder="Tìm kiếm" class="input" @input="searchQuery = searchQuery.replace(/\D/g, '')" @keyup.enter="fetchOrders"/>
+          <button class="btn search-btn" @click="fetchOrders">🔍</button>    </div>
+    </div>
 
   <!-- Bộ lọc -->
   <div class="box">
     <p class="section-title">Tìm kiếm đơn hàng</p>
     <div class="grid-container">
-      <input class="input" placeholder="DD/MM/YYYY to DD/MM/YYYY" />
+      <input class="input" placeholder="DD/MM/YYYY" />
       <select class="input">
         <option>Chọn tình trạng</option>
       </select>
@@ -55,6 +56,7 @@
         <th>HT Thanh toán</th>
         <th>Tổng giá</th>
         <th>Tình trạng</th>
+        <th>Thời gian</th>
         <th>Thao tác</th>
       </tr>
     </thead>
@@ -69,16 +71,50 @@
             <td class="border px-2 text-center">{{ formatDate(order.ngay_tao) }}</td>
             <td class="border px-2 text-center">
                 {{ order.payment_method?.ten_pttt || 'Không rõ' }}</td>
-            <td class="border px-2 text-right">{{ formatCurrency(order.don_gia || 0) }}</td>
+            <td class="border px-2 text-right"> {{ formatCurrency(order.order_items?.reduce((sum, item) => sum + (item.so_luong * item.don_gia), 0) || 0) }}</td>            
             <td class="border px-2 text-center">{{ getTrangThai(order.trang_thai) }}</td>
+            <td class="border px-2 text-center"> {{ getTimeAgo(order.ngay_tao) }} </td>
             <td class="border px-2 text-center">
-              <button @click="approveOrder(order.id)" class="action-btn">Chi tiết</button>
+              <button @click="openOrderDetail(order)" class="action-btn">Chi tiết</button>
               <button @click="rejectOrder(order.id)" class="action-btn ml-2">Cập nhật</button>
               <button @click="deleteOrder(order.id)" class="action-btn ml-2 text-red-600">Ẩn</button>
             </td>
           </tr>
         </tbody>
     </table>
+  </div>
+</div>
+<div v-if="showDetail && selectedOrder" class="modal-overlay">
+  <div class="modal-content" id="print-area">
+    <h3>Chi tiết đơn hàng #{{ selectedOrder.id }}</h3>
+    <p><b>Khách hàng:</b> {{ selectedOrder.user?.ho_ten }}</p>
+    <p><b>Ngày đặt:</b> {{ formatDate(selectedOrder.ngay_tao) }}</p>
+    <p><b>Phương thức thanh toán:</b> {{ selectedOrder.payment_method?.ten_pttt }}</p>
+    <p><b>Tình trạng:</b> {{ getTrangThai(selectedOrder.trang_thai) }}</p>
+    <h4>Danh sách sản phẩm:</h4>
+    <table style="width:100%;margin-bottom:12px;">
+      <thead>
+        <tr>
+          <th>Tên sản phẩm</th>
+          <th>Số lượng</th>
+          <th>Đơn giá</th>
+          <th>Thành tiền</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="item in selectedOrder.order_items" :key="item.id">
+          <td>{{ item.ten_san_pham }}</td>
+          <td>{{ item.so_luong }}</td>
+          <td>{{ formatCurrency(item.don_gia) }}</td>
+          <td>{{ formatCurrency(item.so_luong * item.don_gia) }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <p><b>Tổng tiền:</b> {{ formatCurrency(selectedOrder.order_items?.reduce((sum, item) => sum + (item.so_luong * item.don_gia), 0) || 0) }}</p>
+    <div style="margin-top:16px;">
+      <button @click="printOrderDetail" class="btn search-btn">In đơn hàng</button>
+      <button @click="closeOrderDetail" class="btn clear-btn">Đóng</button>
+    </div>
   </div>
 </div>
 </template>
@@ -91,6 +127,8 @@ export default {
     return {
       orders: [],
       searchQuery: '',
+      selectedOrder: null, // Đơn hàng đang xem chi tiết
+      showDetail: false,
     };
   },
   methods: {
@@ -127,10 +165,35 @@ export default {
       return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
     },
     getTrangThai(status) {
-      if (status === 'approved') return 'Đã xác nhận';
-      if (status === 'shipping') return 'Đang giao hàng';
-      if (status === 'rejected') return 'Đã hủy';
-      return 'Mới đặt';
+      switch (status) {
+        case 1: return 'Chờ xác nhận';
+        case 2: return 'Đã xác nhận';
+        case 3: return 'Đang giao hàng';
+        case 4: return 'Đã hủy';
+        default: return 'Không rõ';
+      }
+    },
+    getTimeAgo(datetime) {
+      const now = new Date();
+      const date = new Date(datetime);
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      if (diffMins < 60) return `${diffMins} phút trước`;
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24) return `${diffHours} giờ trước`;
+      const diffDays = Math.floor(diffHours / 24);
+      return `${diffDays} ngày trước`;
+    },
+    openOrderDetail(order) {
+    this.selectedOrder = order;
+    this.showDetail = true;
+    },
+    closeOrderDetail() {
+      this.showDetail = false;
+      this.selectedOrder = null;
+    },
+    printOrderDetail() {
+      window.print();
     },
   },
   mounted() {
@@ -291,5 +354,30 @@ export default {
 
 .actions button.delete {
   color: #e53935;
+}
+/* Thêm vào <style scoped> */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-content {
+  background: #fff;
+  padding: 32px 24px;
+  border-radius: 8px;
+  min-width: 400px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.2);
+}
+@media print {
+  body * { visibility: hidden; }
+  #print-area, #print-area * { visibility: visible; }
+  #print-area { position: absolute; left: 0; top: 0; width: 100vw; }
 }
 </style>
