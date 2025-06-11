@@ -1,7 +1,9 @@
 <template>
-    <div>
-      <h1>Chào mừng!</h1>
-      <p>Trang chính của ứng dụng Vue SPA</p>
-    </div>
-  </template>
-  
+  <div>
+    <ImageSlider />
+  </div>
+</template>
+
+<script setup>
+import ImageSlider from '@/components/user/Slide.vue'; 
+</script>

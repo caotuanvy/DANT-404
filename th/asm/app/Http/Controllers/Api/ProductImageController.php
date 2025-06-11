@@ -11,7 +11,32 @@ use Illuminate\Support\Facades\DB;
 
 class ProductImageController extends Controller
 {
-    // Upload ảnh cho 1 sản phẩm
+    public function store(Request $request, $productId)
+    {
+        $request->validate([
+            'images.*' => 'required|image|max:2048',
+        ]);
+
+        $uploadedImages = [];
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('products', 'public');
+                $hinhAnh = HinhAnhSanPham::create([
+                    'san_pham_id' => $productId,
+                    'duongdan' => $path,
+                    'mo_ta' => null,
+                    'ngay_tao' => now(),
+                ]);
+                $uploadedImages[] = asset('storage/' . $path);
+            }
+        }
+        return response()->json([
+            'message' => 'Upload ảnh thành công',
+            'uploaded_images' => $uploadedImages,
+        ]);
+    }
+
     public function upload(Request $request, $sanPhamId)
     {
         $request->validate([
@@ -19,12 +44,10 @@ class ProductImageController extends Controller
             'mo_ta' => 'nullable|string',
         ]);
 
-        // Kiểm tra sản phẩm tồn tại
         $product = SanPham::find($sanPhamId);
         if (!$product) {
             return response()->json(['message' => 'Sản phẩm không tồn tại'], 404);
         }
-
         DB::beginTransaction();
         try {
             $file = $request->file('image');
@@ -38,7 +61,6 @@ class ProductImageController extends Controller
             ]);
 
             DB::commit();
-
             return response()->json([
                 'message' => 'Upload ảnh thành công',
                 'data' => $image
@@ -52,41 +74,17 @@ class ProductImageController extends Controller
         }
     }
 
-    // Xóa ảnh sản phẩm theo id ảnh
-    public function destroy($imageId)
-    {
-        $image = HinhAnhSanPham::find($imageId);
-        if (!$image) {
-            return response()->json(['message' => 'Ảnh không tồn tại'], 404);
-        }
+    public function destroy($id)
+{
+    $image = HinhAnhSanPham::findOrFail($id);
+    Storage::delete('public/' . $image->duongdan);
+    $image->delete();
+    return response()->json(['message' => 'Xóa ảnh thành công']);
+}
 
-        DB::beginTransaction();
-        try {
-            // Xóa file ảnh trên storage
-            if (Storage::disk('public')->exists($image->duongdan)) {
-                Storage::disk('public')->delete($image->duongdan);
-            }
-
-            // Xóa bản ghi database
-            $image->delete();
-
-            DB::commit();
-
-            return response()->json(['message' => 'Xóa ảnh thành công'], 200);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'message' => 'Xóa ảnh thất bại',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    // Có thể thêm hàm lấy danh sách ảnh của 1 sản phẩm
     public function getImagesByProduct($sanPhamId)
     {
         $images = HinhAnhSanPham::where('san_pham_id', $sanPhamId)->get();
-
         return response()->json([
             'data' => $images
         ]);

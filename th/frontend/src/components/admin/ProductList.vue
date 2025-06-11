@@ -22,11 +22,17 @@
     <tr v-for="(product, index) in products" :key="product.product_id">
       <td>{{ index + 1 }}</td>
       <td>{{ product.product_name }}</td>
-      <img
-      :src="getImageUrl(product.images?.[0])"
+      <td>
+  <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+    <img
+      v-for="(image, i) in product.images"
+      :key="i"
+      :src="getImageUrl(image)"
       alt="Ảnh sản phẩm"
-      style="width: 60px; height: auto; object-fit: cover;"
-      >
+      style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;"
+    />
+  </div>
+</td>
 
       <td>
         <label class="switch">
@@ -49,6 +55,8 @@
         <router-link :to="`/admin/products/${product.product_id}`" class="btn-detail">Xem chi tiết</router-link>
         <br>
         <router-link :to="`/admin/products/${product.product_id}/edit`" class="btn-edit">Sửa</router-link>
+        <br>
+        <router-link :to="`/admin/products/${product.product_id}/variants`"  class="btn-variants"> Biến thể ({{ product.so_bien_the || 0 }})</router-link>
         <br>
         <button @click="deleteProduct(product.product_id)" class="btn-delete">Xóa</button>
       </div>
@@ -90,13 +98,6 @@ const getProducts = async () => {
     loading.value = false;
   }
 };
-
-
-const formatPrice = (price) => {
-  if (typeof price !== 'number') return '';
-  return price.toLocaleString('vi-VN') + ' đ';
-};
-
 const toggleNoiBat = async (product) => {
   const newStatus = product.noi_bat === 1 ? 2 : 1;
   try {
@@ -155,6 +156,7 @@ onMounted(() => {
   border-radius: 4px;
   text-decoration: none;
   transition: background-color 0.3s ease, transform 0.3s ease;
+  font-weight: bolder;
 }
 .btn-add:hover {
   background-color: #039BE5;
@@ -164,6 +166,7 @@ onMounted(() => {
   color: #2196f3;
   text-decoration: none;
   margin: 0 5px;
+  font-weight: bolder;
 }
 
 .btn-delete {
@@ -173,8 +176,19 @@ onMounted(() => {
   cursor: pointer;
   padding: 0;
   font-size: 1em;
+  font-weight: bolder;
 }
 button:hover {
   text-decoration: underline;
 }
+.btn-variants {
+  color: #673AB7;
+  text-decoration: none;
+  margin: 0 5px;
+  font-weight: bolder;
+}
+.btn-variants:hover {
+  text-decoration: underline;
+}
+
 </style>

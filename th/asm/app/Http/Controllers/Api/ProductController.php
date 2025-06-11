@@ -13,16 +13,17 @@ class ProductController extends Controller
 public function index()
 {
     try {
-        $products = SanPham::with(['danhMuc', 'hinhAnhSanPham'])->get();
+        $products = SanPham::with(['danhMuc', 'hinhAnhSanPham'])->withCount('bienThe')->get();
 
         $result = $products->map(function($item) {
-            return [
+                    return [
                 'product_id' => $item->san_pham_id,
                 'product_name' => $item->ten_san_pham,
                 'price' => $item->gia ?? 0,
                 'description' => $item->mo_ta,
                 'noi_bat' => $item->noi_bat,
                 'khuyen_mai' => $item->khuyen_mai,
+                'so_bien_the' => $item->bien_the_count,
                 'danh_muc' => [
                     'category_id' => $item->danhMuc?->category_id,
                     'ten_danh_muc' => $item->danhMuc?->ten_danh_muc,
@@ -90,12 +91,28 @@ public function toggleNoiBat($id, Request $request)
 // Xem chi tiết sản phẩm
 public function show($id)
 {
-    $product = SanPham::with(['hinhAnhSanPham', 'danhMuc'])->find($id);
-    if (!$product) {
-        return response()->json(['message' => 'Không tìm thấy sản phẩm'], 404);
-    }
+    $product = SanPham::with(['danhMuc', 'hinhAnhSanPham'])->findOrFail($id);
 
-    return response()->json($product);
+    return response()->json([
+        'product_id' => $product->san_pham_id,
+        'product_name' => $product->ten_san_pham,
+        'price' => $product->gia,
+        'description' => $product->mo_ta,
+        'noi_bat' => $product->noi_bat,
+        'khuyen_mai' => $product->khuyen_mai,
+        'so_bien_the' => $product->bienThe->count(),
+        'danh_muc' => $product->danhMuc ? [
+            'category_id' => $product->danhMuc->category_id,
+            'ten_danh_muc' => $product->danhMuc->ten_danh_muc,
+        ] : null,
+        'images' => $product->hinhAnhSanPham->map(function ($img) {
+            return [
+                'id' => $img->hinh_anh_id,
+                'image_path' => $img->duongdan,
+                'url' => asset('storage/' . $img->duongdan),
+            ];
+        }),
+    ]);
 }
 
 
@@ -138,19 +155,18 @@ public function show($id)
 
 
     // // Xóa sản phẩm (cascades xóa biến thể)
-    public function destroy($id)
+
+public function destroy($id)
 {
-    $product = SanPham::find($id);
-    if (!$product) return response()->json(['message' => 'Không tìm thấy sản phẩm'], 404);
-
-    // Nếu bạn muốn cascade xóa biến thể:
-    $product->variants()->delete();
-
-    $product->delete();
+    $sanPham = SanPham::find($id);
+    if (!$sanPham) {
+        return response()->json(['message' => 'Sản phẩm không tồn tại'], 404);
+    }
+    $sanPham->hinhAnhSanPham()->delete();
+    $sanPham->delete();
 
     return response()->json(['message' => 'Xóa sản phẩm thành công']);
 }
-
 
 
 

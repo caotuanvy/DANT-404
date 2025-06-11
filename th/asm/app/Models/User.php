@@ -57,8 +57,8 @@ class User extends Authenticatable
     // }
 
     // // Ví dụ: Quan hệ với bảng đơn hàng nếu có
-    // public function donHangs()
-    // {
-    //     return $this->hasMany(DonHang::class, 'nguoi_dung_id', 'nguoi_dung_id');
-    // }
+    public function order()
+    {
+        return $this->hasMany(Order::class, 'nguoi_dung_id', 'nguoi_dung_id');
+    }
 }

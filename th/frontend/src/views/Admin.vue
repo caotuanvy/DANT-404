@@ -11,7 +11,7 @@
   </div>
 
   <div class="myheader-right">
-    <span class="myheader-version">VERSION 1.0.2</span>
+    <span class="myheader-version">VERSION 1.0.5</span>
     <i class="myheader-icon bi bi-person-circle"></i>
   </div>
 </header>
@@ -46,8 +46,9 @@
       <main class="flex-grow-1 p-4 bg-light">
         <br><br><br>
         <div class="d-flex justify-content-end mb-4">
-          <button class="btn btn-outline-danger btn-sm" @click="logout">Quay về trang chủ</button>
+          <button class="btn btn-outline-danger btn-sm" @click="logout">Đăng Xuất</button>
         </div>
+        
 
         <div class="container-table">
           <router-view />
@@ -65,8 +66,8 @@ import logo1 from '@/assets/images/image60.png';
 const router = useRouter();
 
 const logout = () => {
-  // localStorage.removeItem('token')
-  // localStorage.removeItem('role')
+  localStorage.removeItem('token')
+  localStorage.removeItem('role')
   router.push('/')
 }
 
@@ -106,7 +107,7 @@ const menu = [
   {
     label: 'Quản lý trang tĩnh',
     items: [
-      { to: '/admin/pages/weekly-program', label: 'Chương trình theo tuần', icon: 'bi bi-calendar-week' },
+      { to: '/admin/slide', label: 'Slide Show', icon: 'bi bi-calendar-week' },
     ],
   },
 ];
@@ -216,14 +217,7 @@ const menu = [
 .myheader-logo{
   height: 30px;
 }
-.container-table{
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 10px;
-  background-color: #ffffff;
-  border-radius: 8px;
-}
+
 </style>
 <style>
 
