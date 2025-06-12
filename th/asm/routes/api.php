@@ -78,16 +78,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/product-images/{id}', [ProductImageController::class, 'destroy']);
 });
 
-<<<<<<< HEAD
 Route::get('/tintuc', [TintucController::class, 'index']);        // Lấy danh sách tin tức
 Route::post('/tintuc', [TintucController::class, 'store']);
 Route::get('/tintuc/{id}', [TintucController::class, 'show']);
 Route::put('/tintuc/{id}', [TintucController::class, 'update']);
 Route::delete('/tintuc/{id}', [TintucController::class, 'destroy']);
-=======
 //vỹ
 Route::apiResource('addresses', DiaChiController::class);
 Route::get('/dia_chi/nguoi_dung/{nguoi_dung_id}', [DiaChiController::class, 'index'])->name('dia_chi.by_user');
 Route::post('/dia_chi', [DiaChiController::class, 'store']);
 Route::put('/dia_chi/{id}', [DiaChiController::class, 'update']);
->>>>>>> anxinhdep
