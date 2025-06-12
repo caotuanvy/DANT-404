@@ -39,7 +39,10 @@ class Order extends Model
         {
             return $this->belongsTo(PaymentMethod::class, 'phuong_thuc_thanh_toan_id', 'phuong_thuc_thanh_toan_id');
         }
-
+    public function orderItems()
+        {
+            return $this->hasMany(OrderItem::class, 'don_hang_id', 'id');
+        }
 //     // Quan hệ với mã giảm giá
 //     public function discount()
 //     {

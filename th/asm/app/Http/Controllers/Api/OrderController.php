@@ -10,9 +10,9 @@ use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
-    public function index(Request $request)
+   public function index(Request $request)
     {
-        $query = Order::with('user', 'paymentMethod');
+        $query = Order::with('user', 'paymentMethod', 'orderItems'); // Thêm 'orderItems'
 
         if ($request->has('search') && $request->search) {
             $search = $request->search;
@@ -25,7 +25,6 @@ class OrderController extends Controller
         $orders = $query->get();
         return response()->json($orders);
     }
-
     public function approve($id)
     {
         $order = Order::findOrFail($id);
