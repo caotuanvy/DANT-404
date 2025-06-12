@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\DanhMucTtController;
 use App\Http\Controllers\Api\SlideShowController;
 use App\Http\Controllers\Api\SanPhamBienTheController;
+use App\Http\Controllers\Api\DiaChiController;
 Route::delete('/products/{product_id}/images/{image_id}', [ProductImageController::class, 'destroy']);
 
 Route::post('/products/{product_id}/images', [ProductImageController::class, 'store']);
@@ -48,6 +49,7 @@ Route::get('/categories',[CategoryController::class, 'index']);
 
 Route::put('/products/{id}/toggle-noi-bat', [ProductController::class, 'toggleNoiBat']);
 
+Route::get('/kich-hoat/{token}', [AuthController::class, 'activate']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/users', [UserController::class, 'index']);
@@ -75,3 +77,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 //vỹ
+Route::apiResource('addresses', DiaChiController::class);
+Route::get('/dia_chi/nguoi_dung/{nguoi_dung_id}', [DiaChiController::class, 'index'])->name('dia_chi.by_user');
+Route::post('/dia_chi', [DiaChiController::class, 'store']);
+Route::put('/dia_chi/{id}', [DiaChiController::class, 'update']);

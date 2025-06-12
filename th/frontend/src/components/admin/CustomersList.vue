@@ -13,6 +13,7 @@
           <th>Email</th>
           <th>SĐT</th>
           <th>Vai trò</th>
+          <th>Địa chỉ</th>
           <th>Vô hiệu hóa</th>
         </tr>
       </thead>
@@ -28,10 +29,11 @@
               <option :value="0">User</option>
             </select>
           </td>
+          <td>{{ user.dia_chi || 'Chưa có địa chỉ' }}</td> 
           <td class="text-center">
             <div class="d-flex justify-content-center align-items-center">
               <input type="checkbox" class="custom-switch" v-model="user.trang_thai_checked"
-                @change="toggleUserStatus(user, user.trang_thai_checked)">
+                     @change="toggleUserStatus(user, user.trang_thai_checked)">
             </div>
           </td>
         </tr>
@@ -39,8 +41,6 @@
     </table>
   </div>
 </template>
-<!-- <p>an đẹp trai</p> -->
-
 
 <script>
 import axios from 'axios';
@@ -60,10 +60,10 @@ export default {
     async fetchUsers() {
       try {
         const response = await axios.get('http://localhost:8000/api/users');
-        // Thêm trường trang_thai_checked cho checkbox
         this.users = response.data.map(user => ({
           ...user,
-          trang_thai_checked: user.trang_thai === 1
+          // `trang_thai` sẽ được trả về từ API. Nếu `trang_thai` là 1, `trang_thai_checked` là true.
+          trang_thai_checked: user.trang_thai === 1 
         }));
       } catch (error) {
         console.error('Lỗi khi tải danh sách người dùng:', error);
@@ -76,9 +76,10 @@ export default {
       try {
         await axios.put(`http://localhost:8000/api/users/${user.nguoi_dung_id}`, {
           vai_tro_id: user.vai_tro_id,
-          trang_thai: user.trang_thai_checked ? 1 : 0
+          trang_thai: user.trang_thai_checked ? 1 : 0 // Gửi trạng thái hiện tại của checkbox
         });
-        this.$toast && this.$toast.success('Cập nhật vai trò thành công'); // nếu dùng toast
+        // Bạn có thể thêm một thông báo thành công ở đây (ví dụ: dùng this.$toast)
+        this.$toast && this.$toast.success('Cập nhật vai trò thành công'); 
       } catch (error) {
         console.error('Lỗi khi cập nhật vai trò:', error);
         alert('Cập nhật vai trò thất bại');
@@ -88,27 +89,29 @@ export default {
     async toggleUserStatus(user, checked) {
       try {
         await axios.put(`http://localhost:8000/api/users/${user.nguoi_dung_id}`, {
-          vai_tro_id: user.vai_tro_id,
+          vai_tro_id: user.vai_tro_id, // Gửi vai trò hiện tại
           trang_thai: checked ? 1 : 0
         });
-        user.trang_thai_checked = checked;
+        user.trang_thai_checked = checked; // Cập nhật trạng thái trong dữ liệu cục bộ nếu thành công
         this.$toast && this.$toast.success('Cập nhật trạng thái thành công');
       } catch (error) {
         console.error('Lỗi khi cập nhật trạng thái:', error);
         alert('Cập nhật trạng thái thất bại');
-        // Nếu lỗi thì revert checkbox
+        // Nếu lỗi thì revert checkbox về trạng thái trước đó
         user.trang_thai_checked = !checked;
       }
     },
 
-    // Giữ nguyên hàm deleteUser nếu cần
+    // Hàm deleteUser nếu bạn muốn thêm chức năng xóa người dùng
     async deleteUser(id) {
       if (confirm('Bạn có chắc chắn muốn xóa tài khoản này?')) {
         try {
           await axios.delete(`http://localhost:8000/api/users/${id}`);
           this.users = this.users.filter(user => user.nguoi_dung_id !== id);
+          this.$toast && this.$toast.success('Xóa người dùng thành công');
         } catch (error) {
           console.error('Lỗi khi xóa tài khoản:', error);
+          alert('Xóa người dùng thất bại');
         }
       }
     }
@@ -117,6 +120,9 @@ export default {
 </script>
 
 <style scoped>
+.container{
+  padding: 20px;
+}
 .custom-switch {
   width: 50px;
   height: 25px;

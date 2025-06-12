@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\HasMany; // Import HasMany
 
 class User extends Authenticatable
 {
@@ -14,7 +15,6 @@ class User extends Authenticatable
     protected $table = 'nguoi_dung';
     protected $primaryKey = 'nguoi_dung_id';
     public $timestamps = false;
-
 
     protected $fillable = [
         'ho_ten',
@@ -27,13 +27,14 @@ class User extends Authenticatable
         'slug',
         'ngay_tao',
         'ngay_sua',
-    ];
+        'activation_token', 
+        'is_active',
 
+    ];
 
     protected $hidden = [
         'mat_khau',
     ];
-
 
     protected function casts(): array
     {
@@ -43,7 +44,6 @@ class User extends Authenticatable
             'mat_khau' => 'hashed',
         ];
     }
-
 
     public function getAuthPassword()
     {
@@ -60,5 +60,17 @@ class User extends Authenticatable
     public function order()
     {
         return $this->hasMany(Order::class, 'nguoi_dung_id', 'nguoi_dung_id');
+    }
+
+    /**
+     * Định nghĩa mối quan hệ "có nhiều" (HasMany) với model DiaChi.
+     * Một người dùng có thể có nhiều địa chỉ.
+     */
+    public function diaChis(): HasMany
+    {
+        // 'App\Models\DiaChi' là tên model liên kết.
+        // 'nguoi_dung_id' là khóa ngoại trong bảng 'dia_chi' (bảng đích).
+        // 'nguoi_dung_id' là khóa chính trong bảng 'nguoi_dung' (bảng hiện tại).
+        return $this->hasMany(DiaChi::class, 'nguoi_dung_id', 'nguoi_dung_id');
     }
 }

@@ -101,6 +101,8 @@
 </template>
 
 <script setup>
+import Swal from 'sweetalert2';
+
 import axios from 'axios';
 import { ref, reactive, watch } from 'vue'; // Import watch
 import { useRouter } from 'vue-router';
@@ -185,20 +187,41 @@ const closeModal = () => {
 const handleLogin = async () => {
     loginError.value = ''; // Reset lỗi trước mỗi lần submit
     try {
-        const res = await axios.post('/login', { // Đảm bảo tên trường khớp với API
+        const res = await axios.post('/login', {
             email: loginForm.email,
-            mat_khau: loginForm.password // Gửi theo tên trường API yêu cầu (mat_khau)
+            mat_khau: loginForm.password
         });
 
         const user = res.data.user;
         const token = res.data.token;
 
+        // Kiểm tra tài khoản đã kích hoạt chưa
+        if (user.is_active !== 1) {
+            loginError.value = 'Tài khoản của bạn chưa được kích hoạt.';
+            return;
+        }
+        closeModal();// Đóng modal sau khi đăng nhập thành công
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
         localStorage.setItem('vai_tro_id', user.vai_tro_id);
+        localStorage.setItem('sdt', user.sdt);
+        await Swal.fire({
+            icon: 'success',
+            title: 'Chào mừng!',
+            text: `Xin chào ${user.ho_ten || user.email}, chúc bạn một ngày tuyệt vời!`,
+            toast: true,
+            position: 'top-end',
+            timer: 3000,
+            timerProgressBar: true,
+            showConfirmButton: false
+        });
 
-        // Đóng modal sau khi đăng nhập thành công
-        closeModal();
+
+
+
+
+
+
 
         if (user.vai_tro_id === 1) {
             router.push('/');
@@ -209,6 +232,7 @@ const handleLogin = async () => {
         loginError.value = err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại email và mật khẩu.';
     }
 };
+
 
 const handleRegister = async () => {
     registerError.value = ''; // Đặt lại lỗi trước mỗi lần gửi
@@ -242,8 +266,15 @@ const handleRegister = async () => {
         });
 
         localStorage.setItem('token', res.data.token);
-        alert('Đăng ký thành công! Vui lòng đăng nhập.');
-        changeView('login'); // Chuyển về form đăng nhập sau khi đăng ký thành công
+        Swal.fire({
+            title: 'Đăng ký thành công!',
+            text: 'Vui lòng đăng nhập để tiếp tục.',
+            icon: 'success',
+            confirmButtonText: 'Đăng nhập'
+        }).then(() => {
+            changeView('login');
+        });
+
 
     } catch (err) {
         console.error('Đăng ký thất bại:', err); // Luôn ghi lỗi vào console để gỡ lỗi
