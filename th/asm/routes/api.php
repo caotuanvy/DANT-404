@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\DanhMucTtController;
 use App\Http\Controllers\Api\SlideShowController;
 use App\Http\Controllers\Api\SanPhamBienTheController;
+use App\Http\Controllers\Api\TintucController;
+
 Route::delete('/products/{product_id}/images/{image_id}', [ProductImageController::class, 'destroy']);
 
 Route::post('/products/{product_id}/images', [ProductImageController::class, 'store']);
@@ -59,6 +61,7 @@ Route::get('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'show']);
 Route::put('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'update']);
 Route::delete('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'destroy']);
 Route::post('/danh-muc-tin-tuc', [DanhMucTtController::class, 'store']);
+
 // vỹ
 Route::post('products/{id}/images', [ProductImageController::class, 'store']);
 
@@ -74,4 +77,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/product-images/{id}', [ProductImageController::class, 'destroy']);
 });
 
-//vỹ
+Route::get('/tintuc', [TintucController::class, 'index']);        // Lấy danh sách tin tức
+Route::post('/tintuc', [TintucController::class, 'store']);
+Route::get('/tintuc/{id}', [TintucController::class, 'show']);
+Route::put('/tintuc/{id}', [TintucController::class, 'update']);
+Route::delete('/tintuc/{id}', [TintucController::class, 'destroy']);
