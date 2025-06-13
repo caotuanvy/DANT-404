@@ -103,7 +103,7 @@
       </thead>
       <tbody>
         <tr v-for="item in selectedOrder.order_items" :key="item.id">
-          <td>{{ item.ten_san_pham }}</td>
+          <td>{{ item.bien_the?.san_pham?.ten_san_pham || 'Không rõ' }}</td>
           <td>{{ item.so_luong }}</td>
           <td>{{ formatCurrency(item.don_gia) }}</td>
           <td>{{ formatCurrency(item.so_luong * item.don_gia) }}</td>

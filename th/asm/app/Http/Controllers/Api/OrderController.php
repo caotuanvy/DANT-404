@@ -12,7 +12,7 @@ class OrderController extends Controller
 {
    public function index(Request $request)
     {
-        $query = Order::with('user', 'paymentMethod', 'orderItems'); // Thêm 'orderItems'
+        $query = Order::with('user', 'paymentMethod', 'orderItems', 'orderItems.bienThe.sanPham'); // Thêm 'orderItems'
 
         if ($request->has('search') && $request->search) {
             $search = $request->search;
