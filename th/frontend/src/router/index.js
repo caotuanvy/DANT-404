@@ -46,6 +46,15 @@ const routes = [
         component: () => import('../views/admin/sanphambt/ProductVariants.vue'), 
         meta: { requiresAuth: true, role: 'admin' }
       },
+      {
+        path: '/admin/products/:id/edit',
+        component: () => import('../views/admin/EditProduct.vue')
+      },
+      {
+        path: '/admin/products/add',
+        component: () => import('../views/admin/AddProduct.vue'),
+        meta: { requiresAuth: true, role: 'admin' }
+      },
 
       
     ]
@@ -55,21 +64,14 @@ const routes = [
     name: 'SearchResult',
     component: () => import('../views/SearchResult.vue'),
   },
-  {
-    path: '/admin/products/:id/edit',
-    component: () => import('../views/admin/EditProduct.vue')
-  },
+  
   {
     path: '/admin/products/:id',
     name: 'product-detail',
     component: () => import('../views/admin/ProductDetail.vue'),
     meta: { requiresAuth: true, role: 'admin' }
   },
-  {
-    path: '/admin/products/add',
-    component: () => import('../views/admin/AddProduct.vue'),
-    meta: { requiresAuth: true, role: 'admin' }
-  },
+  
   {
     path: '/admin/categories/add',
     component: () => import('../views/admin/categories/AddCategories.vue'),
@@ -80,11 +82,7 @@ const routes = [
     name: 'CategoryProducts',
     component: () => import('../components/admin/CategoriesProduct.vue')
   },
-  {
-    path: '/admin/categories/:category_id/edit',
-    name: 'EditCategory',
-    component: () => import('../views/admin/categories/EditCategories.vue')
-  },
+  
   {
   path: '/admin/danh-muc-tin-tuc/:id/edit',
   name: 'EditDmTinTuc',
