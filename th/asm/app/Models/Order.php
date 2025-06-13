@@ -28,11 +28,11 @@ class Order extends Model
         return $this->belongsTo(User::class, 'nguoi_dung_id', 'nguoi_dung_id');
     }
 
-//     // Quan hệ với địa chỉ
-//     public function address()
-//     {
-//         return $this->belongsTo(Address::class, 'dia_chi_id', 'id_dia_chi');
-//     }
+    // Quan hệ với địa chỉ
+    public function diachi()
+    {
+        return $this->belongsTo(DiaChi::class, 'dia_chi_id', 'id_dia_chi');
+    }
 
     // Quan hệ với phương thức thanh toán
     public function paymentMethod()

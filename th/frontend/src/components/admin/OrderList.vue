@@ -84,38 +84,78 @@
     </table>
   </div>
 </div>
+<!-- order detail modal -->
 <div v-if="showDetail && selectedOrder" class="modal-overlay">
-  <div class="modal-content" id="print-area">
-    <h3>Chi tiết đơn hàng #{{ selectedOrder.id }}</h3>
-    <p><b>Khách hàng:</b> {{ selectedOrder.user?.ho_ten }}</p>
-    <p><b>Ngày đặt:</b> {{ formatDate(selectedOrder.ngay_tao) }}</p>
-    <p><b>Phương thức thanh toán:</b> {{ selectedOrder.payment_method?.ten_pttt }}</p>
-    <p><b>Tình trạng:</b> {{ getTrangThai(selectedOrder.trang_thai) }}</p>
-    <h4>Danh sách sản phẩm:</h4>
-    <table style="width:100%;margin-bottom:12px;">
+ <div class="order-invoice" id="print-area">
+  <button
+      @click="closeOrderDetail"
+      style="
+        position: absolute;
+        top: 12px;
+        right: 16px;
+        background: transparent;
+        border: none;
+        font-size: 2rem;
+        cursor: pointer;
+        color: black;
+      "
+      aria-label="Đóng"
+    >×</button>
+    <div class="invoice-header">
+      <h2>HÓA ĐƠN BÁN HÀNG</h2>
+      <p><b>Mã đơn hàng:</b> #{{ selectedOrder.id }}</p>
+      <p><b>Ngày đặt:</b> {{ formatDate(selectedOrder.ngay_tao) }}</p>
+    </div>
+    <div class="invoice-info">
+      <div>
+        <b>Khách hàng:</b> {{ selectedOrder.user?.ho_ten }}<br>
+        <b>Phương thức thanh toán:</b> {{ selectedOrder.payment_method?.ten_pttt }}<br>
+        <b>Tình trạng:</b> {{ getTrangThai(selectedOrder.trang_thai) }}
+      </div>
+      <div>
+        <b>Địa chỉ:</b> {{ selectedOrder.diachi?.dia_chi || '...' }}<br>
+        <b>SĐT:</b> {{ selectedOrder.user?.sdt || '...' }}
+      </div>
+    </div>
+    <table class="invoice-table">
       <thead>
         <tr>
+          <th>STT</th>
           <th>Tên sản phẩm</th>
+          <th>Biến thể</th>
           <th>Số lượng</th>
           <th>Đơn giá</th>
           <th>Thành tiền</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="item in selectedOrder.order_items" :key="item.id">
+        <tr v-for="(item, idx) in selectedOrder.order_items" :key="item.id">
+          <td>{{ idx + 1 }}</td>
           <td>{{ item.bien_the?.san_pham?.ten_san_pham || 'Không rõ' }}</td>
+          <td>
+            {{ item.bien_the?.ten_bien_the || '' }}
+            <span v-if="item.bien_the?.mau_sac">Màu: {{ item.bien_the.mau_sac }}</span>
+            <span v-if="item.bien_the?.kich_thuoc"> - Size: {{ item.bien_the.kich_thuoc }}</span>
+          </td>
           <td>{{ item.so_luong }}</td>
           <td>{{ formatCurrency(item.don_gia) }}</td>
           <td>{{ formatCurrency(item.so_luong * item.don_gia) }}</td>
         </tr>
       </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="5" style="text-align:right"><b>Tổng cộng:</b></td>
+          <td><b>{{ formatCurrency(selectedOrder.order_items?.reduce((sum, item) => sum + (item.so_luong * item.don_gia), 0) || 0) }}</b></td>
+        </tr>
+      </tfoot>
     </table>
-    <p><b>Tổng tiền:</b> {{ formatCurrency(selectedOrder.order_items?.reduce((sum, item) => sum + (item.so_luong * item.don_gia), 0) || 0) }}</p>
-    <div style="margin-top:16px;">
-      <button @click="printOrderDetail" class="btn search-btn">In đơn hàng</button>
-      <button @click="closeOrderDetail" class="btn clear-btn">Đóng</button>
-    </div>
+
+    <div style="text-align:center; margin-top: 16px;">
+    <button class="btn search-btn" @click="printOrderDetail">In hóa đơn</button>
+    
   </div>
+  </div>
+  
 </div>
 </template>
 
@@ -375,9 +415,49 @@ export default {
   overflow-y: auto;
   box-shadow: 0 2px 16px rgba(0,0,0,0.2);
 }
+.order-invoice {
+  font-family: 'Arial', sans-serif;
+  background: #fff;
+  color: #222;
+  padding: 32px 40px;
+  max-width: 800px;
+  margin: 0 auto;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+.invoice-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+.invoice-header h2 {
+  margin: 0 0 8px 0;
+  font-size: 2rem;
+  letter-spacing: 2px;
+}
+.invoice-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  font-size: 1rem;
+}
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 32px;
+}
+.invoice-table th, .invoice-table td {
+  border: 1px solid #ccc;
+  padding: 8px 10px;
+  text-align: center;
+}
+.invoice-table th {
+  background: #f5f5f5;
+  font-weight: bold;
+}
 @media print {
   body * { visibility: hidden; }
   #print-area, #print-area * { visibility: visible; }
   #print-area { position: absolute; left: 0; top: 0; width: 100vw; }
+  .order-invoice { box-shadow: none; border: none; }
 }
 </style>
