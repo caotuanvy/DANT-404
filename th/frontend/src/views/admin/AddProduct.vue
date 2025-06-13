@@ -12,18 +12,16 @@
           required
         />
       </div>
-
       <div>
-        <label for="price">Giá sản phẩm:</label>
+        <label for="slug">Đường Dẫn</label>
         <input
-          type="number"
-          id="price"
-          v-model="price"
-          placeholder="Nhập giá sản phẩm"
-          required
+          type="text"
+          id="slug"
+          v-model="slug"
+          placeholder="Đường dẫn sản phẩm (tự động tạo)"
+          @input="userEditedSlug = true"
         />
       </div>
-
       <div>
         <label for="category">Danh mục:</label>
        <select v-model="category_id" required>
@@ -81,15 +79,26 @@ export default {
   data() {
     return {
       name: "",
-      price: "",
       category_id: "",
       description: "",
+      slug: "",
       imageFiles: [],
       imagePreviews: [],
       categories: [],
+      userEditedSlug: false,
     };
   },
   methods: {
+    generateSlug(text) {
+    return text
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-");
+  },
     handleImageUpload(event) {
       this.imageFiles = Array.from(event.target.files);
       this.imagePreviews = this.imageFiles.map(file => URL.createObjectURL(file));
@@ -106,6 +115,7 @@ export default {
         alert("Không thể tải danh mục!");
       }
     },
+   
     async addProduct() {
       try {
         const token = localStorage.getItem("token");
@@ -116,9 +126,9 @@ export default {
 
         const formData = new FormData();
         formData.append("ten_san_pham", this.name);
-        formData.append("gia", this.price);
         formData.append("ten_danh_muc_id", this.category_id);
         formData.append("mo_ta", this.description);
+        formData.append("slug", this.slug);
 
         this.imageFiles.forEach(file => {
           formData.append("images[]", file);
@@ -140,6 +150,13 @@ export default {
       }
     },
   },
+   watch: {
+  name(newVal) {
+    if (!this.userEditedSlug) {
+      this.slug = this.generateSlug(newVal);
+    }
+  },
+},
   mounted() {
     this.getCategories();
   },

@@ -10,5 +10,5 @@ class SlideShow extends Model
     protected $primaryKey = 'Slide_id';
     public $timestamps = false;
 
-    protected $fillable = ['Ten_slide', 'Hinh_anh_1', 'Hinh_anh_2', 'Hinh_anh_3'];
+    protected $fillable = ['Ten_slide', 'Hinh_anh'];
 }

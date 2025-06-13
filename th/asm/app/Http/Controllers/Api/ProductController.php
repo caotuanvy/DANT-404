@@ -6,7 +6,7 @@ use App\Models\SanPham;
 use Illuminate\Http\Request;
 use App\Models\SanPhamBienThe;
 use App\Models\HinhAnhSanPham;
-
+use Illuminate\Validation\Rule;
 class ProductController extends Controller
 {
 
@@ -24,6 +24,7 @@ public function index()
                 'noi_bat' => $item->noi_bat,
                 'khuyen_mai' => $item->khuyen_mai,
                 'so_bien_the' => $item->bien_the_count,
+                'slug' => $item->slug,
                 'danh_muc' => [
                     'category_id' => $item->danhMuc?->category_id,
                     'ten_danh_muc' => $item->danhMuc?->ten_danh_muc,
@@ -52,7 +53,7 @@ public function toggleNoiBat($id, Request $request)
 }
 
 
-    // // Tạo sản phẩm mới
+
    public function store(Request $request)
 {
    $validated = $request->validate([
@@ -64,14 +65,14 @@ public function toggleNoiBat($id, Request $request)
 ]);
 
 
-    // Tạo sản phẩm
+
     $product = SanPham::create([
         'ten_san_pham' => $validated['ten_san_pham'],
         'ten_danh_muc_id' => $validated['ten_danh_muc_id'] ?? null,
         'mo_ta' => $validated['mo_ta'] ?? '',
     ]);
 
-    // Nếu có file ảnh, lưu ảnh và tạo bản ghi hình ảnh sản phẩm
+
     if ($request->hasFile('images')) {
     foreach ($request->file('images') as $file) {
         $path = $file->store('products', 'public');
@@ -100,6 +101,7 @@ public function show($id)
         'description' => $product->mo_ta,
         'noi_bat' => $product->noi_bat,
         'khuyen_mai' => $product->khuyen_mai,
+        'slug' => $product->slug,
         'so_bien_the' => $product->bienThe->count(),
         'danh_muc' => $product->danhMuc ? [
             'category_id' => $product->danhMuc->category_id,
@@ -137,12 +139,17 @@ public function show($id)
         'ten_san_pham' => 'sometimes|required|string|max:255',
         'mo_ta' => 'nullable|string',
         'noi_bat' => 'nullable|boolean',
-        'khuyen_mai' => 'nullable|string',
-        'slug' => 'nullable|string|max:255',
+        'khuyen_mai' => 'nullable|numeric|min:0',
+        'slug' => [
+            'nullable',
+            'string',
+            'max:255',
+            Rule::unique('san_pham', 'slug')->ignore($id, 'san_pham_id'),
+        ],
         'ten_danh_muc_id' => 'nullable|integer|exists:danh_muc_san_pham,category_id',
  ]);
 
-    // Cập nhật ngày sửa
+
     $validated['ngay_sua'] = now();
 
     $product->update($validated);
@@ -152,10 +159,7 @@ public function show($id)
         'data' => $product
     ]);
 }
-
-
     // // Xóa sản phẩm (cascades xóa biến thể)
-
 public function destroy($id)
 {
     $sanPham = SanPham::find($id);
