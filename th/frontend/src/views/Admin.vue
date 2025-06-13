@@ -46,7 +46,8 @@
       <main class="flex-grow-1 p-4 bg-light">
         <br><br><br>
         <div class="d-flex justify-content-end mb-4">
-          <button class="btn btn-outline-danger btn-sm" @click="logout">Đăng Xuất</button>
+
+          <button class="btn btn-outline-danger btn-sm" @click="logout">Quay Lại Trang Trước</button>
         </div>
         
 
@@ -66,8 +67,11 @@ import logo1 from '@/assets/images/image60.png';
 const router = useRouter();
 
 const logout = () => {
-  localStorage.removeItem('token')
-  localStorage.removeItem('role')
+  // localStorage.removeItem('token')
+  // localStorage.removeItem('role')
+router.back()
+}
+const back = () => {
   router.push('/')
 }
 
@@ -213,9 +217,16 @@ const menu = [
 .myheader-logo{
   height: 30px;
 }
-
-</style>
-<style>
-
-
+.container-table{
+  width: 100%;
+  height: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px;
+  background-color: #ffffff;
+  border-radius: 8px;
+}
+.justify-content-end button{
+  margin: 0 5px;
+}
 </style>

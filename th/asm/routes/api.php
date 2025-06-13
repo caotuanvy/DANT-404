@@ -12,7 +12,7 @@ use App\Http\Controllers\Api\DanhMucTtController;
 use App\Http\Controllers\Api\SlideShowController;
 use App\Http\Controllers\Api\SanPhamBienTheController;
 use App\Http\Controllers\Api\TintucController;
-
+use App\Http\Controllers\Api\DiaChiController;
 Route::delete('/products/{product_id}/images/{image_id}', [ProductImageController::class, 'destroy']);
 
 Route::post('/products/{product_id}/images', [ProductImageController::class, 'store']);
@@ -50,6 +50,7 @@ Route::get('/categories',[CategoryController::class, 'index']);
 
 Route::put('/products/{id}/toggle-noi-bat', [ProductController::class, 'toggleNoiBat']);
 
+Route::get('/kich-hoat/{token}', [AuthController::class, 'activate']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/users', [UserController::class, 'index']);
@@ -76,9 +77,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/variants/{id}', [SanPhamBienTheController::class, 'destroy']);
     Route::delete('/product-images/{id}', [ProductImageController::class, 'destroy']);
 });
-
-Route::get('/tintuc', [TintucController::class, 'index']);        // Lấy danh sách tin tức
-Route::post('/tintuc', [TintucController::class, 'store']);
+Route::get('/tintuc', [TintucController::class, 'index']);
 Route::get('/tintuc/{id}', [TintucController::class, 'show']);
 Route::put('/tintuc/{id}', [TintucController::class, 'update']);
 Route::delete('/tintuc/{id}', [TintucController::class, 'destroy']);
+Route::apiResource('addresses', DiaChiController::class);
+Route::get('/dia_chi/nguoi_dung/{nguoi_dung_id}', [DiaChiController::class, 'index'])->name('dia_chi.by_user');
+Route::post('/dia_chi', [DiaChiController::class, 'store']);
+Route::put('/dia_chi/{id}', [DiaChiController::class, 'update']);
+
