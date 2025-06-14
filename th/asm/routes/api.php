@@ -27,6 +27,8 @@ Route::get('/categories/{category_id}/products', [CategoryController::class, 'ge
 Route::get('/orders', [OrderController::class, 'index']);
 Route::patch('/orders/{id}/approve', [OrderController::class, 'approve']);
 Route::patch('/orders/{id}/reject', [OrderController::class, 'reject']);
+Route::patch('/orders/{id}/hide', [OrderController::class, 'hideOrder']);
+Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
 Route::get('/users', [UserController::class, 'index']);
 Route::delete('/users/{id}', [UserController::class, 'destroy']);
 
