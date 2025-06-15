@@ -18,8 +18,8 @@
           <option value="">Chọn danh mục</option>
           <option
             v-for="dm in danhMucs"
-            :key="dm.id"
-            :value="Number(dm.id)"
+            :key="dm.id_danh_muc_tin_tuc"
+            :value="Number(dm.id_danh_muc_tin_tuc)"
           >
             {{ dm.ten_danh_muc }}
           </option>
@@ -67,13 +67,15 @@ export default {
       try {
         const res = await axios.get("http://localhost:8000/api/danh-muc-tin-tuc");
         this.danhMucs = res.data;
-        console.log('danhMucs:', this.danhMucs); // Thêm dòng này
+        console.log('danhMucs:', this.danhMucs);
       } catch (error) {
         alert("Không thể tải danh mục tin tức!");
       }
     },
     async addTintuc() {
-      console.log(this.tieude, this.noidung, this.id_danh_muc_tin_tuc);
+      console.log('tieude:', this.tieude);
+      console.log('noidung:', this.noidung);
+      console.log('id_danh_muc_tin_tuc:', this.id_danh_muc_tin_tuc);
       try {
         if (!this.tieude || !this.noidung || !this.id_danh_muc_tin_tuc) {
           alert("Vui lòng nhập đầy đủ thông tin!");

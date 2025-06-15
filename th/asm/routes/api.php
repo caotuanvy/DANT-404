@@ -81,6 +81,7 @@ Route::get('/tintuc', [TintucController::class, 'index']);
 Route::get('/tintuc/{id}', [TintucController::class, 'show']);
 Route::put('/tintuc/{id}', [TintucController::class, 'update']);
 Route::delete('/tintuc/{id}', [TintucController::class, 'destroy']);
+Route::post('/tintuc', [TintucController::class, 'store']);
 Route::apiResource('addresses', DiaChiController::class);
 Route::get('/dia_chi/nguoi_dung/{nguoi_dung_id}', [DiaChiController::class, 'index'])->name('dia_chi.by_user');
 Route::post('/dia_chi', [DiaChiController::class, 'store']);

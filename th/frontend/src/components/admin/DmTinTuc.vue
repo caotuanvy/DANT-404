@@ -25,10 +25,10 @@
       <td>{{ item.ten_danh_muc }}</td>
       <td>
         <img
-          v-if="item.hinh_anh"
-          :src="item.hinh_anh.startsWith('http') ? item.hinh_anh : `http://localhost:8000/storage/${item.hinh_anh}`"
-          alt="Hình ảnh"
-          style="width: 60px; height: auto; object-fit: cover;"
+      v-if="item.hinh_anh"
+      :src="item.hinh_anh.startsWith('http') ? item.hinh_anh : `http://localhost:8000/storage/${item.hinh_anh}`"
+      alt="Hình ảnh"
+      style="width: 60px; height: auto; object-fit: cover;"
         />
         <img
           v-else

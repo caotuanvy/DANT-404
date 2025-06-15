@@ -11,7 +11,8 @@ class TintucController extends Controller
     // Lấy danh sách tin tức
     public function index()
     {
-        return response()->json(Tintuc::with('danhMuc')->get());
+        $tintucs = Tintuc::with('danhMuc')->get();
+        return response()->json($tintucs);
     }
 
     // Thêm tin tức mới
