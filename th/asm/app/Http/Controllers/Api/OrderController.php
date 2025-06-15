@@ -11,35 +11,52 @@ use Illuminate\Http\Request;
 class OrderController extends Controller
 {
    public function index(Request $request)
-    {
-        $query = Order::with('user', 'paymentMethod', 'orderItems'); // Thêm 'orderItems'
+{
+    $query = Order::whereNull('ngay_xoa')
+        ->with('user', 'paymentMethod', 'orderItems.bien_the.sanPham', 'diachi');
 
-        if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->where('id', 'like', "%$search%")
-                ->orWhereHas('user', function($q) use ($search) {
-                    $q->where('ho_ten', 'like', "%$search%");
-                });
+    if ($request->has('search') && $request->search) {
+        $search = $request->search;
+        $query->where(function($q) use ($search) {
+            $q->where('id', 'like', "%$search%")
+              ->orWhereHas('user', function($q2) use ($search) {
+                  $q2->where('ho_ten', 'like', "%$search%");
+              });
+        });
+    }
+
+    $orders = $query->get();
+    return response()->json($orders);
+}
+    public function hideOrder($id)
+    {
+        $order = Order::findOrFail($id);
+        $order->ngay_xoa = now(); // hoặc Carbon::now()
+        $order->save();
+        return response()->json(['message' => 'Đã ẩn đơn hàng']);
+    }
+    // public function approve($id)
+    // {
+    //     $order = Order::findOrFail($id);
+    //     $order->status = 'approved';
+    //     $order->save();
+
+    //     return response()->json(['message' => 'Đơn hàng đã được duyệt']);
+    // }
+
+    // public function reject($id)
+    // {
+    //     $order = Order::findOrFail($id);
+    //     $order->status = 'rejected';
+    //     $order->save();
+
+    //     return response()->json(['message' => 'Đơn hàng đã bị từ chối']);
+    // }
+    public function updateStatus(Request $request, $id)
+        {
+            $order = Order::findOrFail($id);
+            $order->trang_thai = $request->input('trang_thai');
+            $order->save();
+            return response()->json($order);
         }
-
-        $orders = $query->get();
-        return response()->json($orders);
-    }
-    public function approve($id)
-    {
-        $order = Order::findOrFail($id);
-        $order->status = 'approved';
-        $order->save();
-
-        return response()->json(['message' => 'Đơn hàng đã được duyệt']);
-    }
-
-    public function reject($id)
-    {
-        $order = Order::findOrFail($id);
-        $order->status = 'rejected';
-        $order->save();
-
-        return response()->json(['message' => 'Đơn hàng đã bị từ chối']);
-    }
 }
