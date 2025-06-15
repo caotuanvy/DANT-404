@@ -187,7 +187,7 @@ const navigateToAdmin = () => {
 // --- HÀM MỚI: Chuyển hướng đến trang thông tin người dùng ---
 const navigateToUserInfo = () => {
     showUserMenu.value = false; // Đóng menu trước khi chuyển hướng
-    router.push('/user-info'); // Giả định bạn có một route '/user-info' cho trang thông tin
+    router.push('/infor'); // Giả định bạn có một route '/user-info' cho trang thông tin
 };
 
 // --- Hàm bật/tắt menu thả xuống của người dùng ---

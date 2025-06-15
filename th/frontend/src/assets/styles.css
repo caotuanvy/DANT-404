@@ -126,8 +126,6 @@ img {
     border-radius: 12px;
     font-family: "Lora", serif;
   }
-
-/* Tổng thể cho form */
 form {
   max-width: 600px;
   margin: 0 auto;
@@ -137,15 +135,12 @@ form {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Tiêu đề form */
 form h2 {
   font-size: 1.5rem;
   font-weight: bold;
   color: #333;
   margin-bottom: 1.5rem;
 }
-
-/* Các trường input */
 form div {
   margin-bottom: 1rem;
 }
@@ -173,14 +168,11 @@ form textarea:focus {
   border-color: #3b82f6;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
-
-/* Các trường textarea */
 form textarea {
   resize: vertical;
   min-height: 120px;
 }
 
-/* Nút submit */
 form button {
   padding: 0.8rem 1.5rem;
   font-size: 1rem;
@@ -195,22 +187,15 @@ form button {
 form button:hover {
   background-color: #2563eb;
 }
-
-/* Hiệu ứng khi bấm nút */
 form button:disabled {
   background-color: #d1d5db;
   cursor: not-allowed;
 }
-
-/* Thông báo lỗi (nếu có) */
 form .error-message {
   color: red;
   font-size: 0.875rem;
   margin-top: 0.5rem;
 }
-
-/* ???? */
-/* Style cho toggle switch */
 .switch {
   position: relative;
   display: inline-block;
