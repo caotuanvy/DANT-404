@@ -15,6 +15,7 @@
       <th>Nổi Bật</th>
       <th>Mô tả</th>
       <th>Danh mục</th>
+      <th>Khuyến mãi</th>
       <th>Hành động</th>
     </tr>
   </thead>
@@ -51,8 +52,11 @@
         </router-link>
       </td>
       <td>
+        {{ product.khuyen_mai }} %
+      </td>
+      <td>
       <div class="action-buttons">
-        <router-link :to="`/admin/products/${product.product_id}`" class="btn-detail">Xem chi tiết</router-link>
+        <!-- <router-link :to="`/admin/products/${product.product_id}`" class="btn-detail">Xem chi tiết</router-link> -->
         <br>
         <router-link :to="`/admin/products/${product.product_id}/edit`" class="btn-edit">Sửa</router-link>
         <br>

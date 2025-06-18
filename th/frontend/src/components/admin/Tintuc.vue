@@ -14,6 +14,7 @@
           <th>Danh mục</th>
           <th>Ngày đăng</th>
           <th>Nội dung</th>
+          <th>Xem chi tiết</th>
           <th>Hành động</th>
         </tr>
       </thead>
@@ -23,7 +24,7 @@
           <td>{{ tintuc.tieude }}</td>
           <td>
             <!-- Sửa tên trường danh mục cho đúng với dữ liệu trả về từ API -->
-            {{ tintuc.danhMuc ? tintuc.danhMuc.ten_danh_muc : (tintuc.danhmuc ? tintuc.danhmuc.ten : 'Không có danh mục') }}
+            {{ tintuc.danhMuc ? tintuc.danhMuc.ten_danh_muc : (tintuc.danh_muc ? tintuc.danh_muc.ten_danh_muc : (tintuc.danhmuc ? tintuc.danhmuc.ten : '-')) }}
           </td>
           <td>{{ tintuc.ngay_dang }}</td>
           <td>
@@ -32,11 +33,11 @@
             </div>
           </td>
           <td>
+            <router-link :to="`/admin/tintuc/${tintuc.id}`" class="btn-detail">Xem chi tiết</router-link>
+          </td>
+          <td>
             <div class="action-buttons">
-              <router-link :to="`/admin/tintuc/${tintuc.id}`" class="btn-detail">Xem chi tiết</router-link>
-              <br>
               <router-link :to="`/admin/tintuc/${tintuc.id}/edit`" class="btn-edit">Sửa</router-link>
-              <br>
               <button @click="deleteTintuc(tintuc.id)" class="btn-delete">Xóa</button>
             </div>
           </td>
@@ -144,7 +145,8 @@ button:hover {
 }
 .action-buttons {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
 }
 </style>

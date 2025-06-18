@@ -57,22 +57,20 @@ class DanhMucTtController extends Controller
      // Thêm danh mục tin tức
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $data = $request->validate([
             'ten_danh_muc' => 'required|string|max:255',
             'mo_ta' => 'nullable|string',
-            'hinh_anh' => 'nullable|string|max:100',
+            'hinh_anh' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
         ]);
 
-        $danhMuc = new DanhMucTinTuc();
-        $danhMuc->ten_danh_muc = $validated['ten_danh_muc'];
-        $danhMuc->mo_ta = $validated['mo_ta'] ?? null;
-        $danhMuc->hinh_anh = $validated['hinh_anh'] ?? null;
-        $danhMuc->ngay_tao = now();
-        $danhMuc->save();
+        if ($request->hasFile('hinh_anh')) {
+            $file = $request->file('hinh_anh');
+            // Lưu vào storage/app/public/Tintuc
+            $path = $file->store('Tintuc', 'public');
+            $data['hinh_anh'] = $path;
+        }
 
-        return response()->json([
-            'message' => 'Thêm danh mục thành công',
-            'data' => $danhMuc
-        ], 201);
+        $danhMuc = DanhMucTinTuc::create($data);
+        return response()->json($danhMuc, 201);
     }
 }

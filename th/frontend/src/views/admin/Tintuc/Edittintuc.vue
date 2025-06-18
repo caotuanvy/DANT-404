@@ -10,10 +10,11 @@
       <div>
         <label>Danh mục:</label>
         <select v-model="tintuc.id_danh_muc_tin_tuc" required>
+          <option value="">-- Chọn danh mục --</option>
           <option
             v-for="dm in danhMucs"
-            :key="dm.id"
-            :value="dm.id"
+            :key="dm.id_danh_muc_tin_tuc"
+            :value="dm.id_danh_muc_tin_tuc"
           >
             {{ dm.ten_danh_muc }}
           </option>
@@ -61,6 +62,8 @@ const getTintuc = async () => {
     if (res.data.ngay_dang) {
       res.data.ngay_dang = res.data.ngay_dang.substring(0, 10);
     }
+    // Đảm bảo id_danh_muc_tin_tuc là số hoặc chuỗi số
+    res.data.id_danh_muc_tin_tuc = res.data.id_danh_muc_tin_tuc ? String(res.data.id_danh_muc_tin_tuc) : '';
     tintuc.value = res.data;
   } catch (err) {
     alert('Không thể lấy dữ liệu tin tức!');
@@ -78,6 +81,8 @@ const getDanhMucs = async () => {
 
 const updateTintuc = async () => {
   try {
+    // Đảm bảo id_danh_muc_tin_tuc là số khi gửi lên backend
+    tintuc.value.id_danh_muc_tin_tuc = Number(tintuc.value.id_danh_muc_tin_tuc);
     await axios.put(`http://localhost:8000/api/tintuc/${route.params.id}`, tintuc.value, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
