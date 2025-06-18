@@ -36,6 +36,7 @@ class SanPhamBienTheController extends Controller
         return response()->json($variant, 201);
     }
 
+
     public function destroy($id)
     {
         $variant = SanPhamBienThe::findOrFail($id);
