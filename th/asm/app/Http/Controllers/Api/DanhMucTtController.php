@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\DanhMucTinTuc;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class DanhMucTtController extends Controller
 {
@@ -54,25 +55,31 @@ class DanhMucTtController extends Controller
         ]);
     }
 
-     // Thêm danh mục tin tức
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'ten_danh_muc' => 'required|string|max:255',
-            'mo_ta' => 'nullable|string',
-            'hinh_anh' => 'nullable|string|max:100',
-        ]);
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'ten_danh_muc' => 'required|string|max:255',
+        'mo_ta' => 'nullable|string',
+        'hinh_anh' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+    ]);
 
-        $danhMuc = new DanhMucTinTuc();
-        $danhMuc->ten_danh_muc = $validated['ten_danh_muc'];
-        $danhMuc->mo_ta = $validated['mo_ta'] ?? null;
-        $danhMuc->hinh_anh = $validated['hinh_anh'] ?? null;
-        $danhMuc->ngay_tao = now();
-        $danhMuc->save();
+    $danhMuc = new DanhMucTinTuc();
+    $danhMuc->ten_danh_muc = $validated['ten_danh_muc'];
+    $danhMuc->mo_ta = $validated['mo_ta'] ?? null;
 
-        return response()->json([
-            'message' => 'Thêm danh mục thành công',
-            'data' => $danhMuc
-        ], 201);
+    if ($request->hasFile('hinh_anh')) {
+        $path = $request->file('hinh_anh')->store('products', 'public');
+        $danhMuc->hinh_anh = 'storage/' . $path;
     }
+
+    $danhMuc->ngay_tao = now();
+    $danhMuc->save();
+
+    return response()->json([
+        'message' => 'Thêm danh mục thành công',
+        'data' => $danhMuc
+    ], 201);
+}
+
+
 }

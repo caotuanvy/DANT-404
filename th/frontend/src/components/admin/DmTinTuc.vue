@@ -26,7 +26,7 @@
       <td>
         <img
           v-if="item.hinh_anh"
-          :src="item.hinh_anh.startsWith('http') ? item.hinh_anh : `http://localhost:8000/storage/${item.hinh_anh}`"
+          :src="item.hinh_anh.startsWith('/storage') ? `http://localhost:8000${item.hinh_anh}` : item.hinh_anh"
           alt="Hình ảnh"
           style="width: 60px; height: auto; object-fit: cover;"
         />
@@ -37,6 +37,7 @@
           style="width: 60px; height: auto; object-fit: cover;"
         />
       </td>
+
       <td>{{ item.mo_ta }}</td>
       <td>{{ item.ngay_tao ? new Date(item.ngay_tao).toLocaleString() : '' }}</td>
       <td>{{ item.ngay_sua ? new Date(item.ngay_sua).toLocaleString() : '' }}</td>
