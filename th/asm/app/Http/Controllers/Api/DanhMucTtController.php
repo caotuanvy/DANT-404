@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\DanhMucTinTuc;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class DanhMucTtController extends Controller
 {
@@ -54,6 +55,7 @@ class DanhMucTtController extends Controller
         ]);
     }
 
+
      // Thêm danh mục tin tức
     public function store(Request $request)
     {
@@ -72,5 +74,16 @@ class DanhMucTtController extends Controller
 
         $danhMuc = DanhMucTinTuc::create($data);
         return response()->json($danhMuc, 201);
-    }
+
+
+    $danhMuc->ngay_tao = now();
+    $danhMuc->save();
+
+    return response()->json([
+        'message' => 'Thêm danh mục thành công',
+        'data' => $danhMuc
+    ], 201);
+}
+
+
 }

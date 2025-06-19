@@ -67,6 +67,7 @@ const routes = [
         meta: { requiresAuth: true, role: 'admin' }
       },
       {
+
       path: '/admin/danh-muc-tin-tuc/:id/edit',
       name: 'EditDmTinTuc',
       component: () => import('../views/admin/danhmuctt/Editdanhmuctt.vue'),
@@ -90,6 +91,7 @@ const routes = [
         component: () => import('../views/admin/Tintuc/Edittintuc.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       },
+
 
 
     ]
@@ -118,6 +120,21 @@ const routes = [
     component: () => import('../components/admin/CategoriesProduct.vue')
   },
   
+
+  
+  {
+  path: '/admin/tintuc/add',
+  name: 'AddTintuc',
+  component: () => import('../views/admin/Tintuc/Addtintuc.vue'),
+  meta: { requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: '/admin/tintuc/:id/edit',
+    name: 'EditTintuc',
+    component: () => import('../views/admin/Tintuc/Edittintuc.vue'),
+    meta: { requiresAuth: true, role: 'admin' }
+  },
+
 
 
 {
