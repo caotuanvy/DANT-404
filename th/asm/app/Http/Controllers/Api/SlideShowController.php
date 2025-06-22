@@ -92,7 +92,7 @@ public function addImageToSlide(Request $request)
         $validated = $request->validate([
             'slide_id' => 'required|integer|exists:slide,slide_id',
             'loai_anh' => 'required|string',
-            'hinh_anh' => 'required|image|max:2048',
+            'hinh_anh' => 'required|image|max:3048',
         ]);
         $exists = SlideShow::where('slide_id', $request->slide_id)
             ->where('loai_anh', $request->loai_anh)

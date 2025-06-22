@@ -91,9 +91,25 @@ const routes = [
         component: () => import('../views/admin/Tintuc/Edittintuc.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       },
-
-
-
+      // Vỹ
+      {
+        path: 'introduce',
+        name: 'introduce',
+        component: () => import('../components/admin/IntroduceList.vue'),
+        meta: { requiresAuth: true, role: 'admin' }
+      },
+      
+      {
+         path: '/admin/trang-tinh/:slug',
+        name: 'introduce-detail',
+        component: () => import('../components/introduce/IntroduceDetail.vue'),
+        meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
+        path: '/admin/trang-tinh/add',
+        name: 'introduce-add',
+        component: () => import('../components/introduce/IntroduceAdd.vue'),
+      }
     ]
   },
   {
@@ -119,7 +135,12 @@ const routes = [
     name: 'CategoryProducts',
     component: () => import('../components/admin/CategoriesProduct.vue')
   },
-  
+  {
+  path: '/gioi-thieu',
+  name: 'gioi-thieu',
+  component: () => import('../components/user/ISV.vue')
+  },
+
 
   
   {

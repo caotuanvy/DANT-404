@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\SlideShowController;
 use App\Http\Controllers\Api\SanPhamBienTheController;
 use App\Http\Controllers\Api\TintucController;
 use App\Http\Controllers\Api\DiaChiController;
+use App\Http\Controllers\Api\IntroduceController;
 
 // Auth & User
 Route::post('/register', [AuthController::class, 'register']);
@@ -32,7 +33,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/products/{id}/variants', [SanPhamBienTheController::class, 'index']);
     Route::post('/products/{id}/variants', [SanPhamBienTheController::class, 'store']);
     Route::delete('/variants/{id}', [SanPhamBienTheController::class, 'destroy']);
-
+Route::put('/products/{product_id}/variants/{variant_id}', [SanPhamBienTheController::class, 'update']);
     // Protected Product Images (delete)
     Route::delete('/product-images/{id}', [ProductImageController::class, 'destroy']);
 });
@@ -102,6 +103,16 @@ Route::prefix('admin')->group(function () {
     Route::get('slide-hienthi', [SlideShowController::class, 'getSlideTrangChu']);
     Route::post('slide-hienthi', [SlideShowController::class, 'chonSlideHienThi']);
     Route::post('slide/rename', [SlideShowController::class, 'rename']);
-});
+    // Trang Tĩnh
 
+
+});
+Route::prefix('admin')->group(function () {
+    Route::get('trang-tinh', [IntroduceController::class, 'index']);
+    Route::get('trang-tinh/{slug}', [IntroduceController::class, 'show']);
+    Route::post('trang-tinh/update', [IntroduceController::class, 'update']);
+    Route::post('trang-tinh/{id}', [IntroduceController::class, 'updateMeta']);
+    Route::delete('trang-tinh/{id}', [IntroduceController::class, 'destroy']);
+    Route::post('trang-tinh', [IntroduceController::class, 'store']);
+});
 
