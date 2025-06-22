@@ -262,29 +262,136 @@ input:checked + .slider:before {
   align-items: center;
 }
 
-.btn-detail {
-  color: #4caf50;
+.btn-detail,
+.btn-edit,
+.btn-delete {
+  display: inline-block;
+  padding: 6px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
   text-decoration: none;
-  font-weight: 500;
-  padding: 10px;
+  transition: all 0.2s ease;
+}
+
+.btn-detail {
+  background-color: #e8f5e9;
+  color: #2e7d32 !important;
+  border: 1px solid #c8e6c9;
 }
 
 .btn-edit {
-  color: #2196f3;
-  text-decoration: none;
-  font-weight: 500;
+  background-color: #e3f2fd;
+  color: #1565c0 !important;
+  border: 1px solid #90caf9;
 }
 
 .btn-delete {
-  border: none;
-  background: none;
-  color: #f44336;
-  cursor: pointer;
-  font-weight: 500;
+  background-color: #ffebee;
+  color: #c62828 !important;
+  border: 1px solid #ef9a9a;
 }
 
-.btn-detail:hover,
-.btn-edit:hover,
+.btn-detail:hover {
+  background-color: #c8e6c9;
+}
+
+.btn-edit:hover {
+  background-color: #bbdefb;
+}
+
 .btn-delete:hover {
-  text-decoration: underline;
+  background-color: #ef9a9a;
+}
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.btn-add {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 6px 12px;
+  background-color: #4FC3F7;
+  color: white;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  font-weight: bolder;
+}
+
+.btn-add:hover {
+  background-color: #039BE5;
+  transform: scale(1.05);
+}
+.content {
+  padding: 2rem;
+  min-height: 100vh;
+}
+.page-container {
+  max-width: 900px;
+  margin: 0 auto;
+  border-radius: 12px;
+  padding: 2rem;
+  
+}
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+.page-header h1 {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #333;
+}
+.edit-btn {
+  background-color: #f59e0b;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.edit-btn:hover {
+  background-color: #d97706;
+}
+.editor-box {
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  padding: 1rem;
+  min-height: 300px;
+}
+.save-btn {
+  margin-top: 1rem;
+  background-color: #3b82f6;
+  color: white;
+  padding: 12px 24px;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.page-content h1, .page-content h2, .page-content h3 {
+  color: #1f2937;
+  margin-top: 1rem;
+}
+.page-content p {
+  margin-bottom: 1rem;
+  line-height: 1.7;
+}
+.page-content ul {
+  padding-left: 1.5rem;
+  list-style: disc;
+}
+.loading {
+  text-align: center;
+  font-style: italic;
+  color: #888;
+  margin-top: 50px;
 }

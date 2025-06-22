@@ -50,8 +50,8 @@
         <legend>✏️ Chỉnh sửa biến thể</legend>
         <form @submit.prevent="updateVariant" class="form-layout">
           <input v-model="editVariant.ten_bien_the" placeholder="Tên biến thể" required />
-          <input v-model="editVariant.kich_thuoc" placeholder="Kích thước" required />
-          <input v-model="editVariant.mau_sac" placeholder="Màu sắc" required />
+          <input v-model="editVariant.kich_thuoc" placeholder="Kích thước" />
+          <input v-model="editVariant.mau_sac" placeholder="Màu sắc"  />
           <input v-model.number="editVariant.so_luong_ton_kho" placeholder="Tồn kho" type="number" required />
           <input v-model.number="editVariant.gia" placeholder="Giá" type="number" required />
           <div class="btn-group">
