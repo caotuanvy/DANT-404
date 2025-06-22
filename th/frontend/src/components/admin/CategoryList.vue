@@ -5,18 +5,17 @@
       <table>
         <thead>
           <tr>
-            <th>#</th>
             <th>Id Danh Mục</th>
             <th>Tên Danh Mục</th>
             <th>Mô tả</th>
+            <th>Hành động</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="(category, index) in categories" :key="category.category_id">
-            <td>{{ index + 1 }}</td>
             <td>{{ category.category_id }}</td>
-            <td>{{ category.category_name }}</td>
-            <td>{{ category.description }}</td>
+            <td>{{ category.ten_danh_muc }}</td>
+            <td>{{ category.mo_ta }}</td>
             <td>
               <button class="addProduct" @click="viewCategories(category.category_id)">👁 Xem Sản Phẩm</button>
               <button class="addProduct" @click="editCategories(category.category_id)">✏️ Sửa</button>
@@ -88,17 +87,35 @@
   </script>
   
   <style scoped>
-  .addProduct {
-    margin-right: 10px;
-    padding: 5px 10px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    cursor: pointer;
-  }
-  
-  .addProduct:hover {
-    background-color: #0056b3;
-  }
+  table {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 12px;
+  text-align: center;
+  border: 1px solid #ddd;
+  word-wrap: break-word;
+}
+
+/* Thiết lập tỷ lệ tương ứng giữa các cột */
+th:nth-child(1), td:nth-child(1) {
+  width: 10%;
+}
+
+th:nth-child(2), td:nth-child(2) {
+  width: 20%;
+}
+
+th:nth-child(3), td:nth-child(3) {
+  width: 40%;
+}
+
+th:nth-child(4), td:nth-child(4) {
+  width: 30%;
+}
+
   </style>
   

@@ -7,6 +7,7 @@ import AdminView from '../views/Admin.vue';
 import axios from 'axios';
 
 
+
 const routes = [
   { path: '/', component: Home },
   { path: '/infor', component: Infor },
@@ -42,7 +43,7 @@ const routes = [
       },
       {
           path: 'tintuc', 
-           component: () => import('../components/admin/TinTuc.vue'),
+           component: () => import('../components/admin/Tintuc.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       },
       {
@@ -66,6 +67,8 @@ const routes = [
         component: () => import('../views/admin/AddProduct.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       },
+      { path: '/admin/categories/:id/edit',
+  component: () => import('../views/admin/categories/EditCategories.vue')},
       {
 
       path: '/admin/danh-muc-tin-tuc/:id/edit',

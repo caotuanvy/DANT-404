@@ -47,18 +47,18 @@
             return;
           }
   
-          const response = await axios.post(
-            "http://localhost:8000/api/categories",
-            {
-              category_name: this.category_name,
-              description: this.description || "", 
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
+         const response = await axios.post(
+  "http://localhost:8000/api/categories",
+  {
+    ten_danh_muc: this.category_name, // đổi tên trường cho đúng backend
+    mo_ta: this.description || "",    // đổi tên trường cho đúng backend
+  },
+  {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+);
   
           if (response.status === 201 || response.status === 200) {
             alert("Danh mục đã được thêm thành công!");
