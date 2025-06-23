@@ -90,6 +90,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/variants/{id}', [SanPhamBienTheController::class, 'destroy']);
     Route::delete('/product-images/{id}', [ProductImageController::class, 'destroy']);
 });
+<<<<<<< HEAD
 // Tin tức
 Route::get('/tintuc', [TintucController::class, 'index']);
 Route::get('/tintuc/{id}', [TintucController::class, 'show']);
@@ -100,10 +101,20 @@ Route::get('/xemtintuc-admin/{id}', [TintucController::class, 'xemchitiettintuca
 Route::get('/tintuc-ck', [TintucController::class, 'tintucCongKhai']);
 Route::get('/tintuc-cong-khai/{id}', [TintucController::class, 'chitietCongKhai']);
 
+=======
+
+Route::get('/tintuc', [TintucController::class, 'index']);        // Lấy danh sách tin tức
+Route::post('/tintuc', [TintucController::class, 'store']);
+Route::get('/tintuc/{id}', [TintucController::class, 'show']);
+Route::put('/tintuc/{id}', [TintucController::class, 'update']);
+Route::delete('/tintuc/{id}', [TintucController::class, 'destroy']);
+//vỹ
+>>>>>>> f10599c (aa)
 Route::apiResource('addresses', DiaChiController::class);
 Route::get('/dia_chi/nguoi_dung/{nguoi_dung_id}', [DiaChiController::class, 'index'])->name('dia_chi.by_user');
 Route::post('/dia_chi', [DiaChiController::class, 'store']);
 Route::put('/dia_chi/{id}', [DiaChiController::class, 'update']);
+<<<<<<< HEAD
 
 // Slide Show (admin)
 
@@ -121,3 +132,5 @@ Route::prefix('admin')->group(function () {
 
 });
 
+=======
+>>>>>>> f10599c (aa)
