@@ -7,6 +7,7 @@ use App\Models\SanPham;
 use App\Models\HinhAnhSanPham;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -146,4 +147,45 @@ class ProductController extends Controller
 
         return response()->json(['message' => 'Cập nhật nổi bật thành công']);
     }
+
+public function getTopSelling()
+    {
+        $topSelling = DB::table('san_pham as sp')
+            ->join('san_pham_bien_the as sbt', 'sp.san_pham_id', '=', 'sbt.san_pham_id')
+            ->leftJoin('hinh_anh_san_pham as img', 'sp.san_pham_id', '=', 'img.san_pham_id')
+            ->leftJoin('chi_tiet_don_hang as ctdh', 'sbt.bien_the_id', '=', 'ctdh.san_pham_bien_the_id')
+            ->leftJoin('don_hang as dh', 'ctdh.don_hang_id', '=', 'dh.id')
+            ->select(
+                'sp.san_pham_id',
+                'sp.ten_san_pham',
+                'sp.khuyen_mai',
+                DB::raw('MIN(img.duongdan) as hinh_anh'),
+                DB::raw('SUM(CASE WHEN dh.trang_thai = 1 THEN ctdh.so_luong ELSE 0 END) as so_luong_ban'),
+                DB::raw('MIN(sbt.gia) as gia'),
+                DB::raw('SUM(sbt.so_luong_ton_kho) as tong_ton_kho'),
+            )
+            ->groupBy(
+                'sp.san_pham_id',
+                'sp.ten_san_pham',
+                'sp.khuyen_mai'
+            )
+            ->orderByDesc('so_luong_ban')
+            ->limit(4)
+            ->get();
+        $result = $topSelling->map(function ($item) {
+            return [
+                'san_pham_id'   => $item->san_pham_id,
+                'ten_san_pham'  => $item->ten_san_pham,
+                'so_luong_ban'  => $item->so_luong_ban,
+                'hinh_anh'      => $item->hinh_anh,
+                'gia'           => $item->gia,
+                'khuyen_mai'    => $item->khuyen_mai,
+                'so_luong_ton_kho'  => $item->tong_ton_kho,
+                'tong_so_luong' => $item->tong_ton_kho + $item->so_luong_ban,
+            ];
+        });
+
+        return response()->json($result);
+    }
+
 }

@@ -45,7 +45,7 @@
             </label>
           </td>
 
-          <td>{{ product.description }}</td>
+          <td>{{ truncateText(product.description, 10) }}</td>
           <td>
             <router-link :to="`/danh-muc/${product.danh_muc?.category_id}`">
               {{ product.danh_muc?.ten_danh_muc || 'Không có' }}
@@ -150,6 +150,10 @@ const getImageUrl = (url) => {
   if (!url) return 'https://placehold.co/60x60?text=No+Image';
   return url;
 };
+const truncateText = (text, length = 10) => {
+  if (!text) return '';
+  return text.length > length ? text.substring(0, length) + '...' : text;
+};
 
 onMounted(() => {
   getProducts();
@@ -160,6 +164,12 @@ onMounted(() => {
 .content {
   padding: 20px;
 }
-
+td:nth-child(2) {
+  max-width: 130px; /* Giới hạn chiều rộng */
+  word-break: break-word; /* Ngắt từ giữa nếu cần */
+  font-size: 16px; /* Giảm cỡ chữ */
+  line-height: 1.6; /* Khoảng cách dòng dễ đọc */
+  white-space: normal; /* Cho phép xuống dòng */
+}
 
 </style>

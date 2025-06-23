@@ -104,15 +104,13 @@ Route::prefix('admin')->group(function () {
     Route::post('slide-hienthi', [SlideShowController::class, 'chonSlideHienThi']);
     Route::post('slide/rename', [SlideShowController::class, 'rename']);
     // Trang Tĩnh
-
-
-});
-Route::prefix('admin')->group(function () {
     Route::get('trang-tinh', [IntroduceController::class, 'index']);
-    Route::get('trang-tinh/{slug}', [IntroduceController::class, 'show']);
     Route::post('trang-tinh/update', [IntroduceController::class, 'update']);
     Route::post('trang-tinh/{id}', [IntroduceController::class, 'updateMeta']);
     Route::delete('trang-tinh/{id}', [IntroduceController::class, 'destroy']);
     Route::post('trang-tinh', [IntroduceController::class, 'store']);
+    Route::get('trang-tinh/{slug}', [IntroduceController::class, 'show']);
+    Route::get('/products-sell-top', [ProductController::class, 'getTopSelling']);
 });
+
 
