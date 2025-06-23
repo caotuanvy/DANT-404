@@ -74,7 +74,7 @@ const routes = [
         meta: { requiresAuth: true, role: 'admin' }
       },
       { path: '/admin/categories/:id/edit',
-  component: () => import('../views/admin/categories/EditCategories.vue')},
+      component: () => import('../views/admin/categories/EditCategories.vue')},
       {
 
       path: '/admin/danh-muc-tin-tuc/:id/edit',

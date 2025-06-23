@@ -88,7 +88,7 @@ Route::put('/tintuc/{id}', [TintucController::class, 'update']);
 Route::delete('/tintuc/{id}', [TintucController::class, 'destroy']);
 Route::post('/tintuc', [TintucController::class, 'store']);
 Route::get('/xemtintuc-admin/{id}', [TintucController::class, 'xemchitiettintucadmin']);
-Route::get('/tintuc', [TintucController::class, 'tintucCongKhai']);
+Route::get('/tintuc-ck', [TintucController::class, 'tintucCongKhai']);
 Route::get('/tintuc-cong-khai/{id}', [TintucController::class, 'chitietCongKhai']);
 
 Route::apiResource('addresses', DiaChiController::class);
