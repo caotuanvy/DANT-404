@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\TintucController;
 use App\Http\Controllers\Api\DiaChiController;
 use App\Http\Controllers\Api\IntroduceController;
 
+
 // Auth & User
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -49,16 +50,13 @@ Route::put('/products/{id}/toggle-noi-bat', [ProductController::class, 'toggleNo
 
 // Product Images
 Route::post('/products/{product_id}/images', [ProductImageController::class, 'store']);
+
 Route::delete('/products/{product_id}/images/{image_id}', [ProductImageController::class, 'destroy']);
 
 // Categories
 Route::get('/categories', [CategoryController::class, 'index']);
 
 
-Route::delete('/products/{product_id}/images/{image_id}', [ProductImageController::class, 'destroy']);
-
-Route::post('/products/{product_id}/images', [ProductImageController::class, 'store']);
-
 // Auth & User
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -94,7 +92,6 @@ Route::put('/products/{id}/toggle-noi-bat', [ProductController::class, 'toggleNo
 // Product Images
 Route::post('/products/{product_id}/images', [ProductImageController::class, 'store']);
 Route::delete('/products/{product_id}/images/{image_id}', [ProductImageController::class, 'destroy']);
-
 
 Route::post('/categories', [CategoryController::class, 'store']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
@@ -144,6 +141,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/users', [UserController::class, 'index']);
 Route::delete('/users/{id}', [UserController::class, 'destroy']);
 Route::put('/users/{id}', [UserController::class, 'update']);
+
 
 // Danh mục tin tức
 Route::get('/danh-muc-tin-tuc', [DanhMucTtController::class, 'show']);
@@ -211,6 +209,7 @@ Route::get('/dia_chi/nguoi_dung/{nguoi_dung_id}', [DiaChiController::class, 'ind
 Route::post('/dia_chi', [DiaChiController::class, 'store']);
 Route::put('/dia_chi/{id}', [DiaChiController::class, 'update']);
 
+
 // Slide Show (admin)
 Route::prefix('admin')->group(function () {
 
@@ -225,7 +224,6 @@ Route::prefix('admin')->group(function () {
     Route::post('slide/rename', [SlideShowController::class, 'rename']);
 
 });
-
 
 
 // Slide Show (admin)

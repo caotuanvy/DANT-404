@@ -99,6 +99,7 @@ const routes = [
       {
         path: 'tintuc',
         component: () => import('../components/admin/TinTuc.vue'),
+        component: () => import('../components/admin/Tintuc.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       },
       {
