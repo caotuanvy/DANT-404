@@ -11,6 +11,7 @@ import ChangePassword from '../components/user/ChangePassword.vue';
 import axios from 'axios';
 
 
+
 const routes = [
   { path: '/', component: Home },
   { path: '/infor', component: Infor },
@@ -19,6 +20,12 @@ const routes = [
     name: 'KichHoat',
     component: () => import('../components/user/KichHoatTaiKhoan.vue')
   },
+  {
+  path: '/tin-tuc',
+  name: 'TinTucCongKhai',
+  component: () => import('../components/user/Publicnews.vue')
+  },
+
 
   {
     path: '/user', // Route cha cho các trang người dùng
@@ -95,11 +102,14 @@ const routes = [
         component: () => import('../views/admin/AddProduct.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       },
+      { path: '/admin/categories/:id/edit',
+      component: () => import('../views/admin/categories/EditCategories.vue')},
       {
-        path: '/admin/danh-muc-tin-tuc/:id/edit',
-        name: 'EditDmTinTuc',
-        component: () => import('../views/admin/danhmuctt/Editdanhmuctt.vue'),
-        meta: { requiresAuth: true, role: 'admin' }
+
+      path: '/admin/danh-muc-tin-tuc/:id/edit',
+      name: 'EditDmTinTuc',
+      component: () => import('../views/admin/danhmuctt/Editdanhmuctt.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
       },
       {
         path: '/admin/danh-muc-tin-tuc/add',
@@ -108,10 +118,16 @@ const routes = [
         meta: { requiresAuth: true, role: 'admin' }
       },
       {
-        path: '/admin/tintuc/add',
-        name: 'AddTintuc',
-        component: () => import('../views/admin/Tintuc/Addtintuc.vue'),
-        meta: { requiresAuth: true, role: 'admin' }
+      path: '/admin/danh-muc-tin-tuc/:id',
+      name: 'XemDanhMucTinTuc',
+      component: () => import('../views/admin/danhmuctt/Xemdanhmuctintic.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
+      path: '/admin/tintuc/add',
+      name: 'AddTintuc',
+      component: () => import('../views/admin/Tintuc/Addtintuc.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
       },
       {
         path: '/admin/tintuc/:id/edit',
@@ -119,8 +135,33 @@ const routes = [
         component: () => import('../views/admin/Tintuc/Edittintuc.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       },
+      {
+      path: '/admin/tintuc/:id',
+      name: 'XemTintuc',
+      component: () => import('../views/admin/Tintuc/Xemtintuc.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+      },
 
 
+      // Vỹ
+      {
+        path: 'introduce',
+        name: 'introduce',
+        component: () => import('../components/admin/IntroduceList.vue'),
+        meta: { requiresAuth: true, role: 'admin' }
+      },
+      
+      {
+         path: '/admin/trang-tinh/:slug',
+        name: 'introduce-detail',
+        component: () => import('../components/introduce/IntroduceDetail.vue'),
+        meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
+        path: '/admin/trang-tinh/add',
+        name: 'introduce-add',
+        component: () => import('../components/introduce/IntroduceAdd.vue'),
+      }
     ]
   },
   {
@@ -146,7 +187,26 @@ const routes = [
     name: 'CategoryProducts',
     component: () => import('../components/admin/CategoriesProduct.vue')
   },
+  {
+  path: '/gioi-thieu',
+  name: 'gioi-thieu',
+  component: () => import('../components/user/ISV.vue')
+  },
 
+
+  
+  {
+  path: '/admin/tintuc/add',
+  name: 'AddTintuc',
+  component: () => import('../views/admin/Tintuc/Addtintuc.vue'),
+  meta: { requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: '/admin/tintuc/:id/edit',
+    name: 'EditTintuc',
+    component: () => import('../views/admin/Tintuc/Edittintuc.vue'),
+    meta: { requiresAuth: true, role: 'admin' }
+  },
 
 
   {

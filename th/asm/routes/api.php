@@ -68,22 +68,41 @@ Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
 Route::get('/users', [UserController::class, 'index']);
 Route::delete('/users/{id}', [UserController::class, 'destroy']);
 Route::put('/users/{id}', [UserController::class, 'update']);
-
 // Danh mục tin tức
+Route::get('/danh-muc-tin-tuc', [DanhMucTtController::class, 'show']);
 Route::get('/danh-muc-tin-tuc', [DanhMucTtController::class, 'index']);
 Route::get('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'show']);
 Route::post('/danh-muc-tin-tuc', [DanhMucTtController::class, 'store']);
 Route::put('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'update']);
 Route::delete('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'destroy']);
+Route::post('/danh-muc-tin-tuc', [DanhMucTtController::class, 'store']);
+Route::get('/xemdanhmuc-admin/{id}', [DanhMucTtController::class, 'xemChiTietDanhMucAdmin']);
 
+// vỹ
+Route::post('products/{id}/images', [ProductImageController::class, 'store']);
+
+Route::prefix('admin')->group(function () {
+    Route::get('slide', [SlideShowController::class, 'index']);
+    Route::get('slide/{id}', [SlideShowController::class, 'show']);
+    Route::post('slide/{id}', [SlideShowController::class, 'update']);
+});
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/products/{id}/variants', [SanPhamBienTheController::class, 'index']);
+    Route::post('/products/{id}/variants', [SanPhamBienTheController::class, 'store']);
+    Route::delete('/variants/{id}', [SanPhamBienTheController::class, 'destroy']);
+    Route::delete('/product-images/{id}', [ProductImageController::class, 'destroy']);
+});
 // Tin tức
 Route::get('/tintuc', [TintucController::class, 'index']);
 Route::get('/tintuc/{id}', [TintucController::class, 'show']);
 Route::post('/tintuc', [TintucController::class, 'store']);
 Route::put('/tintuc/{id}', [TintucController::class, 'update']);
 Route::delete('/tintuc/{id}', [TintucController::class, 'destroy']);
-
 // Địa chỉ người dùng
+Route::post('/tintuc', [TintucController::class, 'store']);
+Route::get('/xemtintuc-admin/{id}', [TintucController::class, 'xemchitiettintucadmin']);
+Route::get('/tintuc-ck', [TintucController::class, 'tintucCongKhai']);
+Route::get('/tintuc-cong-khai/{id}', [TintucController::class, 'chitietCongKhai']);
 Route::apiResource('addresses', DiaChiController::class);
 Route::get('/dia_chi/nguoi_dung/{nguoi_dung_id}', [DiaChiController::class, 'index'])->name('dia_chi.by_user');
 Route::post('/dia_chi', [DiaChiController::class, 'store']);

@@ -11,7 +11,7 @@
   </div>
 
   <div class="myheader-right">
-    <span class="myheader-version">VERSION 1.0.5</span>
+    <span class="myheader-version">VERSION 1.5.4</span>
     <i class="myheader-icon bi bi-person-circle"></i>
   </div>
 </header>
@@ -78,7 +78,8 @@ const back = () => {
 const menu = [
   {
     label: 'Quản lý sản phẩm',
-    items: [{ to: '/admin/products', label: 'Sản phẩm', icon: 'bi bi-box' }],
+    items: [{ to: '/admin/products', label: 'Sản phẩm', icon: 'bi bi-box' },
+    { to: '/admin/Category', label: 'Danh mục sản phẩm', icon: 'bi bi-newspaper' },]
   },
   {
     label: 'Quản lý đơn hàng',
@@ -108,6 +109,9 @@ const menu = [
     label: 'Quản lý trang tĩnh',
     items: [
       { to: '/admin/slide', label: 'Slide Show', icon: 'bi bi-calendar-week' },
+      { to: '/admin/introduce',label : 'Trang Tĩnh', icon: 'bi bi-info-circle' },
+      
+      
     ],
   },
 ];
