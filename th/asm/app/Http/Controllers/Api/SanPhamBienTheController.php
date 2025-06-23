@@ -65,6 +65,7 @@ class SanPhamBienTheController extends Controller
         ]);
     }
 
+
     public function destroy($id)
 {
     $variant = SanPhamBienThe::find($id);

@@ -13,16 +13,54 @@ use App\Http\Controllers\Api\SlideShowController;
 use App\Http\Controllers\Api\SanPhamBienTheController;
 use App\Http\Controllers\Api\TintucController;
 use App\Http\Controllers\Api\DiaChiController;
+<<<<<<< HEAD
 use App\Http\Controllers\Api\IntroduceController;
 Route::delete('/products/{product_id}/images/{image_id}', [ProductImageController::class, 'destroy']);
 
 Route::post('/products/{product_id}/images', [ProductImageController::class, 'store']);
+=======
+
+// Auth & User
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::get('/kich-hoat/{token}', [AuthController::class, 'activate']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+
+    // User Orders
+    Route::get('/user/orders', [OrderController::class, 'userOrders']);
+    Route::get('/user/orders/{id}', [OrderController::class, 'getByUser']);
+
+    // Product Variants
+    Route::get('/products/{id}/variants', [SanPhamBienTheController::class, 'index']);
+    Route::post('/products/{id}/variants', [SanPhamBienTheController::class, 'store']);
+    Route::delete('/variants/{id}', [SanPhamBienTheController::class, 'destroy']);
+
+    // Protected Product Images (delete)
+    Route::delete('/product-images/{id}', [ProductImageController::class, 'destroy']);
+});
+
+// Product
+Route::get('/products', [ProductController::class, 'index']);
+Route::post('/products', [ProductController::class, 'store']);
+Route::get('/products/{id}', [ProductController::class, 'show']);
+Route::put('/products/{id}', [ProductController::class, 'update']);
+Route::delete('/products/{id}', [ProductController::class, 'destroy']);
+Route::put('/products/{id}/toggle-noi-bat', [ProductController::class, 'toggleNoiBat']);
+
+// Product Images
+Route::post('/products/{product_id}/images', [ProductImageController::class, 'store']);
+Route::delete('/products/{product_id}/images/{image_id}', [ProductImageController::class, 'destroy']);
+>>>>>>> 2621e14 (Khôi phục toàn bộ nội dung từ anxinhdep1)
 
 Route::post('/categories', [CategoryController::class, 'store']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
 Route::put('/categories/{id}', [CategoryController::class, 'update']);
-Route::delete('/categories/{category_id}', [CategoryController::class, 'destroy']);
-Route::get('/categories/{category_id}/products', [CategoryController::class, 'getProductsByCategory']);
+Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
+Route::get('/categories/{id}/products', [CategoryController::class, 'getProductsByCategory']);
 
 
 Route::get('/orders', [OrderController::class, 'index']);
@@ -33,6 +71,13 @@ Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
 Route::get('/users', [UserController::class, 'index']);
 Route::delete('/users/{id}', [UserController::class, 'destroy']);
 
+<<<<<<< HEAD
+=======
+// Users
+Route::get('/users', [UserController::class, 'index']);
+Route::delete('/users/{id}', [UserController::class, 'destroy']);
+Route::put('/users/{id}', [UserController::class, 'update']);
+>>>>>>> 2621e14 (Khôi phục toàn bộ nội dung từ anxinhdep1)
 
 
 
@@ -63,8 +108,10 @@ Route::put('/users/{id}', [UserController::class, 'update']);
 Route::get('/danh-muc-tin-tuc', [DanhMucTtController::class, 'show']);
 Route::get('/danh-muc-tin-tuc', [DanhMucTtController::class, 'index']);
 Route::get('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'show']);
+Route::post('/danh-muc-tin-tuc', [DanhMucTtController::class, 'store']);
 Route::put('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'update']);
 Route::delete('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'destroy']);
+<<<<<<< HEAD
 Route::post('/danh-muc-tin-tuc', [DanhMucTtController::class, 'store']);
 Route::get('/xemdanhmuc-admin/{id}', [DanhMucTtController::class, 'xemChiTietDanhMucAdmin']);
 
@@ -82,6 +129,15 @@ Route::prefix('admin')->group(function () {
     Route::post('trang-tinh', [IntroduceController::class, 'store']);
     Route::get('trang-tinh/{slug}', [IntroduceController::class, 'show']);
     Route::get('/products-sell-top', [ProductController::class, 'getTopSelling']);
+=======
+
+// Tin tức
+Route::get('/tintuc', [TintucController::class, 'index']);
+Route::get('/tintuc/{id}', [TintucController::class, 'show']);
+Route::post('/tintuc', [TintucController::class, 'store']);
+Route::put('/tintuc/{id}', [TintucController::class, 'update']);
+Route::delete('/tintuc/{id}', [TintucController::class, 'destroy']);
+>>>>>>> 2621e14 (Khôi phục toàn bộ nội dung từ anxinhdep1)
 
 });
 Route::middleware('auth:sanctum')->group(function () {
@@ -115,6 +171,7 @@ Route::get('/dia_chi/nguoi_dung/{nguoi_dung_id}', [DiaChiController::class, 'ind
 Route::post('/dia_chi', [DiaChiController::class, 'store']);
 Route::put('/dia_chi/{id}', [DiaChiController::class, 'update']);
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 // Slide Show (admin)
 
@@ -134,3 +191,12 @@ Route::prefix('admin')->group(function () {
 
 =======
 >>>>>>> f10599c (aa)
+=======
+
+// Slide Show (admin)
+Route::prefix('admin')->group(function () {
+    Route::get('slide', [SlideShowController::class, 'index']);
+    Route::get('slide/{id}', [SlideShowController::class, 'show']);
+    Route::post('slide/{id}', [SlideShowController::class, 'update']);
+});
+>>>>>>> 2621e14 (Khôi phục toàn bộ nội dung từ anxinhdep1)

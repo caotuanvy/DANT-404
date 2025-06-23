@@ -223,11 +223,11 @@ const handleLogin = async () => {
 
 
 
-        if (user.vai_tro_id === 1) {
-            router.push('/');
-        } else {
-            router.push('/');
-        }
+        // if (user.vai_tro_id === 1) {
+        //     router.push('/');
+        // } else {
+        //     router.push('/');
+        // }
     } catch (err) {
         loginError.value = err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại email và mật khẩu.';
     }

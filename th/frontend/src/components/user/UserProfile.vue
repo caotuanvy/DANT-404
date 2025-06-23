@@ -1,69 +1,3 @@
-<template>
-    <div class="content-area container">
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <span class="user-name">Anh <b>{{ userName }}</b></span>
-            </div>
-            <ul>
-                <li class="active"><a href="#"><i class="fas fa-info-circle"></i> Thông tin và địa chỉ</a></li>
-                <li><a href="#"><i class="fas fa-clipboard-list"></i> Đơn hàng đã mua</a></li>
-                <li><a href="#"><i class="fas fa-lock"></i> Thay đổi mật khẩu</a></li>
-            </ul>
-            <button class="logout-btn" @click="handleLogout">Đăng Xuất</button>
-        </aside>
-
-        <main class="main-content">
-            <h1>Thông tin tài khoản</h1>
-            <hr>
-            <div class="account-details-section">
-                <h2>THÔNG TIN CÁ NHÂN</h2>
-                <p>{{ userName }} - {{ userPhone }} <a href="#" class="edit-link"><i class="fas fa-edit"></i>Sửa</a></p>
-            </div>
-            <hr>
-            <div class="shipping-address-section">
-                <h2>ĐỊA CHỈ NHẬN HÀNG</h2>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="province">Tỉnh/Thành phố</label>
-                        <select id="province" v-model="selectedProvinceCode">
-                            <option value="">Chọn Tỉnh/Thành phố</option>
-                            <option v-for="province in provinces" :key="province.code" :value="province.code">
-                                {{ province.name_with_type || province.name }}
-                            </option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="district">Quận/Huyện</label>
-                        <select id="district" v-model="selectedDistrictCode" :disabled="!selectedProvinceCode">
-                            <option value="">Chọn Quận/Huyện</option>
-                            <option v-for="district in districts" :key="district.code" :value="district.code">
-                                {{ district.name_with_type || district.name }}
-                            </option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="ward">Phường/Xã</label>
-                        <select id="ward" v-model="selectedWardCode" :disabled="!selectedDistrictCode">
-                            <option value="">Chọn Phường/Xã</option>
-                            <option v-for="ward in wards" :key="ward.code" :value="ward.code">
-                                {{ ward.name_with_type || ward.name }}
-                            </option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="address">Số Nhà, Tên Đường*</label>
-                        <input type="text" id="address" v-model="streetAddress">
-                    </div>
-                </div>
-                <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
-                <button class="update-btn" @click="handleUpdateAddress">CẬP NHẬT</button>
-            </div>
-        </main>
-    </div>
-</template>
-
 <script setup>
 import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
@@ -83,6 +17,9 @@ const currentAddressId = ref(null); // Dữ liệu cho ID địa chỉ hiện t�
 // Biến để hiển thị thông báo lỗi
 const errorMessage = ref('');
 
+// Biến trạng thái để kiểm soát nút CẬP NHẬT
+const isLoadingAddressData = ref(false);
+
 // Dữ liệu cho các tỉnh/thành phố, quận/huyện, phường/xã thả xuống
 const provinces = ref([]);
 const districts = ref([]);
@@ -91,37 +28,41 @@ const wards = ref([]);
 const router = useRouter(); // Khởi tạo router
 
 // Hàm để phân tích chuỗi địa chỉ
+// Giả định thứ tự trong DB là: Tỉnh, Huyện, Xã, Đường (phần còn lại)
 const parseAddress = (fullAddress) => {
     if (!fullAddress) {
         return { street: '', ward: '', district: '', province: '' };
     }
 
-    // Tách chuỗi bằng dấu phẩy
     const parts = fullAddress.split(',').map(part => part.trim());
 
-    let street = '';
-    let ward = '';
-    let district = '';
     let province = '';
+    let district = '';
+    let ward = '';
+    let street = '';
 
-    // Logic phân tích ngược từ cuối để đảm bảo chính xác (tỉnh -> huyện -> xã -> đường)
-    if (parts.length >= 1) {
-        province = parts.pop(); // Phần tử cuối cùng thường là Tỉnh/Thành phố
-        if (province.startsWith('TP.')) { // Xử lý trường hợp "TP. HCM"
-            province = province.substring(3).trim();
-        }
-    }
-    if (parts.length >= 1) {
-        district = parts.pop(); // Kế cuối là Quận/Huyện
-    }
-    if (parts.length >= 1) {
-        ward = parts.pop(); // Tiếp theo là Phường/Xã
-    }
-    if (parts.length >= 1) {
-        street = parts.join(', '); // Phần còn lại là số nhà, tên đường
+    // Cần cẩn thận với định dạng chuỗi nếu nó không tuân theo một quy tắc nghiêm ngặt.
+    // Ví dụ: "Tỉnh A, Huyện B, Xã C, Số 123 Đường D"
+    // Hoặc "Số 123 Đường D, Xã C, Huyện B, Tỉnh A" (phổ biến hơn ở VN)
+    // Dựa trên yêu cầu của bạn "thứ tự trên database là tỉnh huyện xã đường",
+    // chúng ta sẽ phân tích từ đầu chuỗi.
+    if (parts.length >= 4) { // Ít nhất phải có Tỉnh, Huyện, Xã, và một phần của Đường
+        province = parts[0];
+        district = parts[1];
+        ward = parts[2];
+        street = parts.slice(3).join(', '); // Phần còn lại là số nhà, tên đường
+    } else if (parts.length === 3) { // Tỉnh, Huyện, Xã
+        province = parts[0];
+        district = parts[1];
+        ward = parts[2];
+    } else if (parts.length === 2) { // Tỉnh, Huyện
+        province = parts[0];
+        district = parts[1];
+    } else if (parts.length === 1) { // Chỉ có Tỉnh
+        province = parts[0];
     }
 
-    // Loại bỏ tiền tố nếu có
+    // Loại bỏ tiền tố (chú ý: việc này có thể gây sai lệch nếu tên tỉnh/huyện/xã tự nhiên có chứa từ này)
     ward = ward.replace(/^(Phường|Xã)\s/i, '');
     district = district.replace(/^(Quận|Huyện|Thành phố)\s/i, '');
     province = province.replace(/^(Tỉnh|Thành phố)\s/i, '');
@@ -129,56 +70,33 @@ const parseAddress = (fullAddress) => {
     return { street, ward, district, province };
 };
 
-// Hàm để điền dữ liệu vào các select box (cập nhật để hỗ trợ chọn option đã có)
-async function populateSelect(selectRef, dataArray, defaultOptionText, selectedValue = null) {
-    selectRef.value = dataArray || []; // Gán trực tiếp mảng dữ liệu vào ref
-    if (selectRef.value.length === 0) {
-        // Nếu không có dữ liệu, đảm bảo select bị vô hiệu hóa
-        if (selectRef === districts) {
-            selectedDistrictCode.value = '';
-        } else if (selectRef === wards) {
-            selectedWardCode.value = '';
-        }
-        return;
-    }
-
-    // Đặt giá trị mặc định nếu có selectedValue
-    if (selectedValue) {
-        if (selectRef === provinces) {
-            selectedProvinceCode.value = selectedValue;
-        } else if (selectRef === districts) {
-            selectedDistrictCode.value = selectedValue;
-        } else if (selectRef === wards) {
-            selectedWardCode.value = selectedValue;
-        }
-    }
+// Hàm để điền dữ liệu vào các select box
+async function populateSelect(selectRef, dataArray, selectedValue = null) {
+    selectRef.value = dataArray || [];
+    // Không cần gán selectedValue ở đây, v-model sẽ tự động làm điều đó
+    // khi dataArray được cập nhật và selected...Code được gán giá trị
 }
 
 // Tải dữ liệu Tỉnh/Thành phố
-async function fetchProvinces(selectAndPopulate = true) {
+async function fetchProvinces() {
     try {
         const response = await fetch('https://vn-public-apis.fpo.vn/provinces/getAll?limit=-1');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const apiData = await response.json();
-        if (selectAndPopulate) {
-            await populateSelect(provinces, apiData.data.data, "Chọn Tỉnh/Thành phố");
-        } else {
-            provinces.value = apiData.data.data;
-        }
+        await populateSelect(provinces, apiData.data.data);
     } catch (error) {
         console.error('Lỗi khi tải danh sách Tỉnh/Thành phố:', error);
+        provinces.value = []; // Đảm bảo làm rỗng nếu có lỗi
     }
 }
 
 // Tải dữ liệu Quận/Huyện dựa trên mã Tỉnh đã chọn
-async function fetchDistricts(provinceCode, selectAndPopulate = true) {
+async function fetchDistricts(provinceCode) {
     if (!provinceCode) {
         districts.value = [];
-        selectedDistrictCode.value = '';
-        wards.value = [];
-        selectedWardCode.value = '';
+        wards.value = []; // Reset wards khi không có provinceCode
         return;
     }
     try {
@@ -187,22 +105,18 @@ async function fetchDistricts(provinceCode, selectAndPopulate = true) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const apiData = await response.json();
-        if (selectAndPopulate) {
-            await populateSelect(districts, apiData.data.data, "Chọn Quận/Huyện");
-        } else {
-            districts.value = apiData.data.data;
-        }
+        await populateSelect(districts, apiData.data.data);
     } catch (error) {
         console.error('Lỗi khi tải danh sách Quận/Huyện:', error);
         districts.value = [];
+        wards.value = []; // Reset wards khi có lỗi district
     }
 }
 
 // Tải dữ liệu Phường/Xã dựa trên mã Huyện đã chọn
-async function fetchWards(districtCode, selectAndPopulate = true) {
+async function fetchWards(districtCode) {
     if (!districtCode) {
         wards.value = [];
-        selectedWardCode.value = '';
         return;
     }
     try {
@@ -211,11 +125,7 @@ async function fetchWards(districtCode, selectAndPopulate = true) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const apiData = await response.json();
-        if (selectAndPopulate) {
-            await populateSelect(wards, apiData.data.data, "Chọn Phường/Xã");
-        } else {
-            wards.value = apiData.data.data;
-        }
+        await populateSelect(wards, apiData.data.data);
     } catch (error) {
         console.error('Lỗi khi tải danh sách Phường/Xã:', error);
         wards.value = [];
@@ -223,14 +133,29 @@ async function fetchWards(districtCode, selectAndPopulate = true) {
 }
 
 // Watchers để tự động tải dữ liệu khi lựa chọn thay đổi
-watch(selectedProvinceCode, (newCode) => {
-    fetchDistricts(newCode, true); // Gọi trực tiếp
-    errorMessage.value = ''; // Xóa lỗi khi người dùng thay đổi lựa chọn
+watch(selectedProvinceCode, async (newCode, oldCode) => {
+    // Chỉ chạy khi mã tỉnh thực sự thay đổi hoặc từ rỗng sang có giá trị
+    if (newCode !== oldCode) {
+        isLoadingAddressData.value = true; // Bắt đầu tải, vô hiệu hóa nút
+        errorMessage.value = ''; // Xóa lỗi cũ
+        selectedDistrictCode.value = ''; // Reset Quận/Huyện ngay lập tức
+        selectedWardCode.value = '';    // Reset Phường/Xã ngay lập tức
+
+        await fetchDistricts(newCode); // Tải quận/huyện cho tỉnh mới
+        isLoadingAddressData.value = false; // Tải xong, kích hoạt lại nút
+    }
 });
 
-watch(selectedDistrictCode, (newCode) => {
-    fetchWards(newCode, true); // Gọi trực tiếp
-    errorMessage.value = ''; // Xóa lỗi khi người dùng thay đổi lựa chọn
+watch(selectedDistrictCode, async (newCode, oldCode) => {
+    // Chỉ chạy khi mã huyện thực sự thay đổi hoặc từ rỗng sang có giá trị
+    if (newCode !== oldCode) {
+        isLoadingAddressData.value = true; // Bắt đầu tải, vô hiệu hóa nút
+        errorMessage.value = ''; // Xóa lỗi cũ
+        selectedWardCode.value = ''; // Reset Phường/Xã ngay lập tức
+
+        await fetchWards(newCode); // Tải phường/xã cho huyện mới
+        isLoadingAddressData.value = false; // Tải xong, kích hoạt lại nút
+    }
 });
 
 watch(selectedWardCode, () => {
@@ -246,14 +171,19 @@ onMounted(async () => {
     const storedUser = localStorage.getItem('user');
     if (!storedUser) {
         router.push('/');
-        return; // Dừng lại nếu không có người dùng
+        return;
     }
 
     const user = JSON.parse(storedUser);
     userName.value = user.ho_ten || 'Chưa có tên';
     userPhone.value = user.sdt || 'Chưa có số điện thoại';
 
+    isLoadingAddressData.value = true; // Vô hiệu hóa nút trong quá trình tải ban đầu
+
     try {
+        // Luôn tải danh sách tỉnh trước
+        await fetchProvinces();
+
         const response = await axios.get(`/dia_chi/nguoi_dung/${user.nguoi_dung_id}`);
 
         if (response.data && response.data.length > 0) {
@@ -264,28 +194,52 @@ onMounted(async () => {
             const { street, ward, district, province } = parseAddress(userAddress);
             streetAddress.value = street;
 
-            await fetchProvinces(false); // Fetch all provinces first without populating select
-            const foundProvince = provinces.value.find(p => p.name_with_type.toLowerCase().includes(province.toLowerCase()) || p.name.toLowerCase().includes(province.toLowerCase()));
+            // Tìm và gán mã tỉnh
+            const foundProvince = provinces.value.find(p =>
+                p.name_with_type.toLowerCase().includes(province.toLowerCase()) ||
+                p.name.toLowerCase().includes(province.toLowerCase())
+            );
+
             if (foundProvince) {
                 selectedProvinceCode.value = foundProvince.code;
-                await fetchDistricts(selectedProvinceCode.value, false);
-                const foundDistrict = districts.value.find(d => d.name_with_type.toLowerCase().includes(district.toLowerCase()) || d.name.toLowerCase().includes(district.toLowerCase()));
-                if (foundDistrict) {
-                    selectedDistrictCode.value = foundDistrict.code;
-                    await fetchWards(selectedDistrictCode.value, false);
-                    const foundWard = wards.value.find(w => w.name_with_type.toLowerCase().includes(ward.toLowerCase()) || w.name.toLowerCase().includes(ward.toLowerCase()));
-                    if (foundWard) {
-                        selectedWardCode.value = foundWard.code;
-                    } else {
-                        console.log('Không tìm thấy phường/xã khớp:', ward);
-                    }
-                } else {
-                    console.log('Không tìm thấy quận/huyện khớp:', district);
-                }
-            } else {
-                console.log('Không tìm thấy tỉnh/thành phố khớp:', province);
-            }
 
+                // Tải danh sách huyện cho tỉnh đã tìm thấy
+                // Watcher selectedProvinceCode sẽ tự động fetchDistricts,
+                // nhưng chúng ta cần đảm bảo nó hoàn thành trước khi tìm huyện
+                // Dùng Promise.all để chờ tất cả các promise bên trong hoàn thành
+                await Promise.all([
+                    (async () => {
+                        await fetchDistricts(selectedProvinceCode.value); // Fetch districts
+                        const foundDistrict = districts.value.find(d =>
+                            d.name_with_type.toLowerCase().includes(district.toLowerCase()) ||
+                            d.name.toLowerCase().includes(district.toLowerCase())
+                        );
+                        if (foundDistrict) {
+                            selectedDistrictCode.value = foundDistrict.code;
+
+                            // Tải danh sách xã cho huyện đã tìm thấy
+                            await Promise.all([
+                                (async () => {
+                                    await fetchWards(selectedDistrictCode.value); // Fetch wards
+                                    const foundWard = wards.value.find(w =>
+                                        w.name_with_type.toLowerCase().includes(ward.toLowerCase()) ||
+                                        w.name.toLowerCase().includes(ward.toLowerCase())
+                                    );
+                                    if (foundWard) {
+                                        selectedWardCode.value = foundWard.code;
+                                    } else {
+                                        console.warn('Không tìm thấy phường/xã khớp:', ward);
+                                    }
+                                })()
+                            ]);
+                        } else {
+                            console.warn('Không tìm thấy quận/huyện khớp:', district);
+                        }
+                    })()
+                ]);
+            } else {
+                console.warn('Không tìm thấy tỉnh/thành phố khớp:', province);
+            }
         } else {
             console.log('Người dùng chưa có địa chỉ nào trong database, hoặc API trả về mảng rỗng.');
             currentAddressId.value = null; // Đảm bảo là null nếu không có địa chỉ
@@ -293,12 +247,8 @@ onMounted(async () => {
     } catch (error) {
         console.error('LỖI KHI TẢI ĐỊA CHỈ NGƯỜI DÙNG TRONG onMounted:', error.response?.data || error.message);
         currentAddressId.value = null; // Đảm bảo là null nếu có lỗi
-    }
-
-    // Luôn fetch provinces ban đầu để dropdown không rỗng ngay cả khi không có địa chỉ
-    if (provinces.value.length === 0) {
-        console.log('Lần đầu tải provinces...');
-        await fetchProvinces(true);
+    } finally {
+        isLoadingAddressData.value = false; // Bất kể thành công hay thất bại, kích hoạt lại nút
     }
 });
 
@@ -339,50 +289,53 @@ const handleUpdateAddress = async () => {
     const districtName = districts.value.find(d => d.code === selectedDistrictCode.value)?.name_with_type || '';
     const wardName = wards.value.find(w => w.code === selectedWardCode.value)?.name_with_type || '';
 
-    // Tạo chuỗi địa chỉ đầy đủ
-    // Đảm bảo không có dấu phẩy thừa nếu một phần tử nào đó rỗng
+    // Tạo chuỗi địa chỉ đầy đủ theo thứ tự: Tỉnh, Huyện, Xã, Đường (đúng theo yêu cầu của bạn)
     const addressParts = [
-        streetAddress.value.trim(),
-        wardName,
+        provinceName,
         districtName,
-        provinceName
-    ].filter(part => part); // Lọc bỏ các phần tử rỗng
+        wardName,
+        streetAddress.value.trim()
+    ].filter(part => part); // Vẫn lọc bỏ các phần tử rỗng
 
-    const fullAddress = addressParts.join(', ');
+    const fullAddress = addressParts.join(', '); // Chuỗi địa chỉ sẽ được ghép theo thứ tự này
 
     const storedUser = localStorage.getItem('user');
     if (!storedUser) {
         errorMessage.value = 'Vui lòng đăng nhập để cập nhật địa chỉ.';
-        router.push('/'); // Có thể chuyển hướng nếu không có người dùng
+        router.push('/');
         return;
     }
     const user = JSON.parse(storedUser);
     const userId = user.nguoi_dung_id;
 
     try {
+        isLoadingAddressData.value = true; // Vô hiệu hóa nút khi đang gửi dữ liệu
         if (currentAddressId.value) {
             // Cập nhật địa chỉ hiện có
             console.log(`Đang cập nhật địa chỉ ID: ${currentAddressId.value} cho người dùng ID: ${userId} với địa chỉ: ${fullAddress}`);
             await axios.put(`/dia_chi/${currentAddressId.value}`, {
                 nguoi_dung_id: userId,
                 dia_chi: fullAddress,
-                mac_dinh: isDefaultAddress.value // Thêm trường mặc định
+                mac_dinh: isDefaultAddress.value
             });
             Swal.fire({
-                title: 'Thêm địa chỉ mới thành công!',
+                title: 'Cập nhật địa chỉ thành công!',
                 icon: 'success',
                 confirmButtonText: 'Ok'
-            }); // Thông báo thành công bằng SweetAlert2 
+            });
         } else {
             // Tạo địa chỉ mới nếu chưa có
             console.log(`Đang tạo địa chỉ mới cho người dùng ID: ${userId} với địa chỉ: ${fullAddress}`);
             const response = await axios.post('/dia_chi', {
                 nguoi_dung_id: userId,
                 dia_chi: fullAddress,
-                mac_dinh: isDefaultAddress.value // Thêm trường mặc định
+                mac_dinh: isDefaultAddress.value
             });
-            alert('Thêm địa chỉ mới thành công!'); // Thông báo thành công bằng alert
-            // Sau khi POST thành công, gán ID của địa chỉ mới vào currentAddressId
+            Swal.fire({
+                title: 'Thêm địa chỉ mới thành công!',
+                icon: 'success',
+                confirmButtonText: 'Ok'
+            });
             if (response.data && response.data.id_dia_chi) {
                 currentAddressId.value = response.data.id_dia_chi;
                 console.log('Đã thêm địa chỉ mới, gán currentAddressId là:', currentAddressId.value);
@@ -391,9 +344,61 @@ const handleUpdateAddress = async () => {
     } catch (error) {
         console.error('Lỗi khi cập nhật/thêm địa chỉ:', error.response?.data || error.message);
         errorMessage.value = 'Cập nhật địa chỉ thất bại. Vui lòng thử lại.';
+    } finally {
+        isLoadingAddressData.value = false; // Kích hoạt lại nút sau khi hoàn tất (thành công hoặc thất bại)
     }
 };
 </script>
+
+<template>
+    <h1>Thông tin tài khoản</h1>
+    <hr>
+    <div class="account-details-section">
+        <h2>THÔNG TIN CÁ NHÂN</h2>
+        <p>{{ userName }} - {{ userPhone }} <a href="#" class="edit-link"><i class="fas fa-edit"></i>Sửa</a></p>
+    </div>
+    <hr>
+    <div class="shipping-address-section">
+        <h2>ĐỊA CHỈ NHẬN HÀNG</h2>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="province">Tỉnh/Thành phố</label>
+                <select id="province" v-model="selectedProvinceCode">
+                    <option value="">Chọn Tỉnh/Thành phố</option>
+                    <option v-for="province in provinces" :key="province.code" :value="province.code">
+                        {{ province.name_with_type || province.name }}
+                    </option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="district">Quận/Huyện</label>
+                <select id="district" v-model="selectedDistrictCode" :disabled="!selectedProvinceCode || isLoadingAddressData">
+                    <option value="">Chọn Quận/Huyện</option>
+                    <option v-for="district in districts" :key="district.code" :value="district.code">
+                        {{ district.name_with_type || district.name }}
+                    </option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="ward">Phường/Xã</label>
+                <select id="ward" v-model="selectedWardCode" :disabled="!selectedDistrictCode || isLoadingAddressData">
+                    <option value="">Chọn Phường/Xã</option>
+                    <option v-for="ward in wards" :key="ward.code" :value="ward.code">
+                        {{ ward.name_with_type || ward.name }}
+                    </option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="address">Số Nhà, Tên Đường*</label>
+                <input type="text" id="address" v-model="streetAddress" :disabled="isLoadingAddressData">
+            </div>
+        </div>
+        <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+        <button class="update-btn" @click="handleUpdateAddress" :disabled="isLoadingAddressData">CẬP NHẬT</button>
+    </div>
+</template>
 
 <style scoped>
 /* Thêm style cho thông báo lỗi */
@@ -500,7 +505,7 @@ const handleUpdateAddress = async () => {
     background-color: white;
     padding: 30px;
     border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+
 }
 
 .main-content h1 {
@@ -581,28 +586,12 @@ const handleUpdateAddress = async () => {
     padding-right: 30px;
 }
 
-.shipping-address-section .form-group input:focus,
-.shipping-address-section .form-group select:focus {
-    border-color: black;
-    outline: none;
-}
-
-.shipping-address-section .checkbox-group {
-    display: flex;
-    align-items: center;
-    margin-top: 20px;
-    margin-bottom: 25px;
-}
-
-.shipping-address-section .checkbox-group input[type="checkbox"] {
-    margin-right: 10px;
-    width: 18px;
-    height: 18px;
-}
-
-.shipping-address-section .checkbox-group label {
-    font-size: 15px;
-    color: var(--text-color);
+/* Thêm style cho disabled state */
+.shipping-address-section .form-group select:disabled,
+.shipping-address-section .form-group input:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+    opacity: 0.7;
 }
 
 .shipping-address-section .update-btn {
@@ -622,6 +611,13 @@ const handleUpdateAddress = async () => {
 .shipping-address-section .update-btn:hover {
     background-color: #145eb1;
 }
+
+/* Style cho nút khi disabled */
+.shipping-address-section .update-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
 
 /* Global CSS Variables (cần được đặt ở App.vue hoặc file CSS global nếu muốn dùng chung) */
 :root {
