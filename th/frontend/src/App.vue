@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="app" class="layout-wrapper">
     <header class="top-bar" v-if="!isAdminRoute">
       <div class="container">
         <div class="logo-search">
@@ -20,10 +20,9 @@
             <div class="user-menu-wrapper">
               <div class="user-info" @click="toggleUserMenu">
                 <i class="fas fa-user"></i>
-                <span
-                  >Xin chào, <strong>{{ userName }}</strong
-                  >!</span
-                >
+                <span>
+  Xin chào, <strong>{{ userName.length > 10 ? userName.slice(0, 10) + '...' : userName }}</strong>!
+</span>
                 <i class="fas fa-caret-down"></i>
               </div>
               <div class="user-dropdown-menu" v-if="showUserMenu">
@@ -78,7 +77,9 @@
       </div>
     </nav>
 
-    <router-view />
+    <main class="page-content">
+      <router-view />
+    </main>
 
     <footer class="footer" v-if="!isAdminRoute">
       <div class="container">
@@ -662,5 +663,14 @@ body {
   color: #007bff;
   /* Màu sắc nổi bật cho tên người dùng */
   font-weight: bold;
+}
+.layout-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 150vh;
+}
+
+.page-content {
+  flex: 1;
 }
 </style>

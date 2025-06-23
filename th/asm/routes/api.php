@@ -23,6 +23,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+    Route::put('/users/{id}/change-password', [UserController::class, 'changePassword']);
 
     // User Orders
     Route::get('/user/orders', [OrderController::class, 'userOrders']);
