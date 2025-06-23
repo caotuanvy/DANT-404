@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\SlideShowController;
 use App\Http\Controllers\Api\SanPhamBienTheController;
 use App\Http\Controllers\Api\TintucController;
 use App\Http\Controllers\Api\DiaChiController;
+use App\Http\Controllers\Api\IntroduceController;
 Route::delete('/products/{product_id}/images/{image_id}', [ProductImageController::class, 'destroy']);
 
 Route::post('/products/{product_id}/images', [ProductImageController::class, 'store']);
@@ -74,6 +75,14 @@ Route::prefix('admin')->group(function () {
     Route::get('slide', [SlideShowController::class, 'index']);
     Route::get('slide/{id}', [SlideShowController::class, 'show']);
     Route::post('slide/{id}', [SlideShowController::class, 'update']);
+    Route::get('trang-tinh', [IntroduceController::class, 'index']);
+    Route::post('trang-tinh/update', [IntroduceController::class, 'update']);
+    Route::post('trang-tinh/{id}', [IntroduceController::class, 'updateMeta']);
+    Route::delete('trang-tinh/{id}', [IntroduceController::class, 'destroy']);
+    Route::post('trang-tinh', [IntroduceController::class, 'store']);
+    Route::get('trang-tinh/{slug}', [IntroduceController::class, 'show']);
+    Route::get('/products-sell-top', [ProductController::class, 'getTopSelling']);
+
 });
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/products/{id}/variants', [SanPhamBienTheController::class, 'index']);
