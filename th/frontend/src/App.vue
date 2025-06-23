@@ -16,34 +16,27 @@
             <i class="fas fa-caret-down"></i>
           </div>
 
-          <template v-if="isLoggedIn">
-            <div class="user-menu-wrapper">
-              <div class="user-info" @click="toggleUserMenu">
-                <i class="fas fa-user"></i>
-                <span>
-  Xin chào, <strong>{{ userName.length > 10 ? userName.slice(0, 10) + '...' : userName }}</strong>!
-</span>
-                <i class="fas fa-caret-down"></i>
-              </div>
-              <div class="user-dropdown-menu" v-if="showUserMenu">
-                <ul>
-                  <li @click="navigateToUserInfo">Thông tin tài khoản</li>
-                  <li v-if="userRoleId === 1" @click="navigateToAdmin">Quản lý</li>
-                  <li @click="handleLogout">Đăng xuất</li>
-                    <li><a href="#"><i class="fas fa-bars"></i> Danh mục sản phẩm</a></li>
-                    <li><a href="#">Trang Chủ</a></li>
-                   <li><router-link to="/gioi-thieu">Giới Thiệu</router-link></li>
-                    <li><a href="#">Tin Tức</a></li>
-                    <li><a href="#">Liên Hệ</a></li>
-                </ul>
-              </div>
-            </div>
-          </template>
-          <template v-else>
-            <div class="user-info" @click="showLoginModal = true">
-              <i class="fas fa-user"></i> Đăng nhập
-            </div>
-          </template>
+                    <template v-if="isLoggedIn">
+                        <div class="user-menu-wrapper">
+                            <div class="user-info" @click="toggleUserMenu">
+                                <i class="fas fa-user"></i>
+                                <span>Xin chào, <strong>{{ userName }}</strong>!</span>
+                                <i class="fas fa-caret-down"></i>
+                            </div>
+                            <div class="user-dropdown-menu" v-if="showUserMenu">
+                                <ul>
+                                    <li @click="navigateToUserInfo">Thông tin tài khoản</li>
+                                    <li v-if="userRoleId === 1" @click="navigateToAdmin">Quản lý</li>
+                                    <li @click="handleLogout">Đăng xuất</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </template>
+                    <template v-else>
+                        <div class="user-info" @click="showLoginModal = true">
+                            <i class="fas fa-user"></i> Đăng nhập
+                        </div>
+                    </template>
 
           <div class="cart-info"><i class="fas fa-shopping-cart"></i> Giỏ hàng (0)</div>
           <div class="notification"><i class="fas fa-bell"></i> Thông báo</div>
@@ -451,13 +444,10 @@ body {
 
 /* --- Footer (CSS ví dụ cho footer, bạn có thể điều chỉnh) --- */
 .footer {
-  background-color: #343a40;
-  color: #f8f9fa;
-  padding: 40px 0;
-  margin-top: 40px;
     background-color: #343a40;
     color: #f8f9fa;
     padding: 40px 0;
+    
 }
 
 .footer .container {
