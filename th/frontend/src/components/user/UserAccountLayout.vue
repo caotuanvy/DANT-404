@@ -3,7 +3,7 @@
     <aside class="sidebar">
       <div class="sidebar-header">
         <span class="user-name"
-          >Anh <b>{{ userName }}</b></span
+          >Xin Chào, <b>{{ userName }}</b></span
         >
       </div>
       <ul>
@@ -200,6 +200,7 @@ const handleLogout = () => {
   padding: 30px;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  min-height: 70vh;
 }
 
 /* Các biến CSS toàn cục nếu bạn đã định nghĩa ở đâu đó */

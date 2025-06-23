@@ -29,6 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+    Route::put('/users/{id}/change-password', [UserController::class, 'changePassword']);
 
     // User Orders
     Route::get('/user/orders', [OrderController::class, 'userOrders']);
@@ -80,6 +81,7 @@ Route::put('/users/{id}', [UserController::class, 'update']);
 >>>>>>> 2621e14 (Khôi phục toàn bộ nội dung từ anxinhdep1)
 
 
+<<<<<<< HEAD
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -104,6 +106,8 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/users', [UserController::class, 'index']);
 Route::delete('/users/{id}', [UserController::class, 'destroy']);
 Route::put('/users/{id}', [UserController::class, 'update']);
+=======
+>>>>>>> d97b0f3 (ANN)
 // Danh mục tin tức
 Route::get('/danh-muc-tin-tuc', [DanhMucTtController::class, 'show']);
 Route::get('/danh-muc-tin-tuc', [DanhMucTtController::class, 'index']);
