@@ -12,7 +12,7 @@ import axios from 'axios';
 
 const routes = [
   { path: '/', component: Home },
-  { path: '/infor', component: Infor },
+  // { path: '/infor', component: Infor },
   {
     path: '/admin/test',
     name: 'test',
@@ -53,131 +53,31 @@ const routes = [
       { path: '', component: () => import('../views/admin/AdminDashboard.vue') },
       { path: 'products', component: () => import('../components/admin/ProductList.vue') },
       { path: 'category', component: () => import('../components/admin/CategoryList.vue') },
-      {
-        path: 'orders',
-        component: () => import('../components/admin/OrderList.vue'),
-        meta: { requiresAuth: true, role: 'admin' }
-      },
-      {
-        path: 'customers',
-        component: () => import('../components/admin/CustomersList.vue'),
-        meta: { requiresAuth: true, role: 'admin' }
-      },
-      {
-        path: 'danhmuctintuc',
-        component: () => import('../components/admin/DmTinTuc.vue'),
-        meta: { requiresAuth: true, role: 'admin' }
-      },
-      {
-        path: 'tintuc',
-        component: () => import('../components/admin/Tintuc.vue'),
-        meta: { requiresAuth: true, role: 'admin' }
-      },
-      {
-        path: 'slide',
-        name: 'AdminSlide',
-        component: () => import('../components/admin/SlideList.vue'),
-        meta: { requiresAuth: true, role: 'admin' },
-      },
-      {
-        path: 'products/:id/variants',
-        name: 'ProductVariants',
-        component: () => import('../views/admin/sanphambt/ProductVariants.vue'),
-        meta: { requiresAuth: true, role: 'admin' }
-      },
-      {
-        path: 'products/:id/edit',
-        component: () => import('../views/admin/EditProduct.vue')
-      },
-      {
-        path: 'products/add',
-        component: () => import('../views/admin/AddProduct.vue'),
-        meta: { requiresAuth: true, role: 'admin' }
-      },
-      {
-        path: 'categories/:id/edit',
-        component: () => import('../views/admin/categories/EditCategories.vue')
-      },
-      {
-        path: 'danh-muc-tin-tuc/:id/edit',
-        name: 'EditDmTinTuc',
-        component: () => import('../views/admin/danhmuctt/Editdanhmuctt.vue'),
-        meta: { requiresAuth: true, role: 'admin' }
-      },
-      {
-        path: 'danh-muc-tin-tuc/add',
-        name: 'AddDmTinTuc',
-        component: () => import('../views/admin/danhmuctt/Adddanhmuctt.vue'),
-        meta: { requiresAuth: true, role: 'admin' }
-      },
-      {
-        path: 'danh-muc-tin-tuc/:id',
-        name: 'XemDanhMucTinTuc',
-        component: () => import('../views/admin/danhmuctt/Xemdanhmuctintic.vue'),
-        meta: { requiresAuth: true, role: 'admin' }
-      },
-      {
-        path: 'tintuc/add',
-        name: 'AddTintuc',
-        component: () => import('../views/admin/Tintuc/Addtintuc.vue'),
-        meta: { requiresAuth: true, role: 'admin' }
-      },
-      {
-        path: 'tintuc/:id/edit',
-        name: 'EditTintuc',
-        component: () => import('../views/admin/Tintuc/Edittintuc.vue'),
-        meta: { requiresAuth: true, role: 'admin' }
-      },
-      {
-        path: 'tintuc/:id',
-        name: 'XemTintuc',
-        component: () => import('../views/admin/Tintuc/Xemtintuc.vue'),
-        meta: { requiresAuth: true, role: 'admin' }
-      },
-      {
-        path: 'introduce',
-        name: 'introduce',
-        component: () => import('../components/admin/IntroduceList.vue'),
-        meta: { requiresAuth: true, role: 'admin' }
-      },
-      {
-        path: 'trang-tinh/:slug',
-        name: 'introduce-detail',
-        component: () => import('../components/introduce/IntroduceDetail.vue'),
-        meta: { requiresAuth: true, role: 'admin' }
-      },
-      {
-        path: 'trang-tinh/add',
-        name: 'introduce-add',
-        component: () => import('../components/introduce/IntroduceAdd.vue'),
-      }
+      { path: 'orders', component: () => import('../components/admin/OrderList.vue') },
+      { path: 'customers', component: () => import('../components/admin/CustomersList.vue') },
+      { path: 'danhmuctintuc', component: () => import('../components/admin/DmTinTuc.vue') },
+      { path: 'tintuc', component: () => import('../components/admin/TinTuc.vue') },
+      { path: 'slide', name: 'AdminSlide', component: () => import('../components/admin/SlideList.vue') },
+      { path: 'products/:id/variants', name: 'ProductVariants', component: () => import('../views/admin/sanphambt/ProductVariants.vue') },
+      { path: 'products/:id/edit', component: () => import('../views/admin/EditProduct.vue') },
+      { path: 'products/add', component: () => import('../views/admin/AddProduct.vue') },
+      { path: 'categories/:id/edit', component: () => import('../views/admin/categories/EditCategories.vue') },
+      { path: 'danh-muc-tin-tuc/:id/edit', name: 'EditDmTinTuc', component: () => import('../views/admin/danhmuctt/Editdanhmuctt.vue') },
+      { path: 'danh-muc-tin-tuc/add', name: 'AddDmTinTuc', component: () => import('../views/admin/danhmuctt/Adddanhmuctt.vue') },
+      { path: 'danh-muc-tin-tuc/:id', name: 'XemDanhMucTinTuc', component: () => import('../views/admin/danhmuctt/Xemdanhmuctintic.vue') },
+      { path: 'tintuc/add', name: 'AddTintuc', component: () => import('../views/admin/Tintuc/Addtintuc.vue') },
+      { path: 'tintuc/:id/edit', name: 'EditTintuc', component: () => import('../views/admin/Tintuc/Edittintuc.vue') },
+      { path: 'tintuc/:id', name: 'XemTintuc', component: () => import('../views/admin/Tintuc/Xemtintuc.vue') },
+      { path: 'introduce', name: 'introduce', component: () => import('../components/admin/IntroduceList.vue') },
+      { path: 'trang-tinh/:slug', name: 'introduce-detail', component: () => import('../components/introduce/IntroduceDetail.vue') },
+      { path: 'trang-tinh/add', name: 'introduce-add', component: () => import('../components/introduce/IntroduceAdd.vue') }
     ]
   },
-  {
-    path: '/search',
-    name: 'SearchResult',
-    component: () => import('../views/SearchResult.vue'),
-  },
-  {
-    path: '/admin/products/:id',
-    name: 'product-detail',
-    component: () => import('../views/admin/ProductDetail.vue'),
-    meta: { requiresAuth: true, role: 'admin' }
-  },
-  {
-    path: '/admin/categories/add',
-    component: () => import('../views/admin/categories/AddCategories.vue'),
-    meta: { requiresAuth: true, role: 'admin' }
-  },
-  {
-    path: '/admin/categories/:category_id/products',
-    name: 'CategoryProducts',
-    component: () => import('../components/admin/CategoriesProduct.vue')
-  },
-  {
-    path: '/:pathMatch(.*)*',
-    redirect: '/'
-  }
+  { path: '/search', name: 'SearchResult', component: () => import('../views/SearchResult.vue') },
+  { path: '/admin/products/:id', name: 'product-detail', component: () => import('../views/admin/ProductDetail.vue') },
+  { path: '/admin/categories/add', component: () => import('../views/admin/categories/AddCategories.vue') },
+  { path: '/admin/categories/:category_id/products', name: 'CategoryProducts', component: () => import('../components/admin/CategoriesProduct.vue') },
+  { path: '/:pathMatch(.*)*', redirect: '/' }
 ];
 
 const router = createRouter({
