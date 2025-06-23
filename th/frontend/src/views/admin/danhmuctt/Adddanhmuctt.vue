@@ -47,7 +47,6 @@ export default {
     return {
       ten_danh_muc: "",
       mo_ta: "",
-      hinh_anh: "",
       file: null,
       previewImage: "",
     };
@@ -57,7 +56,6 @@ export default {
       const file = e.target.files[0];
       if (file) {
         this.file = file;
-        this.hinh_anh = file.name; // Nếu chỉ lưu tên file
         this.previewImage = URL.createObjectURL(file);
       }
     },
@@ -69,19 +67,21 @@ export default {
           return;
         }
 
-        // Nếu chỉ lưu tên file (không upload file lên server)
-        const payload = {
-          ten_danh_muc: this.ten_danh_muc,
-          mo_ta: this.mo_ta,
-          hinh_anh: this.hinh_anh,
-        };
+        const formData = new FormData();
+        formData.append("ten_danh_muc", this.ten_danh_muc);
+        formData.append("mo_ta", this.mo_ta);
+        if (this.file) {
+          formData.append("hinh_anh", this.file);
+        }
 
+        // Không cần gửi ngày tạo, backend sẽ tự động thêm ngày tạo
         const response = await axios.post(
           "http://localhost:8000/api/danh-muc-tin-tuc",
-          payload,
+          formData,
           {
             headers: {
               Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
             },
           }
         );

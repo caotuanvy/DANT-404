@@ -15,6 +15,12 @@ const routes = [
     name: 'KichHoat',
     component: () => import('../components/user/KichHoatTaiKhoan.vue')
   },
+  {
+  path: '/tin-tuc',
+  name: 'TinTucCongKhai',
+  component: () => import('../components/user/Publicnews.vue')
+  },
+
 
 
   {
@@ -79,6 +85,12 @@ const routes = [
       meta: { requiresAuth: true, role: 'admin' }
       },
       {
+      path: '/admin/danh-muc-tin-tuc/:id',
+      name: 'XemDanhMucTinTuc',
+      component: () => import('../views/admin/danhmuctt/Xemdanhmuctintic.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
       path: '/admin/tintuc/add',
       name: 'AddTintuc',
       component: () => import('../views/admin/Tintuc/Addtintuc.vue'),
@@ -89,6 +101,12 @@ const routes = [
         name: 'EditTintuc',
         component: () => import('../views/admin/Tintuc/Edittintuc.vue'),
         meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
+      path: '/admin/tintuc/:id',
+      name: 'XemTintuc',
+      component: () => import('../views/admin/Tintuc/Xemtintuc.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
       },
 
 

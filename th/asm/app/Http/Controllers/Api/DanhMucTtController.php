@@ -32,19 +32,26 @@ class DanhMucTtController extends Controller
     }
 
     // Sửa danh mục tin tức
-    public function update($id, Request $request)
+        public function update($id, Request $request)
     {
         $danhMuc = DanhMucTinTuc::findOrFail($id);
 
         $validated = $request->validate([
             'ten_danh_muc' => 'required|string|max:255',
             'mo_ta' => 'nullable|string',
-            'hinh_anh' => 'nullable|string|max:100',
+            'hinh_anh' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
         ]);
 
         $danhMuc->ten_danh_muc = $validated['ten_danh_muc'];
         $danhMuc->mo_ta = $validated['mo_ta'] ?? null;
-        $danhMuc->hinh_anh = $validated['hinh_anh'] ?? $danhMuc->hinh_anh;
+
+        // Xử lý upload file nếu có file mới
+        if ($request->hasFile('hinh_anh')) {
+            $file = $request->file('hinh_anh');
+            $path = $file->store('Tintuc', 'public');
+            $danhMuc->hinh_anh = $path;
+        }
+
         $danhMuc->ngay_sua = now();
         $danhMuc->save();
 
@@ -55,7 +62,7 @@ class DanhMucTtController extends Controller
     }
 
      // Thêm danh mục tin tức
-    public function store(Request $request)
+        public function store(Request $request)
     {
         $data = $request->validate([
             'ten_danh_muc' => 'required|string|max:255',
@@ -65,12 +72,29 @@ class DanhMucTtController extends Controller
 
         if ($request->hasFile('hinh_anh')) {
             $file = $request->file('hinh_anh');
-            // Lưu vào storage/app/public/Tintuc
             $path = $file->store('Tintuc', 'public');
             $data['hinh_anh'] = $path;
         }
 
+        // Thêm ngày tạo nếu bảng có trường ngay_tao
+        $data['ngay_tao'] = now();
+
         $danhMuc = DanhMucTinTuc::create($data);
         return response()->json($danhMuc, 201);
     }
+    // Xem chi tiết danh mục tin tức
+    public function xemChiTietDanhMucAdmin($id)
+{
+    $danhMuc = DanhMucTinTuc::findOrFail($id);
+
+    return response()->json([
+        'id_danh_muc_tin_tuc' => $danhMuc->id_danh_muc_tin_tuc,
+        'ten_danh_muc' => $danhMuc->ten_danh_muc,
+        'mo_ta' => $danhMuc->mo_ta,
+        'hinh_anh' => $danhMuc->hinh_anh,
+        'ngay_tao' => $danhMuc->ngay_tao,
+        'ngay_sua' => $danhMuc->ngay_sua,
+    ]);
+}
+
 }
