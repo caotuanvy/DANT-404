@@ -27,11 +27,6 @@
               </div>
               <div class="user-dropdown-menu" v-if="showUserMenu">
                 <ul>
-                    <li><a href="#"><i class="fas fa-bars"></i> Danh mục sản phẩm</a></li>
-                    <li><a href="#">Trang Chủ</a></li>
-                   <li><router-link to="/gioi-thieu">Giới Thiệu</router-link></li>
-                    <li><a href="#">Tin Tức</a></li>
-                    <li><a href="#">Liên Hệ</a></li>
                   <li @click="navigateToUserInfo">Thông tin tài khoản</li>
                   <li v-if="userRoleId === 1" @click="navigateToAdmin">Quản lý</li>
                   <li @click="handleLogout">Đăng xuất</li>
