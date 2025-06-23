@@ -7,6 +7,7 @@ import AdminView from '../views/Admin.vue';
 import axios from 'axios';
 
 
+
 const routes = [
   { path: '/', component: Home },
   { path: '/infor', component: Infor },
@@ -48,7 +49,7 @@ const routes = [
       },
       {
           path: 'tintuc', 
-           component: () => import('../components/admin/TinTuc.vue'),
+           component: () => import('../components/admin/Tintuc.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       },
       {
@@ -72,7 +73,10 @@ const routes = [
         component: () => import('../views/admin/AddProduct.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       },
+      { path: '/admin/categories/:id/edit',
+  component: () => import('../views/admin/categories/EditCategories.vue')},
       {
+
       path: '/admin/danh-muc-tin-tuc/:id/edit',
       name: 'EditDmTinTuc',
       component: () => import('../views/admin/danhmuctt/Editdanhmuctt.vue'),
@@ -110,6 +114,25 @@ const routes = [
       },
 
 
+      // Vỹ
+      {
+        path: 'introduce',
+        name: 'introduce',
+        component: () => import('../components/admin/IntroduceList.vue'),
+        meta: { requiresAuth: true, role: 'admin' }
+      },
+      
+      {
+         path: '/admin/trang-tinh/:slug',
+        name: 'introduce-detail',
+        component: () => import('../components/introduce/IntroduceDetail.vue'),
+        meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
+        path: '/admin/trang-tinh/add',
+        name: 'introduce-add',
+        component: () => import('../components/introduce/IntroduceAdd.vue'),
+      }
     ]
   },
   {
@@ -135,7 +158,27 @@ const routes = [
     name: 'CategoryProducts',
     component: () => import('../components/admin/CategoriesProduct.vue')
   },
+  {
+  path: '/gioi-thieu',
+  name: 'gioi-thieu',
+  component: () => import('../components/user/ISV.vue')
+  },
+
+
   
+  {
+  path: '/admin/tintuc/add',
+  name: 'AddTintuc',
+  component: () => import('../views/admin/Tintuc/Addtintuc.vue'),
+  meta: { requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: '/admin/tintuc/:id/edit',
+    name: 'EditTintuc',
+    component: () => import('../views/admin/Tintuc/Edittintuc.vue'),
+    meta: { requiresAuth: true, role: 'admin' }
+  },
+
 
 
 {

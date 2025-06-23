@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\DanhMucTinTuc;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class DanhMucTtController extends Controller
 {
@@ -60,6 +61,7 @@ class DanhMucTtController extends Controller
             'data' => $danhMuc
         ]);
     }
+
 
      // Thêm danh mục tin tức
         public function store(Request $request)

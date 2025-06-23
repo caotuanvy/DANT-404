@@ -53,7 +53,7 @@
                 <ul>
                     <li><a href="#"><i class="fas fa-bars"></i> Danh mục sản phẩm</a></li>
                     <li><a href="#">Trang Chủ</a></li>
-                    <li><a href="#">Giới Thiệu</a></li>
+                   <li><router-link to="/gioi-thieu">Giới Thiệu</router-link></li>
                     <li><a href="#">Tin Tức</a></li>
                     <li><a href="#">Liên Hệ</a></li>
                 </ul>
@@ -411,7 +411,7 @@ body {
     background-color: #343a40;
     color: #f8f9fa;
     padding: 40px 0;
-    margin-top: 40px;
+    
 }
 
 .footer .container {

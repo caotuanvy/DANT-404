@@ -1,7 +1,7 @@
 <template>
   <div>
     <h2>Thêm danh mục tin tức</h2>
-    <form @submit.prevent="addCategory">
+    <form @submit.prevent="addCategory" enctype="multipart/form-data">
       <div>
         <label for="ten_danh_muc">Tên danh mục:</label>
         <input
@@ -102,6 +102,7 @@ export default {
   },
 };
 </script>
+
 
 <style scoped>
 form {
