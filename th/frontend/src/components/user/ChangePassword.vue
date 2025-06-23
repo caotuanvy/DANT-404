@@ -1,201 +1,225 @@
-ư<template>
-    <div class="content-area container">
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <span class="user-name">Anh <b>{{ userName }}</b></span>
-            </div>
-            <ul>
-                <li :class="{ 'active': $route.path === '/user/profile' || $route.path === '/user' }">
-                    <router-link to="/user/profile">
-                        <i class="fas fa-info-circle"></i> Thông tin và địa chỉ
-                    </router-link>
-                </li>
-                <li :class="{ 'active': $route.path === '/user/orders' }">
-                    <router-link to="/user/orders">
-                        <i class="fas fa-clipboard-list"></i> Đơn hàng đã mua
-                    </router-link>
-                </li>
-                <li :class="{ 'active': $route.path === '/user/change-password' }">
-                    <router-link to="/user/change-password">
-                        <i class="fas fa-lock"></i> Thay đổi mật khẩu
-                    </router-link>
-                </li>
-            </ul>
-            <button class="logout-btn" @click="handleLogout">Đăng Xuất</button>
-        </aside>
-
-        <main class="main-content">
-            <router-view />
-        </main>
-    </div>
-</template>
-
 <script setup>
-import { ref, onMounted } from 'vue'; // Import onMounted
-import { useRouter, useRoute } from 'vue-router'; // Import useRoute
-import Swal from 'sweetalert2'; // Nếu bạn muốn dùng SweetAlert2 cho logout
+import { ref } from 'vue';
+import axios from 'axios';
+import Swal from 'sweetalert2';
 
-const userName = ref('Khách');
-const router = useRouter();
-const route = useRoute(); // Để kiểm tra đường dẫn hiện tại cho class 'active'
+const oldPassword = ref('');
+const newPassword = ref('');
+const confirmNewPassword = ref('');
+const errorMessage = ref('');
+const successMessage = ref('');
+const isLoading = ref(false);
 
-// Hàm để lấy tên người dùng từ localStorage
-const fetchUserName = () => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-        try {
-            const user = JSON.parse(storedUser);
-            if (user && user.ho_ten) {
-                userName.value = user.ho_ten;
-            }
-        } catch (e) {
-            console.error("Failed to parse user from localStorage:", e);
-            userName.value = 'Guest'; // Fallback
-        }
+const handleChangePassword = async () => {
+    errorMessage.value = '';
+    successMessage.value = '';
+
+    if (!oldPassword.value || !newPassword.value || !confirmNewPassword.value) {
+        errorMessage.value = 'Vui lòng điền đầy đủ tất cả các trường mật khẩu.';
+        return;
     }
-};
 
-// Gọi khi component được mount để hiển thị tên người dùng
-onMounted(() => {
-    fetchUserName();
-});
+    if (newPassword.value !== confirmNewPassword.value) {
+        errorMessage.value = 'Mật khẩu mới và xác nhận mật khẩu mới không khớp.';
+        return;
+    }
 
+    if (newPassword.value.length < 8) {
+        errorMessage.value = 'Mật khẩu mới phải có ít nhất 8 ký tự.';
+        return;
+    }
 
-const handleLogout = () => {
-    Swal.fire({
-        title: 'Bạn có chắc chắn muốn đăng xuất?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Có, đăng xuất!',
-        cancelButtonText: 'Hủy'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            localStorage.removeItem('user');
-            localStorage.removeItem('token'); // Đảm bảo xóa cả token
-            router.push('/'); // Chuyển hướng về trang chủ hoặc trang đăng nhập
-            Swal.fire(
-                'Đã đăng xuất!',
-                'Bạn đã đăng xuất thành công.',
-                'success'
-            );
+    if (newPassword.value === oldPassword.value) {
+        errorMessage.value = 'Mật khẩu mới không được trùng với mật khẩu cũ.';
+        return;
+    }
+
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) {
+        errorMessage.value = 'Bạn chưa đăng nhập. Vui lòng đăng nhập lại.';
+        return;
+    }
+
+    const user = JSON.parse(storedUser);
+    const userId = user.nguoi_dung_id;
+    const token = localStorage.getItem('token');
+
+    if (!userId || !token) {
+        errorMessage.value = 'Không thể xác định thông tin người dùng. Vui lòng đăng nhập lại.';
+        return;
+    }
+
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+    isLoading.value = true;
+
+    try {
+        const response = await axios.put(`http://localhost:8000/api/users/${userId}/change-password`, {
+            old_password: oldPassword.value,
+            new_password: newPassword.value,
+            new_password_confirmation: confirmNewPassword.value,
+        });
+
+        if (response.data.success) {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Đổi mật khẩu thành công!',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didClose: () => {
+                    oldPassword.value = '';
+                    newPassword.value = '';
+                    confirmNewPassword.value = '';
+                }
+            });
+            // successMessage.value = 'Đổi mật khẩu thành công!';
+        } else {
+            errorMessage.value = response.data.message || 'Đổi mật khẩu thất bại.';
         }
-    });
+    } catch (error) {
+        // console.error('Lỗi khi đổi mật khẩu:', error.response?.data || error.message);
+        let currentErrorMessage = 'Đã xảy ra lỗi không xác định. Vui lòng thử lại.';
+
+        if (error.response) {
+            if (error.response.status === 401) {
+                currentErrorMessage = error.response.data.message || 'Bạn chưa đăng nhập hoặc token không hợp lệ.';
+            } else if (error.response.status === 422 && error.response.data?.errors) {
+                let detailedErrors = [];
+                for (const key in error.response.data.errors) {
+                    detailedErrors.push(error.response.data.errors[key][0]);
+                }
+                currentErrorMessage = detailedErrors.join('; ');
+            } else if (error.response.data?.message) {
+                currentErrorMessage = error.response.data.message;
+            }
+        } else {
+            currentErrorMessage = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra internet.';
+        }
+
+        errorMessage.value = currentErrorMessage;
+    } finally {
+        isLoading.value = false;
+    }
 };
 </script>
 
+<template>
+    <h1>Đổi mật khẩu</h1>
+    <hr />
+    <div class="change-password-section">
+        <h2>THAY ĐỔI MẬT KHẨU</h2>
+        <div class="form-group">
+            <label for="oldPassword">Mật khẩu cũ</label>
+            <input type="password" id="oldPassword" v-model="oldPassword" placeholder="Nhập mật khẩu cũ" />
+        </div>
+        <div class="form-group">
+            <label for="newPassword">Mật khẩu mới</label>
+            <input type="password" id="newPassword" v-model="newPassword" placeholder="Nhập mật khẩu mới" />
+        </div>
+        <div class="form-group">
+            <label for="confirmNewPassword">Xác nhận mật khẩu mới</label>
+            <input type="password" id="confirmNewPassword" v-model="confirmNewPassword" placeholder="Xác nhận mật khẩu mới" />
+        </div>
+
+        <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+        <p v-if="successMessage" class="success-message">{{ successMessage }}</p>
+
+        <button class="change-password-btn" @click="handleChangePassword" :disabled="isLoading">
+            <span v-if="isLoading">Đang xử lý...</span>
+            <span v-else>ĐỔI MẬT KHẨU</span>
+        </button>
+    </div>
+</template>
+
 <style scoped>
-/* Bạn hãy đặt các CSS styles cho sidebar và layout tại đây */
-/* Ví dụ từ các đoạn mã trước đó của bạn */
-.content-area {
-    display: flex;
-    gap: 25px;
-    padding: 30px 0;
-    align-items: flex-start;
-}
-
-.container {
-    max-width: 1200px;
-    margin: 40px auto;
-    padding: 0 15px;
-}
-
-.sidebar {
-    background-color: #f4f6f8;
-    padding: 20px;
-    border-radius: 8px;
-    min-width: 250px;
-    color: black;
-}
-
-.sidebar-header {
-    display: flex;
-    align-items: center;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.sidebar-header .user-name {
+.error-message {
+    color: red;
+    font-size: 14px;
+    margin-top: 10px;
     font-weight: 500;
-    color: var(--dark-text);
+    text-align: left;
 }
 
-.sidebar ul {
-    list-style: none;
-    padding: 0;
-    margin-top: 20px;
+.success-message {
+    color: green;
+    font-size: 14px;
+    margin-top: 10px;
+    font-weight: 500;
+    text-align: left;
 }
 
-.sidebar ul li {
-    margin-bottom: 5px;
-}
-
-.sidebar ul li a {
-    text-decoration: none;
+h1 {
+    font-size: 23px;
+    font-weight: bold;
     color: black;
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    padding: 8px 10px;
-    border-radius: 5px;
-    transition: background-color 0.2s ease;
+    margin-bottom: 20px;
 }
 
-.sidebar ul li a i {
-    margin-right: 10px;
+h2 {
     font-size: 18px;
-    color: black;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 20px;
 }
 
-.sidebar ul li a:hover,
-.sidebar ul li.active a {
-    background-color: #e4e7ed;
-    color: black;
+.change-password-section .form-group {
+    margin-bottom: 20px;
 }
 
-.sidebar .logout-btn {
+.change-password-section label {
+    font-size: 15px;
+    font-weight: 500;
+    color: #555;
     display: block;
+    margin-bottom: 8px;
+}
+
+.change-password-section input[type="password"] {
     width: 100%;
     padding: 12px 15px;
-    background-color: #f8f9fa;
-    color: #007bff;
-    border: 1px solid #007bff;
-    border-radius: 5px;
-    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 6px;
     font-size: 16px;
-    font-weight: 600;
-    margin-top: 25px;
-    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    box-sizing: border-box;
 }
 
-.sidebar .logout-btn:hover {
-    background-color: #007bff;
-    color: #ffffff;
+.change-password-section input[type="password"]:focus {
     border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
-.sidebar .logout-btn:active {
+.change-password-btn {
+    padding: 12px 30px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 15px;
+}
+
+.change-password-btn:hover {
     background-color: #0056b3;
-    border-color: #0056b3;
-    color: #ffffff;
 }
 
-.main-content {
-    flex-grow: 1;
-    background-color: white;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+.change-password-btn:disabled {
+    background-color: #a0cbed;
+    cursor: not-allowed;
+    opacity: 0.7;
 }
 
-/* Các biến CSS toàn cục nếu bạn đã định nghĩa ở đâu đó */
-/* :root {
-    --primary-blue: #007bff;
-    --dark-blue: #0056b3;
-    --light-grey: #f8f9fa;
-    --border-color: #dee2e6;
-    --text-color: #333;
-    --dark-text: #212529;
-} */
+@media (max-width: 768px) {
+    .change-password-btn {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+    }
+}
 </style>

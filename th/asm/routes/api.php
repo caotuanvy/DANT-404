@@ -23,6 +23,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+    Route::put('/users/{id}/change-password', [UserController::class, 'changePassword']);
 
     // User Orders
     Route::get('/user/orders', [OrderController::class, 'userOrders']);
@@ -68,6 +69,7 @@ Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
 Route::get('/users', [UserController::class, 'index']);
 Route::delete('/users/{id}', [UserController::class, 'destroy']);
 Route::put('/users/{id}', [UserController::class, 'update']);
+
 
 // Danh mục tin tức
 Route::get('/danh-muc-tin-tuc', [DanhMucTtController::class, 'index']);

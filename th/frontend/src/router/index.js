@@ -13,7 +13,7 @@ import axios from 'axios';
 
 const routes = [
   { path: '/', component: Home },
-  { path: '/infor', component: Infor },
+  // { path: '/infor', component: Infor },
   {
     path: '/kich-hoat',
     name: 'KichHoat',
@@ -22,7 +22,7 @@ const routes = [
 
   {
     path: '/user', // Route cha cho các trang người dùng
-    component: UserAccountLayout, // Layout chứa sidebar
+    component: UserAccountLayout, 
     meta: { requiresAuth: true }, // Yêu cầu xác thực cho tất cả các route con
     children: [
       {

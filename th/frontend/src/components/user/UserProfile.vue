@@ -25,6 +25,12 @@ const provinces = ref([]);
 const districts = ref([]);
 const wards = ref([]);
 
+// --- BIẾN MỚI CHO CHỨC NĂNG CHỈNH SỬA THÔNG TIN CÁ NHÂN ---
+const showEditPersonalForm = ref(false); // Điều khiển hiển thị form chỉnh sửa
+const tempUserName = ref(''); // Biến tạm thời cho họ tên trong form
+const tempUserPhone = ref(''); // Biến tạm thời cho số điện thoại trong form
+// -----------------------------------------------------------
+
 const router = useRouter(); // Khởi tạo router
 
 // Hàm để phân tích chuỗi địa chỉ
@@ -41,10 +47,7 @@ const parseAddress = (fullAddress) => {
     let ward = '';
     let street = '';
 
-    // Cần cẩn thận với định dạng chuỗi nếu nó không tuân theo một quy tắc nghiêm ngặt.
-    // Ví dụ: "Tỉnh A, Huyện B, Xã C, Số 123 Đường D"
-    // Hoặc "Số 123 Đường D, Xã C, Huyện B, Tỉnh A" (phổ biến hơn ở VN)
-    // Dựa trên yêu cầu của bạn "thứ tự trên database là tỉnh huyện xã đường",
+    // Dựa trên yêu cầu "thứ tự trên database là tỉnh huyện xã đường",
     // chúng ta sẽ phân tích từ đầu chuỗi.
     if (parts.length >= 4) { // Ít nhất phải có Tỉnh, Huyện, Xã, và một phần của Đường
         province = parts[0];
@@ -78,59 +81,98 @@ async function populateSelect(selectRef, dataArray, selectedValue = null) {
 }
 
 // Tải dữ liệu Tỉnh/Thành phố
+// fetchProvinces: Gọi API lấy danh sách tỉnh/thành phố và lưu vào localStorage
 async function fetchProvinces() {
     try {
+        const cachedProvinces = localStorage.getItem('provinces');
+        if (cachedProvinces) {
+            provinces.value = JSON.parse(cachedProvinces);
+            return;
+        }
+
         const response = await fetch('https://vn-public-apis.fpo.vn/provinces/getAll?limit=-1');
         if (!response.ok) {
+            if (response.status === 429) {
+                throw new Error('Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau vài giây.');
+            }
             throw new Error(`HTTP error! status: ${response.status}`);
         }
+
         const apiData = await response.json();
-        await populateSelect(provinces, apiData.data.data);
+        provinces.value = apiData.data.data;
+        localStorage.setItem('provinces', JSON.stringify(provinces.value));
     } catch (error) {
-        console.error('Lỗi khi tải danh sách Tỉnh/Thành phố:', error);
-        provinces.value = []; // Đảm bảo làm rỗng nếu có lỗi
+        console.error('Lỗi khi tải danh sách Tỉnh/Thành phố:', error.message);
+        provinces.value = [];
     }
 }
 
-// Tải dữ liệu Quận/Huyện dựa trên mã Tỉnh đã chọn
+// fetchDistricts: Gọi API lấy danh sách quận/huyện theo tỉnh và cache
 async function fetchDistricts(provinceCode) {
     if (!provinceCode) {
         districts.value = [];
-        wards.value = []; // Reset wards khi không có provinceCode
+        wards.value = [];
         return;
     }
+
     try {
+        const cacheKey = `districts_${provinceCode}`;
+        const cachedDistricts = localStorage.getItem(cacheKey);
+        if (cachedDistricts) {
+            districts.value = JSON.parse(cachedDistricts);
+            return;
+        }
+
         const response = await fetch(`https://vn-public-apis.fpo.vn/districts/getByProvince?provinceCode=${provinceCode}&limit=-1`);
         if (!response.ok) {
+            if (response.status === 429) {
+                throw new Error('Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau vài giây.');
+            }
             throw new Error(`HTTP error! status: ${response.status}`);
         }
+
         const apiData = await response.json();
-        await populateSelect(districts, apiData.data.data);
+        districts.value = apiData.data.data;
+        localStorage.setItem(cacheKey, JSON.stringify(districts.value));
     } catch (error) {
-        console.error('Lỗi khi tải danh sách Quận/Huyện:', error);
+        console.error('Lỗi khi tải danh sách Quận/Huyện:', error.message);
         districts.value = [];
-        wards.value = []; // Reset wards khi có lỗi district
+        wards.value = [];
     }
 }
 
-// Tải dữ liệu Phường/Xã dựa trên mã Huyện đã chọn
+// fetchWards: Gọi API lấy danh sách phường/xã theo quận/huyện và cache
 async function fetchWards(districtCode) {
     if (!districtCode) {
         wards.value = [];
         return;
     }
+
     try {
+        const cacheKey = `wards_${districtCode}`;
+        const cachedWards = localStorage.getItem(cacheKey);
+        if (cachedWards) {
+            wards.value = JSON.parse(cachedWards);
+            return;
+        }
+
         const response = await fetch(`https://vn-public-apis.fpo.vn/wards/getByDistrict?districtCode=${districtCode}&limit=-1`);
         if (!response.ok) {
+            if (response.status === 429) {
+                throw new Error('Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau vài giây.');
+            }
             throw new Error(`HTTP error! status: ${response.status}`);
         }
+
         const apiData = await response.json();
-        await populateSelect(wards, apiData.data.data);
+        wards.value = apiData.data.data;
+        localStorage.setItem(cacheKey, JSON.stringify(wards.value));
     } catch (error) {
-        console.error('Lỗi khi tải danh sách Phường/Xã:', error);
+        console.error('Lỗi khi tải danh sách Phường/Xã:', error.message);
         wards.value = [];
     }
 }
+
 
 // Watchers để tự động tải dữ liệu khi lựa chọn thay đổi
 watch(selectedProvinceCode, async (newCode, oldCode) => {
@@ -139,7 +181,7 @@ watch(selectedProvinceCode, async (newCode, oldCode) => {
         isLoadingAddressData.value = true; // Bắt đầu tải, vô hiệu hóa nút
         errorMessage.value = ''; // Xóa lỗi cũ
         selectedDistrictCode.value = ''; // Reset Quận/Huyện ngay lập tức
-        selectedWardCode.value = '';    // Reset Phường/Xã ngay lập tức
+        selectedWardCode.value = '';     // Reset Phường/Xã ngay lập tức
 
         await fetchDistricts(newCode); // Tải quận/huyện cho tỉnh mới
         isLoadingAddressData.value = false; // Tải xong, kích hoạt lại nút
@@ -166,8 +208,171 @@ watch(streetAddress, () => {
     errorMessage.value = ''; // Xóa lỗi khi người dùng thay đổi địa chỉ đường
 });
 
+// --- HÀM MỚI CHO CHỨC NĂNG CHỈNH SỬA THÔNG TIN CÁ NHÂN ---
+const enableEditPersonal = () => {
+    tempUserName.value = userName.value;
+    tempUserPhone.value = userPhone.value;
+    showEditPersonalForm.value = true;
+    errorMessage.value = ''; // Xóa lỗi cũ khi mở form
+};
+
+const cancelEditPersonal = () => {
+    showEditPersonalForm.value = false;
+    errorMessage.value = ''; // Xóa lỗi nếu có
+};
+
+const loadUserProfile = () => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+        const user = JSON.parse(storedUser);
+        userName.value = user.ho_ten || 'Khách'; // Set giá trị mặc định nếu không có
+        userPhone.value = user.sdt || 'Chưa có số điện thoại'; // Set giá trị mặc định nếu không có
+        tempUserName.value = user.ho_ten || ''; // Khởi tạo giá trị cho form chỉnh sửa
+        tempUserPhone.value = user.sdt || ''; // Khởi tạo giá trị cho form chỉnh sửa
+    }
+};
+
+const handleUpdatePersonal = async () => {
+    // 1. Xóa thông báo lỗi cũ mỗi khi cố gắng cập nhật
+    errorMessage.value = '';
+
+    // 2. Kiểm tra các trường dữ liệu đầu vào (Validation)
+    if (!tempUserName.value.trim()) {
+        errorMessage.value = 'Họ tên không được để trống.';
+        return;
+    }
+    if (tempUserName.value.trim().length > 20) {
+    errorMessage.value = 'Họ tên không được vượt quá 20 ký tự.';
+    return;
+}
+    if (!tempUserPhone.value.trim()) {
+        errorMessage.value = 'Số điện thoại không được để trống.';
+        return;
+    }
+    // Regex kiểm tra định dạng số điện thoại Việt Nam (10 hoặc 11 chữ số, bắt đầu bằng 0)
+    const phoneRegex = /^0[0-9]{9,10}$/; 
+    if (!phoneRegex.test(tempUserPhone.value.trim())) {
+        errorMessage.value = 'Số điện thoại không hợp lệ. Vui lòng nhập 10-11 chữ số và bắt đầu bằng 0.';
+        return;
+    }
+
+    // 3. Lấy thông tin người dùng từ localStorage và ID
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) {
+        errorMessage.value = 'Vui lòng đăng nhập để cập nhật thông tin.';
+        router.push('/'); // Chuyển hướng về trang chủ hoặc trang đăng nhập
+        return;
+    }
+    const user = JSON.parse(storedUser);
+    const userId = user.nguoi_dung_id; // Đảm bảo người dùng có ID
+
+    // Kiểm tra nếu userId không tồn tại (trường hợp hiếm nhưng cần thiết)
+    if (!userId) {
+        errorMessage.value = 'Không thể xác định ID người dùng. Vui lòng đăng nhập lại.';
+        router.push('/');
+        return;
+    }
+
+    try {
+        // 4. Gửi request Axios PUT để cập nhật thông tin lên API
+        const response = await axios.put(`http://localhost:8000/api/users/${userId}`, {
+            ho_ten: tempUserName.value.trim(),
+            sdt: tempUserPhone.value.trim()
+        });
+
+        // 5. Cập nhật lại dữ liệu hiển thị trên giao diện của UserProfile.vue
+        userName.value = tempUserName.value;
+        userPhone.value = tempUserPhone.value;
+
+        // 6. Cập nhật localStorage để thông tin được đồng bộ giữa các lần tải trang
+        // Ưu tiên lấy dữ liệu người dùng mới nhất từ response của API nếu có,
+        // nếu không thì dùng đối tượng user hiện tại và cập nhật thủ công.
+        // Điều này đảm bảo rằng các thuộc tính khác của user (nếu có) không bị mất.
+        const updatedUserFromApi = response.data.user; // Giả định API trả về { user: { ... } }
+        let userToStore = user; // Bắt đầu với user hiện tại
+        if (updatedUserFromApi) {
+            userToStore = updatedUserFromApi; // Nếu API trả về user mới, dùng nó
+        } else {
+            // Nếu API không trả về đối tượng user đầy đủ, tự cập nhật các trường đã thay đổi
+            userToStore.ho_ten = userName.value;
+            userToStore.sdt = userPhone.value;
+        }
+        localStorage.setItem('user', JSON.stringify(userToStore));
+
+
+        // 7. Hiển thị thông báo thành công với SweetAlert2
+        Swal.fire({
+            toast: true,
+            position: 'top-end',      // Đặt thông báo ở góc trên bên phải
+            icon: 'success',          // Biểu tượng thành công
+            title: 'Cập nhật thông tin cá nhân thành công!', // Tiêu đề thông báo
+            showConfirmButton: false, // Ẩn nút "Ok"
+            timer: 3000,              // Tự động đóng sau 3000ms (3 giây)
+            timerProgressBar: true,   // Hiển thị thanh tiến trình đếm ngược
+            didClose: () => {
+                // Tải lại toàn bộ trang sau khi thông báo SweetAlert2 đóng
+                window.location.reload();
+            }
+        });
+
+        // 8. Đóng form chỉnh sửa sau khi cập nhật thành công (sẽ bị reset khi reload trang)
+        showEditPersonalForm.value = false;
+
+    } catch (error) {
+        // 9. Xử lý lỗi từ API hoặc lỗi mạng
+        console.error('Lỗi khi cập nhật thông tin cá nhân:', error.response?.data || error.message);
+        
+        let currentErrorMessage = 'Đã xảy ra lỗi không xác định. Vui lòng thử lại.'; 
+
+        if (error.response) {
+            // Lỗi từ phản hồi của server (HTTP status code 4xx, 5xx)
+            if (error.response.status === 401 || error.response.status === 403) {
+                currentErrorMessage = 'Bạn không có quyền hoặc phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+                // Có thể tự động chuyển hướng người dùng đến trang đăng nhập tại đây
+                // router.push('/login'); 
+            } else if (error.response.status === 404) {
+                currentErrorMessage = 'Không tìm thấy người dùng để cập nhật thông tin.';
+            } else if (error.response.data) {
+                if (typeof error.response.data === 'object' && error.response.data !== null) {
+                    // Ưu tiên lấy thông báo từ trường 'message' hoặc 'error'
+                    if (error.response.data.message) {
+                        currentErrorMessage = error.response.data.message;
+                    } else if (error.response.data.error) {
+                        currentErrorMessage = error.response.data.error;
+                    } 
+                    // Xử lý lỗi validation (nếu backend trả về trường 'errors')
+                    else if (error.response.data.errors) {
+                        let detailedErrors = [];
+                        for (const key in error.response.data.errors) {
+                            detailedErrors = detailedErrors.concat(error.response.data.errors[key]);
+                        }
+                        currentErrorMessage = detailedErrors.join('; ');
+                        if (!currentErrorMessage) {
+                            currentErrorMessage = 'Đã xảy ra lỗi từ máy chủ nhưng không rõ chi tiết.';
+                        }
+                    } else {
+                        currentErrorMessage = 'Đã xảy ra lỗi từ máy chủ. Vui lòng kiểm tra console để biết thêm chi tiết.';
+                    }
+                } else {
+                    currentErrorMessage = error.response.data.toString();
+                }
+            }
+        } 
+        // Lỗi không có phản hồi từ server (ví dụ: lỗi mạng, server không khả dụng)
+        else {
+            currentErrorMessage = 'Không thể kết nối đến máy chủ hoặc đã xảy ra lỗi mạng. Vui lòng kiểm tra kết nối internet của bạn.';
+            if (error.message) {
+                currentErrorMessage += ` (${error.message})`; // Thêm chi tiết lỗi mạng nếu có
+            }
+        }
+        
+        // Gán thông báo lỗi cuối cùng vào biến hiển thị trên giao diện
+        errorMessage.value = currentErrorMessage;
+    }
+};
 
 onMounted(async () => {
+    loadUserProfile();
     const storedUser = localStorage.getItem('user');
     if (!storedUser) {
         router.push('/');
@@ -184,6 +389,7 @@ onMounted(async () => {
         // Luôn tải danh sách tỉnh trước
         await fetchProvinces();
 
+        // Lấy địa chỉ người dùng
         const response = await axios.get(`/dia_chi/nguoi_dung/${user.nguoi_dung_id}`);
 
         if (response.data && response.data.length > 0) {
@@ -206,7 +412,6 @@ onMounted(async () => {
                 // Tải danh sách huyện cho tỉnh đã tìm thấy
                 // Watcher selectedProvinceCode sẽ tự động fetchDistricts,
                 // nhưng chúng ta cần đảm bảo nó hoàn thành trước khi tìm huyện
-                // Dùng Promise.all để chờ tất cả các promise bên trong hoàn thành
                 await Promise.all([
                     (async () => {
                         await fetchDistricts(selectedProvinceCode.value); // Fetch districts
@@ -312,33 +517,42 @@ const handleUpdateAddress = async () => {
         isLoadingAddressData.value = true; // Vô hiệu hóa nút khi đang gửi dữ liệu
         if (currentAddressId.value) {
             // Cập nhật địa chỉ hiện có
-            console.log(`Đang cập nhật địa chỉ ID: ${currentAddressId.value} cho người dùng ID: ${userId} với địa chỉ: ${fullAddress}`);
+            // console.log(`Đang cập nhật địa chỉ ID: ${currentAddressId.value} cho người dùng ID: ${userId} với địa chỉ: ${fullAddress}`);
             await axios.put(`/dia_chi/${currentAddressId.value}`, {
                 nguoi_dung_id: userId,
                 dia_chi: fullAddress,
                 mac_dinh: isDefaultAddress.value
             });
             Swal.fire({
-                title: 'Cập nhật địa chỉ thành công!',
-                icon: 'success',
-                confirmButtonText: 'Ok'
-            });
+    toast: true,
+    position: 'top-end',
+    icon: 'success',
+    title: 'Cập nhật địa chỉ thành công!',
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true
+});
+
         } else {
             // Tạo địa chỉ mới nếu chưa có
-            console.log(`Đang tạo địa chỉ mới cho người dùng ID: ${userId} với địa chỉ: ${fullAddress}`);
+            // console.log(`Đang tạo địa chỉ mới cho người dùng ID: ${userId} với địa chỉ: ${fullAddress}`);
             const response = await axios.post('/dia_chi', {
                 nguoi_dung_id: userId,
                 dia_chi: fullAddress,
                 mac_dinh: isDefaultAddress.value
             });
             Swal.fire({
-                title: 'Thêm địa chỉ mới thành công!',
-                icon: 'success',
-                confirmButtonText: 'Ok'
-            });
+    toast: true,
+    position: 'top-end',       // Góc trên bên phải
+    icon: 'success',
+    title: 'Thêm địa chỉ mới thành công!',
+    showConfirmButton: false,  // Ẩn nút "Ok"
+    timer: 3000,               // 3 giây
+    timerProgressBar: true     // Hiển thị thanh thời gian
+});
             if (response.data && response.data.id_dia_chi) {
                 currentAddressId.value = response.data.id_dia_chi;
-                console.log('Đã thêm địa chỉ mới, gán currentAddressId là:', currentAddressId.value);
+                // console.log('Đã thêm địa chỉ mới, gán currentAddressId là:', currentAddressId.value);
             }
         }
     } catch (error) {
@@ -355,7 +569,29 @@ const handleUpdateAddress = async () => {
     <hr>
     <div class="account-details-section">
         <h2>THÔNG TIN CÁ NHÂN</h2>
-        <p>{{ userName }} - {{ userPhone }} <a href="#" class="edit-link"><i class="fas fa-edit"></i>Sửa</a></p>
+        <div v-if="!showEditPersonalForm">
+            <p>
+                {{ userName }} - {{ userPhone }}
+                <a href="#" class="edit-link" @click.prevent="enableEditPersonal">
+                    <i class="fas fa-edit"></i>Sửa
+                </a>
+            </p>
+        </div>
+        <div v-else class="personal-edit-form">
+            <div class="form-group">
+                <label for="editName">Họ và tên</label>
+                <input type="text" id="editName" v-model="tempUserName">
+            </div>
+            <div class="form-group">
+                <label for="editPhone">Số điện thoại</label>
+                <input type="text" id="editPhone" v-model="tempUserPhone">
+            </div>
+            <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+            <div class="form-actions">
+                <button class="save-btn" @click="handleUpdatePersonal">LƯU</button>
+                <button class="cancel-btn" @click="cancelEditPersonal">HỦY</button>
+            </div>
+        </div>
     </div>
     <hr>
     <div class="shipping-address-section">
@@ -395,7 +631,7 @@ const handleUpdateAddress = async () => {
                 <input type="text" id="address" v-model="streetAddress" :disabled="isLoadingAddressData">
             </div>
         </div>
-        <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+        <p v-if="errorMessage && !showEditPersonalForm" class="error-message">{{ errorMessage }}</p>
         <button class="update-btn" @click="handleUpdateAddress" :disabled="isLoadingAddressData">CẬP NHẬT</button>
     </div>
 </template>
@@ -403,7 +639,7 @@ const handleUpdateAddress = async () => {
 <style scoped>
 /* Thêm style cho thông báo lỗi */
 .error-message {
-    color: red;
+    color: red !important;
     font-size: 14px;
     margin-top: 10px;
     margin-bottom: 5px;
@@ -505,7 +741,7 @@ const handleUpdateAddress = async () => {
     background-color: white;
     padding: 30px;
     border-radius: 8px;
-
+    /* min-height: 500px; */
 }
 
 .main-content h1 {
@@ -549,6 +785,71 @@ const handleUpdateAddress = async () => {
     margin-right: 5px;
     color: blue;
 }
+
+/* --- STYLE MỚI CHO FORM CHỈNH SỬA THÔNG TIN CÁ NHÂN --- */
+.personal-edit-form .form-group {
+    margin-bottom: 15px;
+}
+
+.personal-edit-form .form-group label {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.personal-edit-form .form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid black;
+    border-radius: 5px;
+    font-size: 15px;
+}
+
+.personal-edit-form .form-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-start; /* Căn nút về bên trái */
+}
+
+.personal-edit-form .save-btn,
+.personal-edit-form .cancel-btn {
+    padding: 10px 25px;
+    border-radius: 5px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-weight: bold;
+}
+
+.personal-edit-form .save-btn {
+    background-color: #28a745; /* Màu xanh lá cho nút lưu */
+    color: white;
+    border: none;
+}
+
+.personal-edit-form .save-btn:hover {
+    background-color: #218838;
+}
+
+.personal-edit-form .cancel-btn {
+    background-color: #ff1f1f; /* Màu xám cho nút hủy */
+    color: white;
+    border: none;
+}
+
+.personal-edit-form .cancel-btn:hover {
+    background-color: #ad0000;
+}
+
+/* Kế thừa style error-message đã có */
+.personal-edit-form .error-message {
+    margin-top: 10px;
+    margin-bottom: 0;
+}
+/* ------------------------------------------------------------- */
+
 
 .shipping-address-section .form-row {
     display: flex;
