@@ -78,7 +78,8 @@ const back = () => {
 const menu = [
   {
     label: 'Quản lý sản phẩm',
-    items: [{ to: '/admin/products', label: 'Sản phẩm', icon: 'bi bi-box' }],
+    items: [{ to: '/admin/products', label: 'Sản phẩm', icon: 'bi bi-box' },
+    { to: '/admin/Category', label: 'Danh mục sản phẩm', icon: 'bi bi-newspaper' },]
   },
   {
     label: 'Quản lý đơn hàng',

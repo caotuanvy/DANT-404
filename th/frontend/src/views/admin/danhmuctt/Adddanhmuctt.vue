@@ -74,6 +74,7 @@ export default {
           formData.append("hinh_anh", this.file);
         }
 
+        // Không cần gửi ngày tạo, backend sẽ tự động thêm ngày tạo
         const response = await axios.post(
           "http://localhost:8000/api/danh-muc-tin-tuc",
           formData,
