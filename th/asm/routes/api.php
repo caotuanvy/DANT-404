@@ -48,6 +48,7 @@ Route::put('/products/{id}/toggle-noi-bat', [ProductController::class, 'toggleNo
 
 // Product Images
 Route::post('/products/{product_id}/images', [ProductImageController::class, 'store']);
+use App\Http\Controllers\Api\IntroduceController;
 Route::delete('/products/{product_id}/images/{image_id}', [ProductImageController::class, 'destroy']);
 
 // Categories
@@ -86,6 +87,14 @@ Route::prefix('admin')->group(function () {
     Route::get('slide', [SlideShowController::class, 'index']);
     Route::get('slide/{id}', [SlideShowController::class, 'show']);
     Route::post('slide/{id}', [SlideShowController::class, 'update']);
+    Route::get('trang-tinh', [IntroduceController::class, 'index']);
+    Route::post('trang-tinh/update', [IntroduceController::class, 'update']);
+    Route::post('trang-tinh/{id}', [IntroduceController::class, 'updateMeta']);
+    Route::delete('trang-tinh/{id}', [IntroduceController::class, 'destroy']);
+    Route::post('trang-tinh', [IntroduceController::class, 'store']);
+    Route::get('trang-tinh/{slug}', [IntroduceController::class, 'show']);
+    Route::get('/products-sell-top', [ProductController::class, 'getTopSelling']);
+
 });
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/products/{id}/variants', [SanPhamBienTheController::class, 'index']);
@@ -111,7 +120,16 @@ Route::put('/dia_chi/{id}', [DiaChiController::class, 'update']);
 
 // Slide Show (admin)
 Route::prefix('admin')->group(function () {
-    Route::get('slide', [SlideShowController::class, 'index']);
-    Route::get('slide/{id}', [SlideShowController::class, 'show']);
-    Route::post('slide/{id}', [SlideShowController::class, 'update']);
+
+    Route::post('slide', [SlideShowController::class, 'store']);
+    Route::post('slide/update', [SlideShowController::class, 'update']);
+    Route::post('/slide/add-image', [SlideShowController::class, 'addImageToSlide']);
+    Route::delete('slide/{slide_id}/{loai_anh}', [SlideShowController::class, 'deleteImage']);
+    Route::post('slide/update-link', [SlideShowController::class, 'updateLink']);
+    Route::delete('slide/{id}', [SlideShowController::class, 'destroy']);
+    Route::get('slide-hienthi', [SlideShowController::class, 'getSlideTrangChu']);
+    Route::post('slide-hienthi', [SlideShowController::class, 'chonSlideHienThi']);
+    Route::post('slide/rename', [SlideShowController::class, 'rename']);
+
 });
+

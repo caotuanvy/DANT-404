@@ -14,7 +14,19 @@ import axios from 'axios';
 
 const routes = [
   { path: '/', component: Home },
-  // { path: '/infor', component: Infor },
+  { path: '/infor', component: Infor },
+   {
+    path: '/admin/test',
+    name: 'test',
+    component: () => import('../components/user/BestSellProduct.vue'),
+    meta: { requiresAuth: true, role: 'admin' }
+  },
+
+ {
+  path: '/gioi-thieu',
+  name: 'gioi-thieu',
+  component: () => import('../components/user/ISV.vue')
+  },
   {
     path: '/kich-hoat',
     name: 'KichHoat',
@@ -187,11 +199,7 @@ const routes = [
     name: 'CategoryProducts',
     component: () => import('../components/admin/CategoriesProduct.vue')
   },
-  {
-  path: '/gioi-thieu',
-  name: 'gioi-thieu',
-  component: () => import('../components/user/ISV.vue')
-  },
+ 
 
 
   
@@ -207,12 +215,12 @@ const routes = [
     component: () => import('../views/admin/Tintuc/Edittintuc.vue'),
     meta: { requiresAuth: true, role: 'admin' }
   },
+ 
 
-
-  {
-    path: '/:pathMatch(.*)*',
-    redirect: '/'
-  }
+{
+  path: '/:pathMatch(.*)*',
+  redirect: '/'
+}
 ];
 const router = createRouter({
   history: createWebHistory(),
