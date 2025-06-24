@@ -119,7 +119,11 @@ const routes = [
   },
   
 
-
+{
+  path: '/product/:id',
+  name: 'ProductDetail',
+  component: () => import('@/components/user/ProductDetail.vue')
+},
 {
   path: '/:pathMatch(.*)*',
   redirect: '/'

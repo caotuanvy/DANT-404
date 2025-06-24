@@ -114,6 +114,15 @@ public function show($id)
                 'url' => asset('storage/' . $img->duongdan),
             ];
         }),
+        'variants' => $product->bienThe->map(function ($variant) {
+            return [
+                'san_pham_bien_the_id' => $variant->bien_the_id,
+                'mau_sac' => $variant->mau_sac,
+                'kich_thuoc' => $variant->kich_thuoc,
+                'gia' => $variant->gia,
+                'so_luong_ton_kho' => $variant->so_luong_ton_kho,
+            ];
+        }),
     ]);
 }
 
