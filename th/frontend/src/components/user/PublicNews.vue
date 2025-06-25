@@ -234,6 +234,19 @@ const danhMucList = [
   align-items: center;
   gap: 12px;
   margin-bottom: 12px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+.vohop-tinnoibat-item:hover,
+.vohop-tinnoibat-item:focus {
+  background: #eafaff;
+  color: var(--main-blue);
+  box-shadow: 0 2px 8px #33ccff44;
+}
+.vohop-tinnoibat-item:active {
+  background: #33ccff;
+  color: #fff;
+  box-shadow: 0 2px 12px #33ccff55;
 }
 .vohop-tinnoibat-item span {
   font-size: 14px;
@@ -251,13 +264,7 @@ const danhMucList = [
   cursor: pointer;
   transition: background 0.2s, color 0.2s, border 0.2s, box-shadow 0.2s;
 }
-.vohop-tags button:hover,
-.vohop-tags button:focus {
-  background: var(--main-blue);
-  color: #fff;
-  border-color: var(--main-blue);
-  box-shadow: 0 2px 8px #33ccff44;
-}
+/* Xóa hiệu ứng hover và focus, chỉ giữ lại hiệu ứng khi nhấn */
 .vohop-tags button:active {
   background: #1ba6d9;
   color: #fff;
