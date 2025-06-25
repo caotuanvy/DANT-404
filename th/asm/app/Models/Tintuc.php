@@ -19,7 +19,9 @@ class Tintuc extends Model
         'ngay_dang',
         'noi_bat',
         'duyet_tin_tuc',
-        'slug', // Thêm trường slug
+        'slug',
+        'luot_like',
+        'luot_xem',
     ];
 
     public function danhMuc()

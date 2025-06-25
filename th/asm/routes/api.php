@@ -152,6 +152,7 @@ Route::put('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'update']);
 Route::delete('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'destroy']);
 Route::post('/danh-muc-tin-tuc', [DanhMucTtController::class, 'store']);
 Route::get('/xemdanhmuc-admin/{id}', [DanhMucTtController::class, 'xemChiTietDanhMucAdmin']);
+Route::get('tintuc-cong-khai/danh-muc/{id}', [DanhMucTtController::class, 'tintucCongKhaiTheoDanhMuc']);
 
 // vỹ
 Route::post('products/{id}/images', [ProductImageController::class, 'store']);
@@ -167,13 +168,6 @@ Route::prefix('admin')->group(function () {
     Route::post('trang-tinh', [IntroduceController::class, 'store']);
     Route::get('trang-tinh/{slug}', [IntroduceController::class, 'show']);
     Route::get('/products-sell-top', [ProductController::class, 'getTopSelling']);
-
-// Tin tức
-Route::get('/tintuc', [TintucController::class, 'index']);
-Route::get('/tintuc/{id}', [TintucController::class, 'show']);
-Route::post('/tintuc', [TintucController::class, 'store']);
-Route::put('/tintuc/{id}', [TintucController::class, 'update']);
-Route::delete('/tintuc/{id}', [TintucController::class, 'destroy']);
 
 });
 Route::middleware('auth:sanctum')->group(function () {
@@ -193,11 +187,13 @@ Route::delete('/tintuc/{id}', [TintucController::class, 'destroy']);
 Route::post('/tintuc', [TintucController::class, 'store']);
 Route::get('/xemtintuc-admin/{id}', [TintucController::class, 'xemchitiettintucadmin']);
 Route::get('/tintuc-ck', [TintucController::class, 'tintucCongKhai']);
+Route::get('tintuc-cong-khai', [TintucController::class, 'tintucCongKhai']);
 Route::get('/tintuc-cong-khai/{id}', [TintucController::class, 'chitietCongKhai']);
+Route::get('tin-noi-bat', [TintucController::class, 'tinNoiBat']);
 
 
 
-Route::get('/tintuc', [TintucController::class, 'index']);        // Lấy danh sách tin tức
+Route::get('/tintuc', [TintucController::class, 'index']);
 Route::post('/tintuc', [TintucController::class, 'store']);
 Route::get('/tintuc/{id}', [TintucController::class, 'show']);
 Route::put('/tintuc/{id}', [TintucController::class, 'update']);

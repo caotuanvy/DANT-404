@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\DanhMucTinTuc;
 use Illuminate\Http\Request;
+use App\Models\Tintuc;
 use Illuminate\Support\Facades\Storage;
 
 class DanhMucTtController extends Controller
@@ -86,7 +87,7 @@ class DanhMucTtController extends Controller
     }
     // Xem chi tiết danh mục tin tức
     public function xemChiTietDanhMucAdmin($id)
-{
+    {
     $danhMuc = DanhMucTinTuc::findOrFail($id);
 
     return response()->json([
@@ -97,6 +98,18 @@ class DanhMucTtController extends Controller
         'ngay_tao' => $danhMuc->ngay_tao,
         'ngay_sua' => $danhMuc->ngay_sua,
     ]);
-}
+    }
+    // danh muc tin tuc cong khai theo danh muc
+    public function tintucCongKhaiTheoDanhMuc($id_danh_muc)
+    {
+    // Lấy tin tức đã duyệt thuộc danh mục, mới nhất
+    $tintucs = Tintuc::with('danhMuc')
+        ->where('duyet_tin_tuc', 1)
+        ->where('id_danh_muc_tin_tuc', $id_danh_muc)
+        ->orderByDesc('ngay_dang')
+        ->get();
+
+    return response()->json($tintucs);
+    }
 
 }

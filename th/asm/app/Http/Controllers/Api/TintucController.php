@@ -125,6 +125,18 @@ class TintucController extends Controller
         'danhMuc' => $tintuc->danhMuc,
     ]);
     }
+    // Lấy tin tức nổi bật
+    public function tinNoiBat()
+{
+    // Lấy 5 tin tức có lượt xem cao nhất, đã duyệt
+    $tins = Tintuc::where('luot_xem', 1)
+        ->orderByDesc('luot_xem')
+        ->take(5)
+        ->get();
+
+    return response()->json($tins);
+}
+
 
 
 }

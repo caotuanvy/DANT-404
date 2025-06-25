@@ -30,9 +30,9 @@ const routes = [
     component: () => import('../components/user/KichHoatTaiKhoan.vue')
   },
   {
-    path: '/tin-tuc',
-    name: 'TinTucCongKhai',
-    component: () => import('../components/user/Publicnews.vue')
+  path: '/tin-tuc',
+  name: 'TinTucCongKhai',
+  component: () => import('../components/user/PublicNews.vue')
   },
   {
     path: '/user',

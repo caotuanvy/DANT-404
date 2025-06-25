@@ -3,14 +3,24 @@
     <div class="vohop-main">
       <h1 class="vohop-title">Tin tức mới nhất</h1>
       <div class="vohop-newsgrid">
-        <div class="vohop-newsitem" v-for="n in 6" :key="n">
-          <img src="https://via.placeholder.com/400x180" alt="">
+        <div class="vohop-newsitem" v-for="item in newsList" :key="item.id">
+          <img
+            :src="item.hinh_anh
+              ? (item.hinh_anh.startsWith('http')
+                  ? item.hinh_anh
+                  : `http://localhost:8000/storage/${item.hinh_anh}`)
+              : 'https://via.placeholder.com/400x180'"
+            alt="Hình ảnh"
+          >
           <div class="vohop-newsitem-content">
-            <h3>Tiệc tùng linh đình: Khuyến mãi combo pizza</h3>
-            <p>Bạn đang tìm kiếm một bữa ăn ngon lành cho buổi tối cùng bạn bè quây quần? Đừng bỏ lỡ combo pizza siêu ưu đãi tháng này!</p>
+            <h3>{{ item.tieude }}</h3>
+            <div v-html="getNoiDungHtml(item.noidung)"></div>
           </div>
           <div class="vohop-newsitem-footer">
-            <span><i class="fa-regular fa-calendar"></i> 24/03/2025</span>
+            <span>
+              <i class="fa-regular fa-calendar"></i>
+              {{ item.ngay_dang }}
+            </span>
             <button class="vohop-btn">Xem chi tiết</button>
           </div>
         </div>
@@ -22,23 +32,23 @@
         <ul>
           <li
             v-for="(item, idx) in danhMucList"
-            :key="item.label"
+            :key="item.id_danh_muc_tin_tuc"
             :class="{ active: activeDanhMuc === idx }"
-            @click="activeDanhMuc = idx"
+            @click="handleSelectDanhMuc(idx, item.id_danh_muc_tin_tuc)"
           >
-            <i :class="`fa-solid ${item.icon}`"></i> {{ item.label }}
+            <i class="fa-solid fa-angle-right"></i> {{ item.ten_danh_muc }}
           </li>
         </ul>
       </div>
       <div class="vohop-tinnoibat">
-        <h3><i class="fa-solid fa-star"></i> TIN TỨC NỔI BẬT</h3>
-        <div class="vohop-tinnoibat-item">
-          <img src="https://via.placeholder.com/60x60" alt="">
-          <span>Khuyến mãi combo pizza cuối tuần</span>
-        </div>
-        <div class="vohop-tinnoibat-item">
-          <img src="https://via.placeholder.com/60x60" alt="">
-          <span>Gà rán giòn tan chỉ 29k</span>
+        <h3><i class="fa-solid fa-eye"></i> TIN XEM NHIỀU NHẤT</h3>
+        <div
+          class="vohop-tinnoibat-item"
+          v-for="tin in tinNoiBatList"
+          :key="tin.id"
+        >
+          <img :src="tin.hinh_anh ? (tin.hinh_anh.startsWith('http') ? tin.hinh_anh : `http://localhost:8000/storage/${tin.hinh_anh}`) : 'https://via.placeholder.com/60x60'" alt="">
+          <span>{{ tin.tieude }}</span>
         </div>
       </div>
       <div class="vohop-tags">
@@ -53,18 +63,94 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const activeDanhMuc = ref(0)
-const danhMucList = [
-  { icon: 'fa-drumstick-bite', label: 'Các món gà' },
-  { icon: 'fa-pizza-slice', label: 'Pizza' },
-  { icon: 'fa-burger', label: 'Burger' },
-  { icon: 'fa-bowl-food', label: 'Mì Ý' },
-  { icon: 'fa-bowl-rice', label: 'Cơm' },
-  { icon: 'fa-bread-slice', label: 'Bánh' },
-  { icon: 'fa-utensils', label: 'Món ăn kèm' },
-  { icon: 'fa-mug-hot', label: 'Nước uống' }
-]
+import { ref, onMounted } from 'vue'
+const newsList = ref([])
+const activeDanhMuc = ref(null)
+const danhMucList = ref([])
+const tinNoiBatList = ref([])
+
+onMounted(async () => {
+  await fetchDanhMucList()
+  await fetchAllNews()
+  await fetchTinNoiBat()
+})
+
+async function fetchDanhMucList() {
+  try {
+    const res = await fetch('http://localhost:8000/api/danh-muc-tin-tuc')
+    danhMucList.value = await res.json()
+  } catch (err) {
+    danhMucList.value = []
+  }
+}
+
+async function fetchAllNews() {
+  try {
+    const res = await fetch('http://localhost:8000/api/tintuc-cong-khai')
+    newsList.value = await res.json()
+  } catch (err) {
+    newsList.value = []
+  }
+}
+
+async function handleSelectDanhMuc(idx, id) {
+  activeDanhMuc.value = idx
+  try {
+    const res = await fetch(`http://localhost:8000/api/tintuc-cong-khai/danh-muc/${id}`)
+    newsList.value = await res.json()
+  } catch (err) {
+    newsList.value = []
+  }
+}
+
+async function fetchTinNoiBat() {
+  try {
+    const res = await fetch('http://localhost:8000/api/tin-noi-bat')
+    tinNoiBatList.value = await res.json()
+  } catch (err) {
+    tinNoiBatList.value = []
+  }
+}
+
+// Hàm kiểm tra và chuyển đổi nội dung EditorJS sang HTML
+function isJSON(str) {
+  try {
+    const parsed = JSON.parse(str)
+    return parsed && typeof parsed === 'object'
+  } catch {
+    return false
+  }
+}
+
+function convertBlocksToHtml(data) {
+  if (!data || !data.blocks) return ''
+  return data.blocks.map(block => {
+    switch (block.type) {
+      case 'header':
+        return `<h${block.data.level}>${block.data.text}</h${block.data.level}>`
+      case 'paragraph':
+        return `<p>${block.data.text}</p>`
+      case 'list':
+        const tag = block.data.style === 'ordered' ? 'ol' : 'ul'
+        return `<${tag}>${block.data.items.map(i => `<li>${i}</li>`).join('')}</${tag}>`
+      case 'quote':
+        return `<blockquote>${block.data.text}</blockquote>`
+      case 'delimiter':
+        return `<hr />`
+      default:
+        return ''
+    }
+  }).join('')
+}
+
+function getNoiDungHtml(noidung) {
+  if (isJSON(noidung)) {
+    const blockData = JSON.parse(noidung)
+    return convertBlocksToHtml(blockData)
+  }
+  // Nếu không phải JSON thì cắt 100 ký tự đầu
+  return noidung ? noidung.slice(0, 100) + '...' : ''
+}
 </script>
 
 <style scoped>
@@ -264,7 +350,6 @@ const danhMucList = [
   cursor: pointer;
   transition: background 0.2s, color 0.2s, border 0.2s, box-shadow 0.2s;
 }
-/* Xóa hiệu ứng hover và focus, chỉ giữ lại hiệu ứng khi nhấn */
 .vohop-tags button:active {
   background: #1ba6d9;
   color: #fff;
