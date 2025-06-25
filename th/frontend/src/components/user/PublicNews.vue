@@ -168,9 +168,9 @@ const danhMucList = [
   transition: background 0.2s, color 0.2s, border 0.2s;
 }
 .vohop-btn:hover {
-  background: var(--main-blue);
+  background: #1ba6d9;
   color: #fff;
-  border-color: var(--main-blue);
+  border-color: #1ba6d9;
 }
 .vohop-benphai {
   flex: 1;
