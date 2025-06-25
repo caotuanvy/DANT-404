@@ -25,6 +25,11 @@ const routes = [
     component: () => import('../components/user/ISV.vue')
   },
   {
+    path: '/Danh-muc-san-pham',
+    name: 'DAnhMucSanPham',
+    component: () => import('../components/user/DMSP.vue')
+  },
+  {
     path: '/kich-hoat',
     name: 'KichHoat',
     component: () => import('../components/user/KichHoatTaiKhoan.vue')
@@ -97,11 +102,10 @@ const routes = [
         meta: { requiresAuth: true, role: 'admin' }
       },
       {
-        path: 'tintuc',
-        component: () => import('../components/admin/TinTuc.vue'),
-        component: () => import('../components/admin/Tintuc.vue'),
-        meta: { requiresAuth: true, role: 'admin' }
-      },
+  path: 'tintuc',
+  component: () => import('../components/admin/Tintuc.vue'),
+  meta: { requiresAuth: true, role: 'admin' }
+},
       {
         path: 'slide',
         name: 'AdminSlide',
