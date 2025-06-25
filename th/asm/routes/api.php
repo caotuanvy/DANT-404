@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\SlideShowController;
 use App\Http\Controllers\Api\SanPhamBienTheController;
 use App\Http\Controllers\Api\TintucController;
 use App\Http\Controllers\Api\DiaChiController;
+use App\Http\Controllers\Api\CartController;
 Route::delete('/products/{product_id}/images/{image_id}', [ProductImageController::class, 'destroy']);
 
 Route::post('/products/{product_id}/images', [ProductImageController::class, 'store']);
@@ -89,3 +90,7 @@ Route::get('/dia_chi/nguoi_dung/{nguoi_dung_id}', [DiaChiController::class, 'ind
 Route::post('/dia_chi', [DiaChiController::class, 'store']);
 Route::put('/dia_chi/{id}', [DiaChiController::class, 'update']);
 
+// routes
+
+Route::middleware('auth:sanctum')->post('/cart/add', [CartController::class, 'add']);
+Route::get('/cart', [CartController::class, 'index']);

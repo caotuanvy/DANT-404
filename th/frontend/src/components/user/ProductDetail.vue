@@ -18,6 +18,11 @@
       <p><b>Kích thước:</b> {{ selectedVariant.kich_thuoc }}</p>
       <p><b>Giá:</b> {{ formatCurrency(selectedVariant.gia) }}</p>
       <p><b>Tồn kho:</b> {{ selectedVariant.so_luong_ton_kho }}</p>
+      <div>
+        <label>Số lượng: </label>
+        <input type="number" v-model="quantity" min="1" :max="selectedVariant.so_luong_ton_kho" style="width:60px" />
+      </div>
+      <button class="add-cart-btn" @click="addToCart">Thêm vào giỏ hàng</button>
     </div>
   </div>
   <div v-else>
@@ -32,6 +37,7 @@ import axios from 'axios';
 
 const product = ref(null);
 const selectedVariantId = ref(null);
+const quantity = ref(1);
 const route = useRoute();
 
 const formatCurrency = (value) =>
@@ -42,6 +48,53 @@ const selectedVariant = computed(() => {
   return product.value.variants.find(v => v.san_pham_bien_the_id === selectedVariantId.value);
 });
 
+const addToCart = async () => {
+  if (!selectedVariant.value) return;
+  try {
+    // Lấy token từ localStorage (nếu dùng JWT)
+    const token = localStorage.getItem('token');
+    await axios.post(
+      '/cart/add',
+      {
+        san_pham_bien_the_id: selectedVariant.value.san_pham_bien_the_id,
+        quantity: Number(quantity.value)
+      },
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true // Nếu backend dùng cookie/session
+      }
+    );
+    alert('Đã thêm vào giỏ hàng!');
+  } catch (e) {
+    // Debug lỗi BE nếu cần
+    if (e.response) {
+      console.error('Lỗi BE:', e.response.data);
+      if (e.response.data && e.response.data.message) {
+        alert('Lỗi: ' + e.response.data.message);
+      }
+    }
+    // Nếu lỗi (chưa đăng nhập), fallback lưu localStorage
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const idx = cart.findIndex(
+      item => item.san_pham_bien_the_id === selectedVariant.value.san_pham_bien_the_id
+    );
+    if (idx !== -1) {
+      cart[idx].quantity += Number(quantity.value);
+    } else {
+      cart.push({
+        san_pham_bien_the_id: selectedVariant.value.san_pham_bien_the_id,
+        product_name: product.value.product_name,
+        mau_sac: selectedVariant.value.mau_sac,
+        kich_thuoc: selectedVariant.value.kich_thuoc,
+        gia: selectedVariant.value.gia,
+        hinh_anh: product.value.hinh_anh,
+        quantity: Number(quantity.value)
+      });
+    }
+    localStorage.setItem('cart', JSON.stringify(cart));
+    alert('Đã thêm vào giỏ hàng (local)!');
+  }
+};
 onMounted(async () => {
   const id = route.params.id;
   const res = await axios.get(`/products/${id}`);
@@ -51,4 +104,36 @@ onMounted(async () => {
     selectedVariantId.value = product.value.variants[0].san_pham_bien_the_id;
   }
 });
+
 </script>
+
+<style scoped>
+.product-detail {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 24px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px #eee;
+}
+.product-img {
+  max-width: 220px;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px #ddd;
+  margin-bottom: 16px;
+}
+.add-cart-btn {
+  margin-top: 12px;
+  padding: 8px 18px;
+  background: #007cff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.add-cart-btn:hover {
+  background: #005fa3;
+}
+</style>
