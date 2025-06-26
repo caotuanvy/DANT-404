@@ -19,6 +19,8 @@ class SanPhamBienThe extends Model
         'mau_sac',
         'so_luong_ton_kho',
         'gia',
+        'hinh_anh',       // cần có
+        'trong_luong',    // cần có
         'ngay_tao',
         'ngay_sua',
     ];

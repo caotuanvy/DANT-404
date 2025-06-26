@@ -821,6 +821,7 @@ const handleUpdateAddress = async () => {
     cursor: pointer;
     transition: background-color 0.3s ease;
     font-weight: bold;
+    margin: 0;
 }
 
 .personal-edit-form .save-btn {
@@ -834,7 +835,7 @@ const handleUpdateAddress = async () => {
 }
 
 .personal-edit-form .cancel-btn {
-    background-color: #ff1f1f; /* Màu xám cho nút hủy */
+    background-color: #ff1f1f; 
     color: white;
     border: none;
 }
