@@ -26,6 +26,14 @@ class SanPham extends Model
 {
     return $this->hasMany(SanPhamBienThe::class, 'san_pham_id', 'san_pham_id');
 }
+public function variants()
+{
+    return $this->hasMany(SanPhamBienThe::class, 'san_pham_id', 'san_pham_id');
+}
+public function gioHangChiTiet()
+{
+    return $this->hasMany(GioHangChiTiet::class, 'san_pham_id');
+}
 
 }
 

@@ -8,10 +8,12 @@ import UserAccountLayout from '../components/user/UserAccountLayout.vue';
 import UserProfile from '../components/user/UserProfile.vue'; 
 import UserOrders from '../components/user/UserOrders.vue';
 import ChangePassword from '../components/user/ChangePassword.vue';
+import Cart from '../components/user/Cart.vue';
 import axios from 'axios';
 
 const routes = [
   { path: '/', component: Home },
+  { path: '/cart', component: Cart, meta: { requiresAuth: true } },
   { path: '/infor', component: Infor },
   {
     path: '/admin/test',
@@ -67,6 +69,7 @@ const routes = [
     component: UserAccountLayout, 
     meta: { requiresAuth: true }, // Yêu cầu xác thực cho tất cả các route con
     children: [
+      
       {
         path: '', // Đường dẫn mặc định khi truy cập /user, chuyển hướng đến profile
         redirect: '/user/profile'
@@ -222,10 +225,17 @@ const routes = [
     name: 'CategoryProducts',
     component: () => import('../components/admin/CategoriesProduct.vue')
   },
-  {
-    path: '/:pathMatch(.*)*',
-    redirect: '/'
-  }
+  
+
+{
+  path: '/product/:id',
+  name: 'ProductDetail',
+  component: () => import('@/components/user/ProductDetail.vue')
+},
+{
+  path: '/:pathMatch(.*)*',
+  redirect: '/'
+}
 ];
 
 const router = createRouter({

@@ -40,32 +40,41 @@ class ProductController extends Controller
         }
     }
 
-    public function show($id)
-    {
-        $product = SanPham::with(['danhMuc', 'hinhAnhSanPham'])->findOrFail($id);
+public function show($id)
+{
+    $product = SanPham::with(['danhMuc', 'hinhAnhSanPham'])->findOrFail($id);
 
-        return response()->json([
-            'product_id' => $product->san_pham_id,
-            'product_name' => $product->ten_san_pham,
-            'price' => $product->gia,
-            'description' => $product->mo_ta,
-            'noi_bat' => $product->noi_bat,
-            'khuyen_mai' => $product->khuyen_mai,
-            'slug' => $product->slug,
-            'so_bien_the' => $product->bienThe->count(),
-            'danh_muc' => $product->danhMuc ? [
-                'category_id' => $product->danhMuc->category_id,
-                'ten_danh_muc' => $product->danhMuc->ten_danh_muc,
-            ] : null,
-            'images' => $product->hinhAnhSanPham->map(function ($img) {
-                return [
-                    'id' => $img->hinh_anh_id,
-                    'image_path' => $img->duongdan,
-                    'url' => asset('storage/' . $img->duongdan),
-                ];
-            }),
-        ]);
-    }
+    return response()->json([
+        'product_id' => $product->san_pham_id,
+        'product_name' => $product->ten_san_pham,
+        'price' => $product->gia,
+        'description' => $product->mo_ta,
+        'noi_bat' => $product->noi_bat,
+        'khuyen_mai' => $product->khuyen_mai,
+        'slug' => $product->slug,
+        'so_bien_the' => $product->bienThe->count(),
+        'danh_muc' => $product->danhMuc ? [
+            'category_id' => $product->danhMuc->category_id,
+            'ten_danh_muc' => $product->danhMuc->ten_danh_muc,
+        ] : null,
+        'images' => $product->hinhAnhSanPham->map(function ($img) {
+            return [
+                'id' => $img->hinh_anh_id,
+                'image_path' => $img->duongdan,
+                'url' => asset('storage/' . $img->duongdan),
+            ];
+        }),
+        'variants' => $product->bienThe->map(function ($variant) {
+            return [
+                'san_pham_bien_the_id' => $variant->bien_the_id,
+                'mau_sac' => $variant->mau_sac,
+                'kich_thuoc' => $variant->kich_thuoc,
+                'gia' => $variant->gia,
+                'so_luong_ton_kho' => $variant->so_luong_ton_kho,
+            ];
+        }),
+    ]);
+}
 
     public function store(Request $request)
     {
