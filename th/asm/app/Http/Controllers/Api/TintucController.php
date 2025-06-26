@@ -127,7 +127,7 @@ class TintucController extends Controller
     }
     // Lấy tin tức nổi bật
     public function tinNoiBat()
-{
+    {
     // Lấy 5 tin tức có lượt xem cao nhất, đã duyệt
     $tins = Tintuc::where('luot_xem', 1)
         ->orderByDesc('luot_xem')
@@ -135,7 +135,7 @@ class TintucController extends Controller
         ->get();
 
     return response()->json($tins);
-}
+    }
 
 
 

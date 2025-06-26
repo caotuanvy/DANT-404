@@ -35,6 +35,11 @@ const routes = [
   component: () => import('../components/user/PublicNews.vue')
   },
   {
+  path: '/tin-tuc-chi-tiet',
+  name: 'ChiTietTinTucCongKhai',
+  component: () => import('../components/user/NewsDetails.vue')
+  },
+  {
     path: '/user',
     component: UserAccountLayout,
     meta: { requiresAuth: true },
