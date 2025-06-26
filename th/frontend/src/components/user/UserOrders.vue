@@ -30,28 +30,27 @@
         </div>
 
         <div v-for="item in order.order_items" :key="item.id" class="order-product-item">
-  <img
-    :src="item.bien_the?.san_pham?.anh_dai_dien || '/placeholder-image.jpg'"
-    alt="Product Image"
-    class="product-image"
-  />
-  <div class="product-details">
-    <span class="product-name">
-      {{ item.bien_the?.san_pham?.ten_san_pham || 'Không rõ tên sản phẩm' }}
-    </span>
-    <span class="product-variant" v-if="item.bien_the?.mau_sac || item.bien_the?.kich_thuoc">
-      Phân loại:
-      {{ item.bien_the.mau_sac || 'Màu không xác định' }}
-      {{ item.bien_the.kich_thuoc ? '- ' + item.bien_the.kich_thuoc : '' }}
-    </span>
-    <span class="product-quantity">Số lượng: {{ item.so_luong }}</span>
-    <span class="product-price">Đơn giá: {{ formatCurrency(item.don_gia) }}</span>
-    <span class="product-total">
-      Tổng: {{ formatCurrency(item.so_luong * item.don_gia) }}
-    </span>
-  </div>
-</div>
-
+          <img
+            :src="item.bien_the?.san_pham?.anh_dai_dien || '/placeholder-image.jpg'"
+            alt="Product Image"
+            class="product-image"
+          />
+          <div class="product-details">
+            <span class="product-name">
+              {{ item.bien_the?.san_pham?.ten_san_pham || 'Không rõ tên sản phẩm' }}
+            </span>
+            <span class="product-variant" v-if="item.bien_the?.mau_sac || item.bien_the?.kich_thuoc">
+              Phân loại:
+              {{ item.bien_the.mau_sac || 'Màu không xác định' }}
+              {{ item.bien_the.kich_thuoc ? '- ' + item.bien_the.kich_thuoc : '' }}
+            </span>
+            <span class="product-quantity">Số lượng: {{ item.so_luong }}</span>
+            <span class="product-price">Đơn giá: {{ formatCurrency(item.don_gia) }}</span>
+            <span class="product-total">
+              Tổng: {{ formatCurrency(item.so_luong * item.don_gia) }}
+            </span>
+          </div>
+        </div>
 
         <div class="order-footer">
           <div>
@@ -69,7 +68,6 @@
           </div>
         </div>
       </div>
-      
     </div>
   </div>
 </template>
@@ -193,33 +191,39 @@ const calculateOrderTotal = (order) => {
 .order-status-tabs {
   display: flex;
   justify-content: flex-start; /* Căn trái */
-  gap: 10px;
+  gap: 10px; /* Khoảng cách giữa các nút */
   margin-bottom: 20px;
   flex-wrap: wrap; /* Cho phép xuống dòng nếu quá nhiều tab */
 }
 
 .order-status-tabs button {
-  background-color: #f0f0f0;
+  background-color: #f0f2f5; /* Nền nhẹ nhàng hơn */
   color: #555;
-  border: 1px solid #ddd;
-  padding: 10px 15px;
-  border-radius: 5px;
+  border: 1px solid #dcdfe6; /* Viền tinh tế hơn */
+  padding: 10px 20px; /* Tăng padding để nút lớn hơn */
+  border-radius: 20px; /* Bo tròn nút để trông hiện đại hơn */
   cursor: pointer;
-  font-size: 14px;
+  font-size: 15px; /* Tăng kích thước chữ */
+  font-weight: 500; /* Đậm vừa phải */
   transition: all 0.3s ease;
   white-space: nowrap; /* Ngăn text bị xuống dòng */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Thêm đổ bóng nhẹ */
 }
 
 .order-status-tabs button:hover {
-  background-color: #e0e0e0;
-  border-color: #ccc;
+  background-color: #e6f7ff; /* Nền xanh nhạt khi hover */
+  border-color: #91d5ff; /* Viền xanh khi hover */
+  color: #1890ff; /* Chữ xanh khi hover */
+  transform: translateY(-2px); /* Hiệu ứng nhấc nhẹ nút lên */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Đổ bóng rõ hơn khi hover */
 }
 
 .order-status-tabs button.active {
-  background-color: #4a90e2; /* Màu xanh của bạn */
+  background-color: #1890ff; /* Màu xanh dương chủ đạo */
   color: white;
-  border-color: #4a90e2;
+  border-color: #1890ff;
   font-weight: bold;
+  box-shadow: 0 4px 8px rgba(24, 144, 255, 0.2); /* Đổ bóng xanh cho nút active */
 }
 
 /* Styles cho danh sách đơn hàng */
