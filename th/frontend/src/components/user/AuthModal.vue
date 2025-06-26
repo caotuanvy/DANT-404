@@ -1,3 +1,421 @@
+<script setup>
+import Swal from 'sweetalert2';
+import axios from 'axios';
+import { ref, reactive, watch, onMounted } from 'vue'; // Thêm onMounted
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+
+const props = defineProps({
+    show: {
+        type: Boolean,
+        default: false
+    }
+});
+
+const emit = defineEmits(['update:show']);
+
+const currentView = ref('login');
+
+const loginForm = reactive({
+    email: '',
+    password: ''
+});
+const loginError = ref('');
+
+const registerForm = reactive({
+    email: '',
+    password: '',
+    confirmPassword: ''
+});
+const registerError = ref('');
+
+const forgotPasswordForm = reactive({
+    email: ''
+});
+const forgotPasswordError = ref('');
+
+const isSubmitting = ref(false);
+
+watch(() => props.show, (newVal) => {
+    if (!newVal) {
+        currentView.value = 'login';
+        resetForms();
+    } else {
+        // Nếu modal được mở, kiểm tra và hiển thị Google One Tap
+        // displayGoogleOneTap(); // Bỏ bình luận nếu muốn dùng One Tap
+    }
+});
+
+const resetForms = () => {
+    loginForm.email = '';
+    loginForm.password = '';
+    loginError.value = '';
+
+    registerForm.email = '';
+    registerForm.password = '';
+    registerForm.confirmPassword = '';
+    registerError.value = '';
+
+    forgotPasswordForm.email = '';
+    forgotPasswordForm.error = '';
+};
+
+const changeView = (viewName) => {
+    currentView.value = viewName;
+    resetForms();
+};
+
+const closeModal = () => {
+    emit('update:show', false);
+};
+
+const handleLogin = async () => {
+    loginError.value = '';
+    try {
+        const res = await axios.post('/login', {
+            email: loginForm.email,
+            mat_khau: loginForm.password
+        });
+
+        const user = res.data.user;
+        const token = res.data.token;
+
+        if (user.is_active !== 1) {
+            loginError.value = 'Tài khoản của bạn chưa được kích hoạt.';
+            return;
+        }
+        closeModal();
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('vai_tro_id', user.vai_tro_id);
+        localStorage.setItem('sdt', user.sdt);
+        await Swal.fire({
+            icon: 'success',
+            title: 'Chào mừng!',
+            text: `Xin chào ${user.ho_ten || user.email}, chúc bạn một ngày tuyệt vời!`,
+            toast: true,
+            position: 'top-end',
+            timer: 3000,
+            timerProgressBar: true,
+            showConfirmButton: false
+        });
+    } catch (err) {
+        loginError.value = err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại email và mật khẩu.';
+    }
+};
+
+const handleRegister = async () => {
+    isSubmitting.value = true;
+
+    if (registerForm.password !== registerForm.confirmPassword) {
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'error',
+            title: 'Mật khẩu và xác nhận mật khẩu không khớp.',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        });
+        isSubmitting.value = false;
+        return;
+    }
+
+    const atIndex = registerForm.email.indexOf('@');
+    if (atIndex === -1 || atIndex === 0 || atIndex === registerForm.email.length - 1) {
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'error',
+            title: 'Địa chỉ email không hợp lệ.',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        });
+        isSubmitting.value = false;
+        return;
+    }
+    registerForm.ho_ten = registerForm.email.substring(0, atIndex);
+
+    let toastLoading = null;
+
+    try {
+        toastLoading = Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'info',
+            title: 'Đang đăng ký tài khoản...',
+            showConfirmButton: false,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
+            }
+        });
+
+        const res = await axios.post('/register', {
+            ho_ten: registerForm.ho_ten,
+            email: registerForm.email,
+            sdt: registerForm.sdt || '',
+            mat_khau: registerForm.password,
+            mat_khau_confirmation: registerForm.confirmPassword
+        });
+
+        if (toastLoading) {
+            Swal.close(toastLoading);
+        }
+
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Đăng ký thành công! Vui lòng kiểm tra email để kích hoạt tài khoản.',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        }).then(() => {
+            changeView('login');
+        });
+
+    } catch (err) {
+        console.error('Đăng ký thất bại:', err);
+
+        if (toastLoading) {
+            Swal.close(toastLoading);
+        }
+
+        let errorMessage = 'Đăng ký thất bại. Vui lòng thử lại.';
+
+        if (err.response && err.response.data && err.response.data.errors) {
+            const errors = err.response.data.errors;
+
+            if (errors.email) {
+                if (errors.email.includes('The email has already been taken.')) {
+                    errorMessage = 'Email này đã được sử dụng. Vui lòng chọn email khác.';
+                } else {
+                    errorMessage = 'Email không hợp lệ: ' + errors.email[0];
+                }
+            } else if (errors.mat_khau) {
+                if (errors.mat_khau.includes('The mat khau field must be at least 8 characters.')) {
+                    errorMessage = 'Mật khẩu phải có ít nhất 8 ký tự.';
+                } else if (errors.mat_khau.includes('The password confirmation does not match.')) {
+                    errorMessage = 'Mật khẩu xác nhận không khớp.';
+                } else {
+                    errorMessage = 'Mật khẩu không hợp lệ: ' + errors.mat_khau[0];
+                }
+            } else if (errors.sdt) {
+                errorMessage = 'Số điện thoại không hợp lệ: ' + errors.sdt[0];
+            } else if (errors.ho_ten) {
+                errorMessage = 'Họ tên không hợp lệ: ' + errors.ho_ten[0];
+            } else {
+                const firstErrorKey = Object.keys(errors)[0];
+                if (firstErrorKey) {
+                    errorMessage = errors[firstErrorKey][0];
+                }
+            }
+
+        } else if (err.response && err.response.data && err.response.data.message) {
+            errorMessage = err.response.data.message;
+        }
+
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'error',
+            title: errorMessage,
+            showConfirmButton: false,
+            timer: 5000,
+            timerProgressBar: true
+        });
+    } finally {
+        isSubmitting.value = false;
+    }
+};
+
+const handleForgotPassword = async () => {
+    forgotPasswordError.value = '';
+    try {
+        const res = await axios.post('/forgot-password', { email: forgotPasswordForm.email });
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: res.data.message || `Hướng dẫn khôi phục mật khẩu đã được gửi đến ${forgotPasswordForm.email}.`,
+            showConfirmButton: false,
+            timer: 5000,
+            timerProgressBar: true
+        });
+        changeView('login');
+    } catch (err) {
+        console.error('Lỗi khi gửi yêu cầu quên mật khẩu:', err);
+        const errorMessage = err.response?.data?.message || 'Không thể gửi yêu cầu. Vui lòng kiểm tra lại email.';
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'error',
+            title: errorMessage,
+            showConfirmButton: false,
+            timer: 5000,
+            timerProgressBar: true
+        });
+        forgotPasswordError.value = errorMessage;
+    }
+};
+
+// --- Thêm các hàm xử lý đăng nhập Google/Facebook ---
+
+// Google Login
+const handleGoogleLogin = () => {
+    // Để tích hợp Google Login, bạn cần dùng Google Identity Services SDK
+    // Tham khảo: https://developers.google.com/identity/gsi/web/guides/overview
+    // Cách 1: Sử dụng popup hoặc redirect (khuyến nghị cho button)
+    const googleClientId = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com'; // Thay thế bằng Client ID của bạn
+
+    window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: handleGoogleCredentialResponse, // Hàm callback sau khi nhận được thông tin
+        ux_mode: 'popup' // hoặc 'redirect'
+    });
+
+    // Mở popup đăng nhập Google
+    window.google.accounts.id.prompt(); // Hoặc bạn có thể đính kèm vào nút của mình
+                                       // window.google.accounts.id.renderButton(
+                                       //   document.getElementById("google-login-button"),
+                                       //   { theme: "outline", size: "large" }  // tùy chỉnh nút
+                                       // );
+};
+
+const handleGoogleCredentialResponse = async (response) => {
+    // 'response' chứa id_token từ Google
+    if (response.credential) {
+        try {
+            // Gửi id_token này về backend của bạn để xác minh
+            // Backend sẽ dùng Google API để xác minh token và lấy thông tin người dùng
+            const res = await axios.post('/api/auth/google', {
+                id_token: response.credential
+            });
+
+            // Xử lý phản hồi từ backend tương tự như handleLogin
+            const user = res.data.user;
+            const token = res.data.token;
+
+            closeModal();
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('vai_tro_id', user.vai_tro_id);
+            localStorage.setItem('sdt', user.sdt);
+
+            await Swal.fire({
+                icon: 'success',
+                title: 'Chào mừng!',
+                text: `Xin chào ${user.ho_ten || user.email}, chúc bạn một ngày tuyệt vời!`,
+                toast: true,
+                position: 'top-end',
+                timer: 3000,
+                timerProgressBar: true,
+                showConfirmButton: false
+            });
+        } catch (error) {
+            console.error('Đăng nhập Google thất bại:', error);
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'error',
+                title: error.response?.data?.message || 'Đăng nhập Google thất bại. Vui lòng thử lại.',
+                showConfirmButton: false,
+                timer: 5000,
+                timerProgressBar: true
+            });
+        }
+    }
+};
+
+// Facebook Login
+const handleFacebookLogin = () => {
+    // Đảm bảo Facebook SDK đã được tải
+    if (window.FB) {
+        window.FB.login(async function(response) {
+            if (response.authResponse) {
+                // Người dùng đã đăng nhập và cấp quyền
+                const accessToken = response.authResponse.accessToken;
+                console.log('Access Token Facebook:', accessToken);
+
+                try {
+                    // Gửi accessToken này về backend của bạn để xác minh
+                    // Backend sẽ dùng accessToken để lấy thông tin người dùng từ Facebook API
+                    const res = await axios.post('/api/auth/facebook', {
+                        access_token: accessToken
+                    });
+
+                    // Xử lý phản hồi từ backend tương tự như handleLogin
+                    const user = res.data.user;
+                    const token = res.data.token;
+
+                    closeModal();
+                    localStorage.setItem('token', token);
+                    localStorage.setItem('user', JSON.stringify(user));
+                    localStorage.setItem('vai_tro_id', user.vai_tro_id);
+                    localStorage.setItem('sdt', user.sdt);
+
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Chào mừng!',
+                        text: `Xin chào ${user.ho_ten || user.email}, chúc bạn một ngày tuyệt vời!`,
+                        toast: true,
+                        position: 'top-end',
+                        timer: 3000,
+                        timerProgressBar: true,
+                        showConfirmButton: false
+                    });
+
+                } catch (error) {
+                    console.error('Đăng nhập Facebook thất bại:', error);
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'error',
+                        title: error.response?.data?.message || 'Đăng nhập Facebook thất bại. Vui lòng thử lại.',
+                        showConfirmButton: false,
+                        timer: 5000,
+                        timerProgressBar: true
+                    });
+                }
+            } else {
+                console.log('Người dùng hủy đăng nhập Facebook hoặc không cấp quyền.');
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'warning',
+                    title: 'Đăng nhập Facebook bị hủy.',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true
+                });
+            }
+        }, { scope: 'email,public_profile' }); // Yêu cầu quyền truy cập email và public profile
+    } else {
+        console.error('Facebook SDK chưa được tải.');
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'error',
+            title: 'Không thể kết nối Facebook. Vui lòng thử lại sau.',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        });
+    }
+};
+
+// Gán các hàm xử lý vào nút
+// onMounted(() => {
+//     // Nếu bạn muốn hiển thị Google One Tap khi modal mở, có thể gọi ở đây
+//     // Nhưng thường thì chỉ cần gắn vào button
+// });
+
+</script>
+
 <template>
     <div v-if="show" class="login-modal-overlay" @click.self="closeModal">
         <div class="login-modal-content">
@@ -19,11 +437,11 @@
 
                 <template v-if="currentView !== 'forgot-password'">
                     <div class="social-login-buttons">
-                        <button class="social-btn google-btn">
+                        <button class="social-btn google-btn" @click="handleGoogleLogin">
                             <img src="https://img.icons8.com/color/16/000000/google-logo.png" alt="Google icon">
                             Continue with Google
                         </button>
-                        <button class="social-btn facebook-btn">
+                        <button class="social-btn facebook-btn" @click="handleFacebookLogin">
                             <i class="fab fa-facebook-f"></i>
                             Continue with Facebook
                         </button>
@@ -102,279 +520,6 @@
         </div>
     </div>
 </template>
-
-<script setup>
-import Swal from 'sweetalert2';
-import axios from 'axios';
-import { ref, reactive, watch } from 'vue';
-import { useRouter } from 'vue-router';
-
-const router = useRouter();
-
-const props = defineProps({
-    show: {
-        type: Boolean,
-        default: false
-    }
-});
-
-const emit = defineEmits(['update:show']);
-
-const currentView = ref('login');
-
-const loginForm = reactive({
-    email: '',
-    password: ''
-});
-const loginError = ref(''); // GIỮ NGUYÊN cho form đăng nhập nếu bạn muốn lỗi inline ở đó
-
-const registerForm = reactive({
-    email: '',
-    password: '',
-    confirmPassword: ''
-});
-const registerError = ref(''); // <--- CÁI NÀY SẼ KHÔNG ĐƯỢC GÁN GIÁ TRỊ NỮA TRONG handleRegister
-
-const forgotPasswordForm = reactive({
-    email: ''
-});
-const forgotPasswordError = ref(''); // GIỮ NGUYÊN cho form quên mật khẩu nếu bạn muốn lỗi inline ở đó
-
-const isSubmitting = ref(false);
-
-watch(() => props.show, (newVal) => {
-    if (!newVal) {
-        currentView.value = 'login';
-        resetForms();
-    }
-});
-
-const resetForms = () => {
-    loginForm.email = '';
-    loginForm.password = '';
-    loginError.value = '';
-
-    registerForm.email = '';
-    registerForm.password = '';
-    registerForm.confirmPassword = '';
-    registerError.value = ''; // Reset cả cái này khi đóng modal hoặc đổi view
-
-    forgotPasswordForm.email = '';
-    forgotPasswordForm.error = ''; // Đảm bảo reset cả lỗi này
-};
-
-const changeView = (viewName) => {
-    currentView.value = viewName;
-    resetForms();
-};
-
-const closeModal = () => {
-    emit('update:show', false);
-};
-
-const handleLogin = async () => {
-    loginError.value = '';
-    try {
-        const res = await axios.post('/login', {
-            email: loginForm.email,
-            mat_khau: loginForm.password
-        });
-
-        const user = res.data.user;
-        const token = res.data.token;
-
-        if (user.is_active !== 1) {
-            loginError.value = 'Tài khoản của bạn chưa được kích hoạt.';
-            return;
-        }
-        closeModal();
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-        localStorage.setItem('vai_tro_id', user.vai_tro_id);
-        localStorage.setItem('sdt', user.sdt);
-        await Swal.fire({
-            icon: 'success',
-            title: 'Chào mừng!',
-            text: `Xin chào ${user.ho_ten || user.email}, chúc bạn một ngày tuyệt vời!`,
-            toast: true,
-            position: 'top-end',
-            timer: 3000,
-            timerProgressBar: true,
-            showConfirmButton: false
-        });
-    } catch (err) {
-        loginError.value = err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại email và mật khẩu.';
-    }
-};
-
-const handleRegister = async () => {
-    // Không cần reset registerError.value ở đây nữa nếu bạn không dùng nó để hiển thị lỗi inline
-    isSubmitting.value = true;
-
-    // --- KIỂM TRA CLIENT-SIDE ---
-    if (registerForm.password !== registerForm.confirmPassword) {
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'error',
-            title: 'Mật khẩu và xác nhận mật khẩu không khớp.',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true
-        });
-        isSubmitting.value = false;
-        return;
-    }
-
-    const atIndex = registerForm.email.indexOf('@');
-    if (atIndex === -1 || atIndex === 0 || atIndex === registerForm.email.length - 1) {
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'error',
-            title: 'Địa chỉ email không hợp lệ.',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true
-        });
-        isSubmitting.value = false;
-        return;
-    }
-    registerForm.ho_ten = registerForm.email.substring(0, atIndex);
-
-    let toastLoading = null;
-
-    try {
-        // Hiển thị thông báo "Đang đăng ký tài khoản..." khi bắt đầu gọi API
-        toastLoading = Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'info',
-            title: 'Đang đăng ký tài khoản...',
-            showConfirmButton: false,
-            timerProgressBar: true,
-            didOpen: (toast) => {
-                toast.addEventListener('mouseenter', Swal.stopTimer);
-                toast.addEventListener('mouseleave', Swal.resumeTimer);
-            }
-        });
-
-        // GỌI API ĐĂNG KÝ
-        const res = await axios.post('/register', {
-            ho_ten: registerForm.ho_ten,
-            email: registerForm.email,
-            sdt: registerForm.sdt || '',
-            mat_khau: registerForm.password,
-            mat_khau_confirmation: registerForm.confirmPassword
-        });
-
-        // Đóng thông báo đang tải nếu nó còn
-        if (toastLoading) {
-            Swal.close(toastLoading);
-        }
-
-        // HIỂN THỊ THÔNG BÁO THÀNH CÔNG
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'success',
-            title: 'Đăng ký thành công! Vui lòng kiểm tra email để kích hoạt tài khoản.',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true
-        }).then(() => {
-            changeView('login'); // Chuyển sang form đăng nhập
-        });
-
-    } catch (err) {
-        console.error('Đăng ký thất bại:', err);
-
-        // Đóng thông báo đang tải nếu nó còn
-        if (toastLoading) {
-            Swal.close(toastLoading);
-        }
-
-        let errorMessage = 'Đăng ký thất bại. Vui lòng thử lại.';
-
-        if (err.response && err.response.data && err.response.data.errors) {
-            const errors = err.response.data.errors;
-
-            if (errors.email) {
-                if (errors.email.includes('The email has already been taken.')) {
-                    errorMessage = 'Email này đã được sử dụng. Vui lòng chọn email khác.';
-                } else {
-                    errorMessage = 'Email không hợp lệ: ' + errors.email[0];
-                }
-            } else if (errors.mat_khau) {
-                if (errors.mat_khau.includes('The mat khau field must be at least 8 characters.')) {
-                    errorMessage = 'Mật khẩu phải có ít nhất 8 ký tự.';
-                } else if (errors.mat_khau.includes('The password confirmation does not match.')) {
-                    errorMessage = 'Mật khẩu xác nhận không khớp.';
-                } else {
-                    errorMessage = 'Mật khẩu không hợp lệ: ' + errors.mat_khau[0];
-                }
-            } else if (errors.sdt) {
-                errorMessage = 'Số điện thoại không hợp lệ: ' + errors.sdt[0];
-            } else if (errors.ho_ten) {
-                errorMessage = 'Họ tên không hợp lệ: ' + errors.ho_ten[0];
-            } else {
-                const firstErrorKey = Object.keys(errors)[0];
-                if (firstErrorKey) {
-                    errorMessage = errors[firstErrorKey][0];
-                }
-            }
-
-        } else if (err.response && err.response.data && err.response.data.message) {
-            errorMessage = err.response.data.message;
-        }
-
-        // CHỈ HIỂN THỊ LỖI DẠNG TOAST CHO TẤT CẢ CÁC TRƯỜNG HỢP LỖI
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'error',
-            title: errorMessage,
-            showConfirmButton: false,
-            timer: 5000,
-            timerProgressBar: true
-        });
-
-        // <--- BỎ DÒNG NÀY ĐI HOẶC BÌNH LUẬN NÓ LẠI --->
-        // registerError.value = errorMessage;
-    } finally {
-        isSubmitting.value = false;
-    }
-};
-
-const handleForgotPassword = async () => {
-    forgotPasswordError.value = ''; // Vẫn giữ lại nếu bạn muốn lỗi inline cho form này
-    try {
-        const res = await axios.post('/forgot-password', { email: forgotPasswordForm.email });
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'success',
-            title: res.data.message || `Hướng dẫn khôi phục mật khẩu đã được gửi đến ${forgotPasswordForm.email}.`,
-            showConfirmButton: false,
-            timer: 5000,
-            timerProgressBar: true
-        });
-        changeView('login');
-    } catch (err) {
-        const errorMessage = err.response?.data?.message || 'Không thể gửi yêu cầu. Vui lòng kiểm tra lại email.';
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'error',
-            title: errorMessage,
-            showConfirmButton: false,
-            timer: 5000,
-            timerProgressBar: true
-        });
-        forgotPasswordError.value = errorMessage; // Vẫn giữ lại nếu bạn muốn lỗi inline cho form này
-    }
-};
-</script>
 
 <style scoped>
 /* Giữ nguyên các style CSS hiện có */
