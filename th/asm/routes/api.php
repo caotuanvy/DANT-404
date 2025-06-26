@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
+use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UserController;
@@ -37,12 +38,23 @@ Route::apiResource('categories', CategoryController::class);
 
 // Tin tuc
 Route::apiResource('tintuc', TintucController::class);
+Route::get('/tintuc', [TintucController::class, 'index']);
+Route::post('/tintuc', [TintucController::class, 'store']);
+Route::get('/tintuc/{id}', [TintucController::class, 'show']);
+Route::put('/tintuc/{id}', [TintucController::class, 'update']);
+Route::delete('/tintuc/{id}', [TintucController::class, 'destroy']);
 Route::get('/tintuc-cong-khai', [TintucController::class, 'tintucCongKhai']);
 Route::get('/tintuc-cong-khai/{id}', [TintucController::class, 'chitietCongKhai']);
 Route::get('/tin-noi-bat', [TintucController::class, 'tinNoiBat']);
 Route::get('/xemtintuc-admin/{id}', [TintucController::class, 'xemchitiettintucadmin']);
 
+
 // Danh muc tin tuc
+Route::get('/danh-muc-tin-tuc', [DanhMucTtController::class, 'index']);
+Route::get('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'show']);
+Route::post('/danh-muc-tin-tuc', [DanhMucTtController::class, 'store']);
+Route::put('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'update']);
+Route::delete('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'destroy']);
 Route::apiResource('danh-muc-tin-tuc', DanhMucTtController::class);
 Route::get('/xemdanhmuc-admin/{id}', [DanhMucTtController::class, 'xemChiTietDanhMucAdmin']);
 Route::get('tintuc-cong-khai/danh-muc/{id}', [DanhMucTtController::class, 'tintucCongKhaiTheoDanhMuc']);
