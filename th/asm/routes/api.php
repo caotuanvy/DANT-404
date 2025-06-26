@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\SlideShowController;
 use App\Http\Controllers\Api\SanPhamBienTheController;
 use App\Http\Controllers\Api\TintucController;
 use App\Http\Controllers\Api\DiaChiController;
+use App\Http\Controllers\Api\GioHangController;
 use App\Http\Controllers\Api\IntroduceController;
 
 
@@ -106,14 +107,13 @@ Route::patch('/orders/{id}/approve', [OrderController::class, 'approve']);
 Route::patch('/orders/{id}/reject', [OrderController::class, 'reject']);
 Route::patch('/orders/{id}/hide', [OrderController::class, 'hideOrder']);
 Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
+Route::post('/orders', [OrderController::class, 'store']); // Thêm mới đơn hàng
 
-
-// Users
 // Users
 Route::get('/users', [UserController::class, 'index']);
 Route::delete('/users/{id}', [UserController::class, 'destroy']);
 Route::put('/users/{id}', [UserController::class, 'update']);
-
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 
 
 
@@ -141,7 +141,8 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/users', [UserController::class, 'index']);
 Route::delete('/users/{id}', [UserController::class, 'destroy']);
 Route::put('/users/{id}', [UserController::class, 'update']);
-
+Route::get('/gio-hang/nguoi-dung/{id}', [GioHangController::class, 'layGioHangTheoNguoiDung']);
+Route::get('/dia-chi/mac-dinh/{nguoi_dung_id}', [DiaChiController::class, 'diaChiMacDinh']);
 
 // Danh mục tin tức
 Route::get('/danh-muc-tin-tuc', [DanhMucTtController::class, 'show']);
