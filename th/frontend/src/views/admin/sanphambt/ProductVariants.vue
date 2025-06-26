@@ -7,6 +7,7 @@
     <table v-if="!loading && variants.length > 0" class="variant-table">
       <thead>
         <tr>
+          <th>Tên biến thể</th>
           <th>Kích thước</th>
           <th>Màu sắc</th>
           <th>Tồn kho</th>
@@ -16,6 +17,7 @@
       </thead>
       <tbody>
         <tr v-for="variant in variants" :key="variant.bien_the_id">
+          <td>{{ variant.ten_bien_the }}</td>
           <td>{{ variant.kich_thuoc }}</td>
           <td>{{ variant.mau_sac }}</td>
           <td>{{ variant.so_luong_ton_kho }}</td>
@@ -35,6 +37,7 @@
       <fieldset>
         <legend>➕ Thêm biến thể mới</legend>
         <form @submit.prevent="addVariant" class="form-layout">
+          <input v-model="newVariant.ten_bien_the" placeholder="Tên biến thể" required />
           <input v-model="newVariant.kich_thuoc" placeholder="Kích thước" required />
           <input v-model="newVariant.mau_sac" placeholder="Màu sắc" required />
           <input v-model.number="newVariant.so_luong_ton_kho" placeholder="Tồn kho" type="number" required />
@@ -46,8 +49,9 @@
       <fieldset v-if="editingVariantId">
         <legend>✏️ Chỉnh sửa biến thể</legend>
         <form @submit.prevent="updateVariant" class="form-layout">
-          <input v-model="editVariant.kich_thuoc" placeholder="Kích thước" required />
-          <input v-model="editVariant.mau_sac" placeholder="Màu sắc" required />
+          <input v-model="editVariant.ten_bien_the" placeholder="Tên biến thể" required />
+          <input v-model="editVariant.kich_thuoc" placeholder="Kích thước" />
+          <input v-model="editVariant.mau_sac" placeholder="Màu sắc"  />
           <input v-model.number="editVariant.so_luong_ton_kho" placeholder="Tồn kho" type="number" required />
           <input v-model.number="editVariant.gia" placeholder="Giá" type="number" required />
           <div class="btn-group">
@@ -72,6 +76,7 @@ const route = useRoute();
 const productId = route.params.id;
 const editingVariantId = ref(null);
 const editVariant = ref({
+  ten_bien_the: '',
   kich_thuoc: '',
   mau_sac: '',
   so_luong_ton_kho: 0,
@@ -83,6 +88,7 @@ const loading = ref(false);
 const errorMessage = ref('');
 
 const newVariant = ref({
+  ten_bien_the: '',
   kich_thuoc: '',
   mau_sac: '',
   so_luong_ton_kho: '',
@@ -111,13 +117,15 @@ const getVariants = async () => {
 };
 const updateVariant = async () => {
   try {
-    await axios.put(`http://localhost:8000/api/variants/${editingVariantId.value}`, editVariant.value, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
+   await axios.put(`http://localhost:8000/api/products/${productId}/variants/${editingVariantId.value}`, editVariant.value, {
+
+  headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
+
     editingVariantId.value = null;
-    editVariant.value = { kich_thuoc: '', mau_sac: '', so_luong_ton_kho: 0, gia: 0 };
+    editVariant.value = { ten_bien_the:'' , kich_thuoc: '', mau_sac: '', so_luong_ton_kho: 0, gia: 0 };
     getVariants();
   } catch (error) {
     console.error('Lỗi khi cập nhật biến thể:', error);
@@ -132,7 +140,7 @@ const addVariant = async () => {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
     });
-    newVariant.value = { kich_thuoc: '', mau_sac: '', so_luong_ton_kho: 0, gia: 0 };
+    newVariant.value = { ten_bien_the:'',kich_thuoc: '', mau_sac: '', so_luong_ton_kho: 0, gia: 0 };
     getVariants();
   } catch (error) {
     console.error('Lỗi khi thêm biến thể:', error);

@@ -1,11 +1,8 @@
 <template>
   <section class="content">
     <h2>Danh sách tin tức</h2>
-
-    <!-- Nút thêm tin tức -->
     <router-link to="/admin/tintuc/add" class="btn-add">+ Thêm tin tức</router-link>
     <div v-if="loading">Đang tải dữ liệu...</div>
-
     <table v-if="!loading && tintucs.length > 0">
       <thead>
         <tr>
@@ -13,7 +10,9 @@
           <th>Tiêu đề</th>
           <th>Danh mục</th>
           <th>Ngày đăng</th>
-          <th>Nội dung</th>
+          <th>Hình ảnh</th>
+          <th>Hiển thị trang chủ</th>
+          <th>Duyệt</th>
           <th>Xem chi tiết</th>
           <th>Hành động</th>
         </tr>
@@ -23,14 +22,32 @@
           <td>{{ index + 1 }}</td>
           <td>{{ tintuc.tieude }}</td>
           <td>
-            <!-- Sửa tên trường danh mục cho đúng với dữ liệu trả về từ API -->
             {{ tintuc.danhMuc ? tintuc.danhMuc.ten_danh_muc : (tintuc.danh_muc ? tintuc.danh_muc.ten_danh_muc : (tintuc.danhmuc ? tintuc.danhmuc.ten : '-')) }}
           </td>
-          <td>{{ tintuc.ngay_dang }}</td>
+          <td>{{ tintuc.ngay_dang ? tintuc.ngay_dang.substring(0, 10) : '' }}</td>
           <td>
-            <div style="max-width: 250px; white-space: pre-line; overflow: hidden; text-overflow: ellipsis;">
-              {{ tintuc.noidung }}
-            </div>
+            <img
+              v-if="tintuc.hinh_anh"
+              :src="tintuc.hinh_anh.startsWith('http') ? tintuc.hinh_anh : `http://localhost:8000/storage/${tintuc.hinh_anh}`"
+              alt="Hình ảnh"
+              style="width: 60px; height: auto; object-fit: cover;"
+            />
+            <img
+              v-else
+              src="https://via.placeholder.com/60x40?text=No+Image"
+              alt="Không có"
+              style="width: 60px; height: auto; object-fit: cover;"
+            />
+          </td>
+          <td>
+            <span class="switch" @click="toggleNoiBat(tintuc)">
+              <span :class="['slider', tintuc.noi_bat == 1 ? 'on' : 'off']"></span>
+            </span>
+          </td>
+          <td>
+            <span class="switch" @click="toggleDuyet(tintuc)">
+              <span :class="['slider', tintuc.duyet_tin_tuc == 1 ? 'on' : 'off']"></span>
+            </span>
           </td>
           <td>
             <router-link :to="`/admin/tintuc/${tintuc.id}`" class="btn-detail">Xem chi tiết</router-link>
@@ -44,7 +61,6 @@
         </tr>
       </tbody>
     </table>
-
     <p v-if="!loading && tintucs.length === 0">Chưa có tin tức nào.</p>
     <p v-if="errorMessage" style="color: red;">{{ errorMessage }}</p>
   </section>
@@ -68,8 +84,6 @@ const getTintucs = async () => {
       },
     });
     tintucs.value = res.data;
-    // Xem cấu trúc dữ liệu trả về để xác định đúng trường danh mục
-    // console.log(tintucs.value);
   } catch (error) {
     console.error('Lỗi khi lấy tin tức:', error);
     errorMessage.value = 'Lỗi khi lấy tin tức: ' + (error.response?.data?.message || error.message);
@@ -94,9 +108,44 @@ const deleteTintuc = async (id) => {
   }
 };
 
+// Toggle Nổi bật
+const toggleNoiBat = async (tintuc) => {
+  const newNoiBat = tintuc.noi_bat == 1 ? 0 : 1;
+  try {
+    await axios.put(`http://localhost:8000/api/tintuc/${tintuc.id}`, {
+      noi_bat: newNoiBat
+    }, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    tintuc.noi_bat = newNoiBat;
+  } catch (error) {
+    alert('Cập nhật nổi bật thất bại!');
+  }
+};
+
+// Toggle Duyệt
+const toggleDuyet = async (tintuc) => {
+  const newDuyet = tintuc.duyet_tin_tuc == 1 ? 0 : 1;
+  try {
+    await axios.put(`http://localhost:8000/api/tintuc/${tintuc.id}`, {
+      duyet_tin_tuc: newDuyet
+    }, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    tintuc.duyet_tin_tuc = newDuyet;
+  } catch (error) {
+    alert('Cập nhật duyệt thất bại!');
+  }
+};
+
 onMounted(() => {
   getTintucs();
 });
+
 </script>
 
 <style scoped>
@@ -148,5 +197,51 @@ button:hover {
   flex-direction: row;
   gap: 8px;
   align-items: center;
+}
+
+/* Toggle switch style for Nổi bật & Duyệt */
+.switch {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.slider {
+  width: 54px;
+  height: 30px;
+  border-radius: 15px;
+  background: #ccc;
+  position: relative;
+  transition: background 0.3s;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.slider::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 0.3s, background 0.3s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+
+.slider.on {
+  background: #4CAF50;
+}
+.slider.on::before {
+  left: 27px;
+  background: #fff;
+}
+
+/* Ẩn chữ label */
+.switch-label {
+  display: none;
 }
 </style>

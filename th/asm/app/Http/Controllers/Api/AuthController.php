@@ -56,7 +56,7 @@ class AuthController extends Controller
         ]);
     }
 
-    // Đăng nhập
+
     public function login(Request $request)
     {
         $request->validate([

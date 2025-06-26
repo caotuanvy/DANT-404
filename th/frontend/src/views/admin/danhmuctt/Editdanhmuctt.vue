@@ -84,25 +84,26 @@ export default {
       const file = e.target.files[0];
       if (file) {
         this.file = file;
-        this.hinh_anh = file.name; // chỉ lưu tên file, nếu backend chỉ nhận tên file
         this.previewImage = URL.createObjectURL(file);
       }
     },
     async updateCategory() {
       try {
         const token = localStorage.getItem("token");
-        // Nếu chỉ lưu tên file:
-        const payload = {
-          ten_danh_muc: this.ten_danh_muc,
-          mo_ta: this.mo_ta,
-          hinh_anh: this.hinh_anh,
-        };
-        const res = await axios.put(
-          `http://localhost:8000/api/danh-muc-tin-tuc/${this.$route.params.id}`,
-          payload,
+        const formData = new FormData();
+        formData.append("ten_danh_muc", this.ten_danh_muc);
+        formData.append("mo_ta", this.mo_ta);
+        if (this.file) {
+          formData.append("hinh_anh", this.file);
+        }
+
+        const res = await axios.post(
+          `http://localhost:8000/api/danh-muc-tin-tuc/${this.$route.params.id}?_method=PUT`,
+          formData,
           {
             headers: {
               Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
             },
           }
         );

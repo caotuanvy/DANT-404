@@ -21,7 +21,7 @@ class DanhMucTinTuc extends Model
     protected $fillable = [
         'ten_danh_muc',
         'mo_ta',
-        'hinh_anh',      // Thêm dòng này
+        'hinh_anh',
         'ngay_tao',
         'ngay_sua',
     ];

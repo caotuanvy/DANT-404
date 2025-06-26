@@ -1,8 +1,6 @@
 <template>
   <div class="space-y-6">
     <h2 class="text-2xl font-bold">Quản lý Slide</h2>
-
-    <!-- Danh sách các slide -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div
         v-for="s in slideList"
@@ -15,8 +13,6 @@
         <p class="text-sm text-gray-600">ID: {{ s.Slide_id }}</p>
       </div>
     </div>
-
-    <!-- Form cập nhật ảnh khi chọn 1 slide -->
     <div v-if="selectedSlide" class="mt-8 border-t pt-6">
       <h3 class="text-xl font-semibold mb-4">Cập nhật ảnh cho: {{ selectedSlide.Ten_slide }}</h3>
       <form @submit.prevent="updateSlide">

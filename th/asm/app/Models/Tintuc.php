@@ -1,5 +1,6 @@
 <?php
 
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -13,8 +14,14 @@ class Tintuc extends Model
     protected $fillable = [
         'id_danh_muc_tin_tuc',
         'tieude',
+        'hinh_anh',
         'noidung',
         'ngay_dang',
+        'noi_bat',
+        'duyet_tin_tuc',
+        'slug',
+        'luot_like',
+        'luot_xem',
     ];
 
     public function danhMuc()
