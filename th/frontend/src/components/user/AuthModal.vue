@@ -76,10 +76,7 @@
                         <input type="password" id="confirmPassword" placeholder="Xác nhận mật khẩu" required
                             v-model="registerForm.confirmPassword">
                     </div>
-                    <button type="submit" class="login-btn" :disabled="isSubmitting">
-                        <span v-if="isSubmitting">Đang xử lý...</span>
-                        <span v-else>Đăng ký</span>
-                    </button>
+                    <button type="submit" class="login-btn">Đăng ký</button>
                     <p style="color: red" v-if="registerError">{{ registerError }}</p>
                     <p class="form-footer">
                         Bạn đã có tài khoản? <a href="#" @click.prevent="changeView('login')">Đăng nhập</a>
@@ -105,12 +102,14 @@
 
 <script setup>
 import Swal from 'sweetalert2';
+
 import axios from 'axios';
-import { ref, reactive, watch } from 'vue';
+import { ref, reactive, watch } from 'vue'; // Import watch
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
 
+// Props để kiểm soát việc hiển thị modal từ component cha (ví dụ: App.vue)
 const props = defineProps({
     show: {
         type: Boolean,
@@ -118,34 +117,41 @@ const props = defineProps({
     }
 });
 
+// Emit sự kiện để thông báo cho component cha khi modal muốn đóng
 const emit = defineEmits(['update:show']);
 
+// Trạng thái hiện tại của form: 'login', 'register' hoặc 'forgot-password'
 const currentView = ref('login');
 
+// Dữ liệu cho form Đăng nhập
 const loginForm = reactive({
     email: '',
-    password: ''
+    password: '' // Đổi từ mat_khau thành password để nhất quán
 });
-const loginError = ref(''); // GIỮ NGUYÊN cho form đăng nhập nếu bạn muốn lỗi inline ở đó
+const loginError = ref('');
 
+// Dữ liệu cho form Đăng ký
 const registerForm = reactive({
-    email: '',
-    password: '',
-    confirmPassword: ''
-});
-const registerError = ref(''); // <--- CÁI NÀY SẼ KHÔNG ĐƯỢC GÁN GIÁ TRỊ NỮA TRONG handleRegister
 
+    email: '',
+    //   sdt: '',
+    password: '', // Đổi từ mat_khau thành password
+    confirmPassword: '' // Đổi từ mat_khau_confirmation thành confirmPassword
+});
+const registerError = ref('');
+
+// Dữ liệu cho form Quên mật khẩu
 const forgotPasswordForm = reactive({
     email: ''
 });
-const forgotPasswordError = ref(''); // GIỮ NGUYÊN cho form quên mật khẩu nếu bạn muốn lỗi inline ở đó
+const forgotPasswordError = ref('');
 
-const isSubmitting = ref(false);
 
+// Watcher để reset form và view khi modal được đóng từ bên ngoài
 watch(() => props.show, (newVal) => {
-    if (!newVal) {
-        currentView.value = 'login';
-        resetForms();
+    if (!newVal) { // Nếu modal vừa đóng
+        currentView.value = 'login'; // Reset về view đăng nhập
+        resetForms(); // Reset dữ liệu form
     }
 });
 
@@ -154,26 +160,32 @@ const resetForms = () => {
     loginForm.password = '';
     loginError.value = '';
 
+    registerForm.username = '';
     registerForm.email = '';
+    registerForm.sdt = '';
     registerForm.password = '';
     registerForm.confirmPassword = '';
-    registerError.value = ''; // Reset cả cái này khi đóng modal hoặc đổi view
+    registerError.value = '';
 
     forgotPasswordForm.email = '';
-    forgotPasswordForm.error = ''; // Đảm bảo reset cả lỗi này
+    forgotPasswordError.value = '';
 };
 
+// Hàm để thay đổi giữa các view (login, register, forgot-password)
 const changeView = (viewName) => {
     currentView.value = viewName;
-    resetForms();
+    resetForms(); // Reset form mỗi khi chuyển view
 };
 
+// Hàm đóng modal
 const closeModal = () => {
-    emit('update:show', false);
+    emit('update:show', false); // Thông báo cho component cha đóng modal
 };
+
+// --- Xử lý API cho Login, Register, Forgot Password ---
 
 const handleLogin = async () => {
-    loginError.value = '';
+    loginError.value = ''; // Reset lỗi trước mỗi lần submit
     try {
         const res = await axios.post('/login', {
             email: loginForm.email,
@@ -183,11 +195,12 @@ const handleLogin = async () => {
         const user = res.data.user;
         const token = res.data.token;
 
+        // Kiểm tra tài khoản đã kích hoạt chưa
         if (user.is_active !== 1) {
             loginError.value = 'Tài khoản của bạn chưa được kích hoạt.';
             return;
         }
-        closeModal();
+        closeModal();// Đóng modal sau khi đăng nhập thành công
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
         localStorage.setItem('vai_tro_id', user.vai_tro_id);
@@ -202,97 +215,69 @@ const handleLogin = async () => {
             timerProgressBar: true,
             showConfirmButton: false
         });
+
+
+
+
+
+
+
+
+        if (user.vai_tro_id === 1) {
+            router.push('/');
+        } else {
+            router.push('/');
+        }
     } catch (err) {
         loginError.value = err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại email và mật khẩu.';
     }
 };
 
+
 const handleRegister = async () => {
-    // Không cần reset registerError.value ở đây nữa nếu bạn không dùng nó để hiển thị lỗi inline
-    isSubmitting.value = true;
+    registerError.value = ''; // Đặt lại lỗi trước mỗi lần gửi
 
-    // --- KIỂM TRA CLIENT-SIDE ---
+    // Kiểm tra mật khẩu và xác nhận mật khẩu
     if (registerForm.password !== registerForm.confirmPassword) {
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'error',
-            title: 'Mật khẩu và xác nhận mật khẩu không khớp.',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true
-        });
-        isSubmitting.value = false;
+        registerError.value = 'Mật khẩu và xác nhận mật khẩu không khớp.';
         return;
     }
 
+    // --- Bắt đầu: Logic để lấy tên người dùng từ email ---
     const atIndex = registerForm.email.indexOf('@');
-    if (atIndex === -1 || atIndex === 0 || atIndex === registerForm.email.length - 1) {
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'error',
-            title: 'Địa chỉ email không hợp lệ.',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true
-        });
-        isSubmitting.value = false;
+    if (atIndex > -1) {
+        // Lấy phần trước '@' làm ho_ten
+        registerForm.ho_ten = registerForm.email.substring(0, atIndex);
+    } else {
+        // Xử lý trường hợp email không hợp lệ (không có '@')
+        // Bạn có thể hiển thị lỗi hoặc đặt một giá trị mặc định
+        registerError.value = 'Địa chỉ email không hợp lệ.';
         return;
     }
-    registerForm.ho_ten = registerForm.email.substring(0, atIndex);
-
-    let toastLoading = null;
+    // --- Kết thúc: Logic để lấy tên người dùng từ email ---
 
     try {
-        // Hiển thị thông báo "Đang đăng ký tài khoản..." khi bắt đầu gọi API
-        toastLoading = Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'info',
-            title: 'Đang đăng ký tài khoản...',
-            showConfirmButton: false,
-            timerProgressBar: true,
-            didOpen: (toast) => {
-                toast.addEventListener('mouseenter', Swal.stopTimer);
-                toast.addEventListener('mouseleave', Swal.resumeTimer);
-            }
-        });
-
-        // GỌI API ĐĂNG KÝ
         const res = await axios.post('/register', {
-            ho_ten: registerForm.ho_ten,
+            ho_ten: registerForm.ho_ten, // Bây giờ sẽ lấy từ email
             email: registerForm.email,
-            sdt: registerForm.sdt || '',
+            sdt: registerForm.sdt || '', // Đặt giá trị mặc định cho sdt nếu không có trường nhập
             mat_khau: registerForm.password,
             mat_khau_confirmation: registerForm.confirmPassword
         });
 
-        // Đóng thông báo đang tải nếu nó còn
-        if (toastLoading) {
-            Swal.close(toastLoading);
-        }
-
-        // HIỂN THỊ THÔNG BÁO THÀNH CÔNG
+        localStorage.setItem('token', res.data.token);
         Swal.fire({
-            toast: true,
-            position: 'top-end',
+            title: 'Đăng ký thành công!',
+            text: 'Vui lòng đăng nhập để tiếp tục.',
             icon: 'success',
-            title: 'Đăng ký thành công! Vui lòng kiểm tra email để kích hoạt tài khoản.',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true
+            confirmButtonText: 'Đăng nhập'
         }).then(() => {
-            changeView('login'); // Chuyển sang form đăng nhập
+            changeView('login');
         });
 
-    } catch (err) {
-        console.error('Đăng ký thất bại:', err);
 
-        // Đóng thông báo đang tải nếu nó còn
-        if (toastLoading) {
-            Swal.close(toastLoading);
-        }
+    } catch (err) {
+        console.error('Đăng ký thất bại:', err); // Luôn ghi lỗi vào console để gỡ lỗi
 
         let errorMessage = 'Đăng ký thất bại. Vui lòng thử lại.';
 
@@ -328,56 +313,24 @@ const handleRegister = async () => {
             errorMessage = err.response.data.message;
         }
 
-        // CHỈ HIỂN THỊ LỖI DẠNG TOAST CHO TẤT CẢ CÁC TRƯỜNG HỢP LỖI
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'error',
-            title: errorMessage,
-            showConfirmButton: false,
-            timer: 5000,
-            timerProgressBar: true
-        });
-
-        // <--- BỎ DÒNG NÀY ĐI HOẶC BÌNH LUẬN NÓ LẠI --->
-        // registerError.value = errorMessage;
-    } finally {
-        isSubmitting.value = false;
+        registerError.value = errorMessage;
     }
 };
 
 const handleForgotPassword = async () => {
-    forgotPasswordError.value = ''; // Vẫn giữ lại nếu bạn muốn lỗi inline cho form này
+    forgotPasswordError.value = ''; // Reset lỗi trước mỗi lần submit
     try {
+        // Giả sử API quên mật khẩu nhận email và trả về thông báo
         const res = await axios.post('/forgot-password', { email: forgotPasswordForm.email });
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'success',
-            title: res.data.message || `Hướng dẫn khôi phục mật khẩu đã được gửi đến ${forgotPasswordForm.email}.`,
-            showConfirmButton: false,
-            timer: 5000,
-            timerProgressBar: true
-        });
-        changeView('login');
+        alert(res.data.message || `Hướng dẫn khôi phục mật khẩu đã được gửi đến ${forgotPasswordForm.email}.`);
+        changeView('login'); // Quay lại form đăng nhập
     } catch (err) {
-        const errorMessage = err.response?.data?.message || 'Không thể gửi yêu cầu. Vui lòng kiểm tra lại email.';
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'error',
-            title: errorMessage,
-            showConfirmButton: false,
-            timer: 5000,
-            timerProgressBar: true
-        });
-        forgotPasswordError.value = errorMessage; // Vẫn giữ lại nếu bạn muốn lỗi inline cho form này
+        forgotPasswordError.value = err.response?.data?.message || 'Không thể gửi yêu cầu. Vui lòng kiểm tra lại email.';
     }
 };
 </script>
 
 <style scoped>
-/* Giữ nguyên các style CSS hiện có */
 body {
     margin: 0;
     font-family: Arial, sans-serif;
@@ -770,6 +723,7 @@ body {
 .form-group input {
     width: 100%;
     padding: 10px;
+    /* border: none;  */
     border-radius: 4px;
     box-sizing: border-box;
     transition: none;
@@ -779,6 +733,7 @@ body {
 
 .form-group input:focus {
     outline: none;
+    /* border-color: transparent; */
     box-shadow: none;
 }
 
@@ -816,15 +771,6 @@ body {
 .login-btn:hover {
     background-color: #00a8e1;
 }
-
-/* THÊM CÁC QUY TẮC CSS NÀY VÀO ĐÂY */
-.login-btn:disabled {
-    background-color: #cccccc; /* Màu nền xám hơn */
-    cursor: not-allowed; /* Con trỏ chuột thành biểu tượng "không được phép" */
-    opacity: 0.7; /* Giảm độ mờ */
-    pointer-events: none; /* Vô hiệu hóa tất cả sự kiện chuột, bao gồm hover */
-}
-
 
 .form-footer {
     text-align: center;
