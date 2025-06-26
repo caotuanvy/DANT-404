@@ -14,6 +14,7 @@ class SanPhamBienThe extends Model
 
     protected $fillable = [
         'san_pham_id',
+        'ten_bien_the',
         'kich_thuoc',
         'mau_sac',
         'so_luong_ton_kho',

@@ -57,10 +57,7 @@
                         <input type="text" id="address" v-model="streetAddress">
                     </div>
                 </div>
-                <!-- <div class="checkbox-group">
-                    <input type="checkbox" id="default-address" v-model="isDefaultAddress">
-                    <label for="default-address">Đặt làm địa chỉ mặc định</label>
-                </div> -->
+                <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
                 <button class="update-btn" @click="handleUpdateAddress">CẬP NHẬT</button>
             </div>
         </main>
@@ -71,20 +68,22 @@
 import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
-// import debounce from 'lodash.debounce'; // Dòng này sẽ được xóa hoặc comment lại
+import Swal from 'sweetalert2';
 
-// Các biến reactive để lưu trữ dữ liệu người dùng và địa chỉ
+// Các biến phản ứng để lưu trữ dữ liệu người dùng và địa chỉ
 const userName = ref('Khách');
 const userPhone = ref('Chưa có số điện thoại');
 const streetAddress = ref(''); // Số nhà, tên đường
 const selectedProvinceCode = ref('');
 const selectedDistrictCode = ref('');
 const selectedWardCode = ref('');
-const isDefaultAddress = ref(false); // Thêm biến cho địa chỉ mặc định
+const isDefaultAddress = ref(false); // Thêm biến cho mặc định địa chỉ
+const currentAddressId = ref(null); // Dữ liệu cho ID địa chỉ hiện tại
 
-const currentAddressId = ref(null);
+// Biến để hiển thị thông báo lỗi
+const errorMessage = ref('');
 
-// Dữ liệu cho các dropdown
+// Dữ liệu cho các tỉnh/thành phố, quận/huyện, phường/xã thả xuống
 const provinces = ref([]);
 const districts = ref([]);
 const wards = ref([]);
@@ -94,12 +93,7 @@ const router = useRouter(); // Khởi tạo router
 // Hàm để phân tích chuỗi địa chỉ
 const parseAddress = (fullAddress) => {
     if (!fullAddress) {
-        return {
-            street: '',
-            ward: '',
-            district: '',
-            province: ''
-        };
+        return { street: '', ward: '', district: '', province: '' };
     }
 
     // Tách chuỗi bằng dấu phẩy
@@ -134,7 +128,6 @@ const parseAddress = (fullAddress) => {
 
     return { street, ward, district, province };
 };
-
 
 // Hàm để điền dữ liệu vào các select box (cập nhật để hỗ trợ chọn option đã có)
 async function populateSelect(selectRef, dataArray, defaultOptionText, selectedValue = null) {
@@ -229,71 +222,48 @@ async function fetchWards(districtCode, selectAndPopulate = true) {
     }
 }
 
-
 // Watchers để tự động tải dữ liệu khi lựa chọn thay đổi
-// KHÔNG SỬ DỤNG DEBOUNCE NẾU BẠN KHÔNG CÀI ĐẶT LODASH
 watch(selectedProvinceCode, (newCode) => {
     fetchDistricts(newCode, true); // Gọi trực tiếp
+    errorMessage.value = ''; // Xóa lỗi khi người dùng thay đổi lựa chọn
 });
 
 watch(selectedDistrictCode, (newCode) => {
     fetchWards(newCode, true); // Gọi trực tiếp
+    errorMessage.value = ''; // Xóa lỗi khi người dùng thay đổi lựa chọn
+});
+
+watch(selectedWardCode, () => {
+    errorMessage.value = ''; // Xóa lỗi khi người dùng thay đổi lựa chọn
+});
+
+watch(streetAddress, () => {
+    errorMessage.value = ''; // Xóa lỗi khi người dùng thay đổi địa chỉ đường
 });
 
 
-// Hàm để tìm kiếm code từ tên trong mảng dữ liệu (province, district, ward)
-const findCodeByName = (name, dataArray, isProvince = false) => {
-    // Chuẩn hóa tên để so sánh (loại bỏ tiền tố, chuyển về chữ thường)
-    const normalizedName = name.replace(/^(Phường|Xã|Quận|Huyện|Thành phố|Tỉnh)\s/i, '').trim().toLowerCase();
-
-    for (const item of dataArray) {
-        let itemNormalizedName = (item.name_with_type || item.name).replace(/^(Phường|Xã|Quận|Huyện|Thành phố|Tỉnh)\s/i, '').trim().toLowerCase();
-
-        // Xử lý đặc biệt cho TP. HCM
-        if (isProvince && (normalizedName === 'hcm' || normalizedName === 'hồ chí minh')) {
-            if (itemNormalizedName === 'hồ chí minh') {
-                return item.code;
-            }
-        } else if (itemNormalizedName.includes(normalizedName) || normalizedName.includes(itemNormalizedName)) {
-            // Tìm kiếm tương đối
-            return item.code;
-        }
-    }
-    return null;
-};
-
-
 onMounted(async () => {
-    // console.log('--- onMounted bắt đầu ---');
     const storedUser = localStorage.getItem('user');
     if (!storedUser) {
-        // console.log('Không có người dùng trong localStorage. Chuyển hướng.');
         router.push('/');
         return; // Dừng lại nếu không có người dùng
     }
 
     const user = JSON.parse(storedUser);
-    // console.log('Người dùng từ localStorage:', user);
     userName.value = user.ho_ten || 'Chưa có tên';
     userPhone.value = user.sdt || 'Chưa có số điện thoại';
 
     try {
-        // console.log(`Đang gọi API địa chỉ cho người dùng ID: ${user.nguoi_dung_id}`);
         const response = await axios.get(`/dia_chi/nguoi_dung/${user.nguoi_dung_id}`);
-        // console.log('Phản hồi API địa chỉ:', response.data);
 
-        if (response.data && response.data.length > 0) { // Đảm bảo response.data tồn tại và là mảng không rỗng
+        if (response.data && response.data.length > 0) {
             const addressData = response.data[0];
-            currentAddressId.value = addressData.id_dia_chi; // Gán ID địa chỉ
-            // console.log('Đã tìm thấy địa chỉ. currentAddressId.value được gán là:', currentAddressId.value);
+            currentAddressId.value = addressData.id_dia_chi;
 
             const userAddress = addressData.dia_chi;
             const { street, ward, district, province } = parseAddress(userAddress);
             streetAddress.value = street;
 
-            // ... (phần còn lại của logic điền dropdown)
-            // Debugging populate dropdowns
-            // console.log('Đang điền dropdowns...');
             await fetchProvinces(false); // Fetch all provinces first without populating select
             const foundProvince = provinces.value.find(p => p.name_with_type.toLowerCase().includes(province.toLowerCase()) || p.name.toLowerCase().includes(province.toLowerCase()));
             if (foundProvince) {
@@ -330,7 +300,6 @@ onMounted(async () => {
         console.log('Lần đầu tải provinces...');
         await fetchProvinces(true);
     }
-    // console.log('--- onMounted kết thúc ---');
 });
 
 // Xử lý đăng xuất (nếu bạn có)
@@ -340,11 +309,30 @@ const handleLogout = () => {
 };
 
 const handleUpdateAddress = async () => {
+    // Xóa thông báo lỗi cũ mỗi khi cố gắng cập nhật
+    errorMessage.value = '';
+
     // Kiểm tra xem đã chọn đủ Tỉnh/Thành phố, Quận/Huyện, Phường/Xã và nhập Số nhà/Tên đường chưa
     if (!selectedProvinceCode.value || !selectedDistrictCode.value || !selectedWardCode.value || !streetAddress.value.trim()) {
-        alert('Vui lòng điền đầy đủ thông tin địa chỉ (Tỉnh/Thành phố, Quận/Huyện, Phường/Xã, Số Nhà/Tên Đường).');
+        errorMessage.value = 'Vui lòng điền đầy đủ thông tin địa chỉ (Tỉnh/Thành phố, Quận/Huyện, Phường/Xã, Số Nhà/Tên Đường).';
         return;
     }
+
+    // --- BẮT ĐẦU LOGIC KIỂM TRA MỚI ---
+    // 1. Kiểm tra xem Huyện đã chọn có thuộc Tỉnh đã chọn không
+    const foundDistrictInSelectedProvince = districts.value.some(d => d.code === selectedDistrictCode.value);
+    if (!foundDistrictInSelectedProvince) {
+        errorMessage.value = 'Huyện/Quận đã chọn không hợp lệ cho Tỉnh/Thành phố hiện tại. Vui lòng chọn lại.';
+        return;
+    }
+
+    // 2. Kiểm tra xem Xã đã chọn có thuộc Huyện đã chọn không
+    const foundWardInSelectedDistrict = wards.value.some(w => w.code === selectedWardCode.value);
+    if (!foundWardInSelectedDistrict) {
+        errorMessage.value = 'Phường/Xã đã chọn không hợp lệ cho Quận/Huyện hiện tại. Vui lòng chọn lại.';
+        return;
+    }
+    // --- KẾT THÚC LOGIC KIỂM TRA MỚI ---
 
     // Lấy tên đầy đủ của Tỉnh/Thành phố, Quận/Huyện, Phường/Xã từ code đã chọn
     const provinceName = provinces.value.find(p => p.code === selectedProvinceCode.value)?.name_with_type || '';
@@ -362,15 +350,14 @@ const handleUpdateAddress = async () => {
 
     const fullAddress = addressParts.join(', ');
 
-
     const storedUser = localStorage.getItem('user');
     if (!storedUser) {
-        alert('Vui lòng đăng nhập để cập nhật địa chỉ.');
+        errorMessage.value = 'Vui lòng đăng nhập để cập nhật địa chỉ.';
         router.push('/'); // Có thể chuyển hướng nếu không có người dùng
         return;
     }
     const user = JSON.parse(storedUser);
-    const userId = user.nguoi_dung_id; // Đảm bảo dòng này đã được uncomment
+    const userId = user.nguoi_dung_id;
 
     try {
         if (currentAddressId.value) {
@@ -381,7 +368,11 @@ const handleUpdateAddress = async () => {
                 dia_chi: fullAddress,
                 mac_dinh: isDefaultAddress.value // Thêm trường mặc định
             });
-            alert('Cập nhật địa chỉ thành công!');
+            Swal.fire({
+                title: 'Thêm địa chỉ mới thành công!',
+                icon: 'success',
+                confirmButtonText: 'Ok'
+            }); // Thông báo thành công bằng SweetAlert2 
         } else {
             // Tạo địa chỉ mới nếu chưa có
             console.log(`Đang tạo địa chỉ mới cho người dùng ID: ${userId} với địa chỉ: ${fullAddress}`);
@@ -390,7 +381,7 @@ const handleUpdateAddress = async () => {
                 dia_chi: fullAddress,
                 mac_dinh: isDefaultAddress.value // Thêm trường mặc định
             });
-            alert('Thêm địa chỉ mới thành công!');
+            alert('Thêm địa chỉ mới thành công!'); // Thông báo thành công bằng alert
             // Sau khi POST thành công, gán ID của địa chỉ mới vào currentAddressId
             if (response.data && response.data.id_dia_chi) {
                 currentAddressId.value = response.data.id_dia_chi;
@@ -399,26 +390,30 @@ const handleUpdateAddress = async () => {
         }
     } catch (error) {
         console.error('Lỗi khi cập nhật/thêm địa chỉ:', error.response?.data || error.message);
-        alert('Cập nhật địa chỉ thất bại. Vui lòng thử lại.');
+        errorMessage.value = 'Cập nhật địa chỉ thất bại. Vui lòng thử lại.';
     }
 };
 </script>
 
 <style scoped>
-/* (Không thay đổi phần style vì lỗi không liên quan đến CSS) */
-/* Đã sửa background-color của sidebar */
+/* Thêm style cho thông báo lỗi */
+.error-message {
+    color: red;
+    font-size: 14px;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    text-align: left;
+    font-weight: 500;
+}
+
 .sidebar {
     background-color: #f4f6f8;
-    /* Màu nền cho sidebar */
     padding: 20px;
     border-radius: 8px;
     min-width: 250px;
     color: black;
-    /* box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); */
-    /* Thêm lại box-shadow nếu muốn */
 }
 
-/* Giữ nguyên các style khác từ trước */
 .content-area {
     display: flex;
     gap: 25px;
@@ -432,13 +427,11 @@ const handleUpdateAddress = async () => {
     padding: 0 15px;
 }
 
-
 .sidebar-header {
     display: flex;
     align-items: center;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--border-color);
-    /* margin-bottom: 20px; */
 }
 
 .sidebar-header .avatar {
@@ -460,7 +453,6 @@ const handleUpdateAddress = async () => {
     align-items: center;
     padding: 8px 10px;
     border-radius: 5px;
-    /* transition: background-color 0.3s ease; */
 }
 
 .sidebar ul li a i {
@@ -524,7 +516,6 @@ const handleUpdateAddress = async () => {
     color: black;
 }
 
-
 .main-content h2 {
     font-size: 18px;
     color: var(--dark-text);
@@ -535,8 +526,6 @@ const handleUpdateAddress = async () => {
 .shipping-address-section {
     margin-bottom: 0;
     padding-bottom: 0;
-    /* border-bottom: 1px solid var(--border-color); */
-    /* Đã bỏ border-bottom ở đây vì dùng <hr> */
 }
 
 .account-details-section p {
@@ -630,15 +619,11 @@ const handleUpdateAddress = async () => {
     font-weight: bold;
 }
 
-
 .shipping-address-section .update-btn:hover {
     background-color: #145eb1;
 }
 
 /* Global CSS Variables (cần được đặt ở App.vue hoặc file CSS global nếu muốn dùng chung) */
-/* Nếu header/footer cũng dùng các biến này, bạn nên định nghĩa chúng ở cấp độ cao hơn. */
-/* Tôi sẽ để chúng ở đây để component này hoạt động độc lập nếu được nhúng vào môi trường khác. */
-/* Nhưng lý tưởng là chúng nên ở một file CSS global hoặc App.vue */
 :root {
     --primary-blue: #007bff;
     --dark-blue: #0056b3;
@@ -647,18 +632,12 @@ const handleUpdateAddress = async () => {
     --text-color: #333;
     --dark-text: #212529;
     --header-bg: #e0e0e0;
-    /* Đây là của header, có thể bỏ nếu header là component riêng */
     --nav-bg: #0099ff;
-    /* Đây là của nav, có thể bỏ nếu nav là component riêng */
     --sidebar-bg: #fff;
     --footer-bg: #343a40;
-    /* Đây là của footer, có thể bỏ nếu footer là component riêng */
     --footer-text: #adb5bd;
-    /* Đây là của footer, có thể bỏ nếu footer là component riêng */
 }
 
-/* Các style chung cho body, container, v.v. cũng nên được đưa ra file CSS global */
-/* hoặc vào App.vue nếu bạn chỉ muốn nó ảnh hưởng đến các component trong ứng dụng Vue */
 body {
     font-family: 'Roboto', sans-serif;
     line-height: 1.6;

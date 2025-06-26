@@ -5,52 +5,50 @@
     <!-- Nút thêm danh mục -->
     <router-link to="/admin/danh-muc-tin-tuc/add" class="btn-add">+ Thêm danh mục</router-link>
     <div v-if="loading">Đang tải dữ liệu...</div>
-    
+    <table v-if="!loading && danhMuc.length > 0">
       <thead>
-    <tr>
-      <th>#</th>
-      <th>Tên danh mục</th>
-      <th>Hình ảnh</th> <!-- Thêm dòng này -->
-      <th>Mô tả</th>
-      <th>Ngày tạo</th>
-      <th>Ngày sửa</th>
-      <th>Xem chi tiết</th>
-      <th>Hành động</th>
-    </tr>
-     </thead>
-     
-  <tbody>
-    <tr v-for="(item, index) in danhMuc" :key="item.id_danh_muc_tin_tuc">
-      <td>{{ index + 1 }}</td>
-      <td>{{ item.ten_danh_muc }}</td>
-      <td>
-        <img
-      v-if="item.hinh_anh"
-      :src="item.hinh_anh.startsWith('http') ? item.hinh_anh : `http://localhost:8000/storage/${item.hinh_anh}`"
-      alt="Hình ảnh"
-      style="width: 60px; height: auto; object-fit: cover;"
-        />
-        <img
-          v-else
-          src="https://via.placeholder.com/60x40?text=No+Image"
-          alt="Không có"
-          style="width: 60px; height: auto; object-fit: cover;"
-        />
-      </td>
-      <td>{{ item.mo_ta }}</td>
-      <td>{{ item.ngay_tao ? new Date(item.ngay_tao).toLocaleString() : '' }}</td>
-      <td>{{ item.ngay_sua ? new Date(item.ngay_sua).toLocaleString() : '' }}</td>
-      <td>
-        <router-link :to="`/admin/danh-muc-tin-tuc/${item.id_danh_muc_tin_tuc}`">Xem chi tiết</router-link>
-      </td>
-      <td>
-        <router-link :to="`/admin/danh-muc-tin-tuc/${item.id_danh_muc_tin_tuc}/edit`" class="btn-edit">Sửa</router-link>
-        |
-        <button @click="deleteDanhMuc(item.id_danh_muc_tin_tuc)" class="btn-delete">Xóa</button>
-      </td>
-    </tr>
-  </tbody>
-    
+        <tr>
+          <th>#</th>
+          <th>Tên danh mục</th>
+          <th>Hình ảnh</th>
+          <th>Ngày tạo</th>
+          <th>Ngày sửa</th>
+          <th>Xem chi tiết</th>
+          <th>Hành động</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(item, index) in danhMuc" :key="item.id_danh_muc_tin_tuc">
+          <td>{{ index + 1 }}</td>
+          <td>{{ item.ten_danh_muc }}</td>
+          <td>
+            <img
+              v-if="item.hinh_anh"
+              :src="item.hinh_anh.startsWith('http') ? item.hinh_anh : `http://localhost:8000/storage/${item.hinh_anh}`"
+              alt="Hình ảnh"
+              style="width: 60px; height: auto; object-fit: cover;"
+            />
+            <img
+              v-else
+              src="https://via.placeholder.com/60x40?text=No+Image"
+              alt="Không có"
+              style="width: 60px; height: auto; object-fit: cover;"
+            />
+          </td>
+          <!-- <td>{{ item.mo_ta }}</td> -->
+          <td>{{ item.ngay_tao ? new Date(item.ngay_tao).toLocaleString() : '' }}</td>
+          <td>{{ item.ngay_sua ? new Date(item.ngay_sua).toLocaleString() : '' }}</td>
+          <td>
+            <router-link :to="`/admin/danh-muc-tin-tuc/${item.id_danh_muc_tin_tuc}`">Xem chi tiết</router-link>
+          </td>
+          <td>
+            <router-link :to="`/admin/danh-muc-tin-tuc/${item.id_danh_muc_tin_tuc}/edit`" class="btn-edit">Sửa</router-link>
+            |
+            <button @click="deleteDanhMuc(item.id_danh_muc_tin_tuc)" class="btn-delete">Xóa</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
 
     <p v-if="!loading && danhMuc.length === 0">Chưa có danh mục nào.</p>
     <p v-if="errorMessage" style="color: red;">{{ errorMessage }}</p>
