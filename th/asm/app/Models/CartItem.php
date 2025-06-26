@@ -14,6 +14,7 @@ class CartItem extends Model
         'gio_hang_id',
         'san_pham_bien_the_id',
         'so_luong',
-        'ngay_tao'
+        'ngay_tao',
+        'don_gia'
     ];
 }
