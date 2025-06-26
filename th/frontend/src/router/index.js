@@ -45,6 +45,11 @@ const routes = [
   component: () => import('../components/user/NewsDetails.vue')
   },
   {
+  path: '/tin-tuc-chi-tiet/:id',
+  name: 'ChiTietTinTucCongKhai',
+  component: () => import('../components/user/NewsDetails.vue')
+  },
+  {
     path: '/user',
     component: UserAccountLayout,
     meta: { requiresAuth: true },

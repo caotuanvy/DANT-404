@@ -123,6 +123,8 @@ class TintucController extends Controller
         'noi_bat' => $tintuc->noi_bat,
         'slug' => $tintuc->slug,
         'danhMuc' => $tintuc->danhMuc,
+        'luot_like' => $tintuc->luot_like,
+        'luot_xem' => $tintuc->luot_xem,
     ]);
     }
     // Lấy tin tức nổi bật
