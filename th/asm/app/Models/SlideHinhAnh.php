@@ -4,17 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class SlideShow extends Model
+class SlideHinhAnh extends Model
 {
-    protected $table = 'slide_show';
-    public $incrementing = false;
+    protected $table = 'slide_hinh_anh';
+    protected $primaryKey = 'id';
+    public $incrementing = true;
     public $timestamps = false;
 
-    protected $fillable = ['slide_id', 'loai_anh', 'duong_dan','dieu_huong'];
+    protected $fillable = ['slide_id', 'duong_dan', 'dieu_huong', 'thu_tu'];
 
     public function slide()
     {
         return $this->belongsTo(Slide::class, 'slide_id', 'slide_id');
     }
 }
-

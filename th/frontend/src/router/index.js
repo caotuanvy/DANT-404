@@ -99,7 +99,8 @@ const routes = [
       { path: '', component: () => import('../views/admin/AdminDashboard.vue') },
       { path: 'products', component: () => import('../components/admin/ProductList.vue') },
       { path: 'category', component: () => import('../components/admin/CategoryList.vue') },
-      {
+       { path: 'testt', component: () => import('../components/admin/Test.vue') },
+       {
         path: 'orders',
         component: () => import('../components/admin/OrderList.vue'),
         meta: { requiresAuth: true, role: 'admin' }

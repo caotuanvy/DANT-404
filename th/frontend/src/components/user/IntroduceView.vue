@@ -7,7 +7,7 @@
         <div v-html="renderedHtml" />
       </div>
       <div class="image">
-        <img src="http://localhost:8000/storage/slides/LMoQyPzP8Hd1m58Q3otaGCdujPpOjrcfHvfsC7HJ.png" alt="FoF Mart Giới Thiệu" />
+        <img src="http://localhost:8000/storage/slides/EaPThZeOlCfbUusOHsX3xfvU9bhKL9J9A9Bq502l.png" alt="FoF Mart Giới Thiệu" />
       </div>
     </div>
   </section>

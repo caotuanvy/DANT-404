@@ -63,18 +63,20 @@ Route::get('/gio-hang/nguoi-dung/{id}', [GioHangController::class, 'layGioHangTh
 
 // Slide Show (admin)
 Route::prefix('admin')->group(function () {
-    Route::get('slide', [SlideShowController::class, 'index']);
+   Route::get('slide', [SlideShowController::class, 'index']);
     Route::get('slide/{id}', [SlideShowController::class, 'show']);
     Route::post('slide', [SlideShowController::class, 'store']);
     Route::post('slide/update', [SlideShowController::class, 'update']);
-    Route::post('slide/{id}', [SlideShowController::class, 'update']);
-    Route::post('/slide/add-image', [SlideShowController::class, 'addImageToSlide']);
-    Route::delete('slide/{slide_id}/{loai_anh}', [SlideShowController::class, 'deleteImage']);
+    Route::post('slide/add-image', [SlideShowController::class, 'addImageToSlide']);
     Route::post('slide/update-link', [SlideShowController::class, 'updateLink']);
-    Route::delete('slide/{id}', [SlideShowController::class, 'destroy']);
-    Route::get('slide-hienthi', [SlideShowController::class, 'getSlideTrangChu']);
-    Route::post('slide-hienthi', [SlideShowController::class, 'chonSlideHienThi']);
     Route::post('slide/rename', [SlideShowController::class, 'rename']);
+    Route::post('slide-hienthi', [SlideShowController::class, 'chonSlideHienThi']);
+    Route::get('slide-hienthi', [SlideShowController::class, 'getSlideTrangChu']);
+    Route::post('slide/image/update-image/{id}', [SlideShowController::class, 'updateImage']);
+
+
+    Route::delete('slide/image/{id}', [SlideShowController::class, 'deleteImage']);
+    Route::delete('slide/{id}', [SlideShowController::class, 'destroy']);
     Route::get('trang-tinh', [IntroduceController::class, 'index']);
     Route::post('trang-tinh', [IntroduceController::class, 'store']);
     Route::post('trang-tinh/update', [IntroduceController::class, 'update']);
