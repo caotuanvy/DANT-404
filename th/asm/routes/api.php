@@ -29,6 +29,7 @@ Route::apiResource('products', ProductController::class);
 Route::put('/products/{id}/toggle-noi-bat', [ProductController::class, 'toggleNoiBat']);
 Route::get('/categories/{id}/products', [CategoryController::class, 'getProductsByCategory']);
 
+
 // Product Image Upload (public add, delete protected)
 Route::post('/products/{product_id}/images', [ProductImageController::class, 'store']);
 Route::delete('/products/{product_id}/images/{image_id}', [ProductImageController::class, 'destroy']);
@@ -96,6 +97,7 @@ Route::prefix('admin')->group(function () {
     Route::delete('trang-tinh/{id}', [IntroduceController::class, 'destroy']);
     Route::get('trang-tinh/{slug}', [IntroduceController::class, 'show']);
     Route::get('/products-sell-top', [ProductController::class, 'getTopSelling']);
+    Route::get('products-featured', [ProductController::class, 'getFeatured']);
 });
 
 // Protected Routes

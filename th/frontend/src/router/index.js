@@ -18,7 +18,7 @@ const routes = [
   {
     path: '/admin/test',
     name: 'test',
-    component: () => import('../components/user/BestSellProduct.vue'),
+    component: () => import('../components/user/EightProductGrid.vue'),
     meta: { requiresAuth: true, role: 'admin' }
   },
   {
