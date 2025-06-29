@@ -14,7 +14,7 @@ class ProductController extends Controller
     public function index()
     {
         try {
-            $products = SanPham::with(['danhMuc', 'hinhAnhSanPham'])->withCount('bienThe')->get();
+            $products = SanPham::with(['danhMuc', 'hinhAnhSanPham'])->withCount('bienThe')->withAvg('bienThe', 'gia')->get();
 
             $result = $products->map(function ($item) {
                 return [
@@ -24,7 +24,9 @@ class ProductController extends Controller
                     'description' => $item->mo_ta,
                     'noi_bat' => $item->noi_bat,
                     'khuyen_mai' => $item->khuyen_mai,
+                    'trang_thai' => $item->trang_thai,
                     'so_bien_the' => $item->bien_the_count,
+                    'gia_trung_binh' => $item->bien_the_avg_gia,
                     'slug' => $item->slug,
                     'danh_muc' => [
                         'category_id' => $item->danhMuc?->category_id,
@@ -67,6 +69,7 @@ public function show($id)
         'variants' => $product->bienThe->map(function ($variant) {
             return [
                 'san_pham_bien_the_id' => $variant->bien_the_id,
+                'ten_bien_the' => $variant->ten_bien_the,
                 'mau_sac' => $variant->mau_sac,
                 'kich_thuoc' => $variant->kich_thuoc,
                 'gia' => $variant->gia,
@@ -84,12 +87,15 @@ public function show($id)
             'mo_ta' => 'nullable|string',
             'images' => 'nullable',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'slug' => 'required|string|max:255|unique:san_pham,slug',
+
         ]);
 
         $product = SanPham::create([
             'ten_san_pham' => $validated['ten_san_pham'],
             'ten_danh_muc_id' => $validated['ten_danh_muc_id'] ?? null,
             'mo_ta' => $validated['mo_ta'] ?? '',
+            'slug' => $validated['slug'],
         ]);
 
         if ($request->hasFile('images')) {
@@ -244,6 +250,30 @@ public function getFeatured()
     });
 
     return response()->json($result);
+}
+public function deactivate($id)
+{
+    $product = SanPham::find($id);
+    if (!$product) {
+        return response()->json(['message' => 'Không tìm thấy sản phẩm'], 404);
+    }
+    $product->trang_thai = 0;
+    $product->save();
+
+    return response()->json(['message' => 'Vô hiệu hóa sản phẩm thành công']);
+}
+public function toggleStatus($id)
+{
+    $product = SanPham::find($id);
+    if (!$product) {
+        return response()->json(['message' => 'Không tìm thấy sản phẩm'], 404);
+    }
+    $product->trang_thai = !$product->trang_thai;
+    $product->save();
+
+    $message = $product->trang_thai ? 'Kích hoạt sản phẩm thành công' : 'Vô hiệu hóa sản phẩm thành công';
+
+    return response()->json(['message' => $message]);
 }
 
 

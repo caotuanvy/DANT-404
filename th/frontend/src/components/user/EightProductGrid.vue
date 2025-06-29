@@ -92,6 +92,7 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 25px;
+  margin-top: 60px;
 }
 
 .product-card {
@@ -105,7 +106,7 @@ onMounted(async () => {
   align-items: center;
   border: 1px solid #e0e0e0;
   transition: transform 0.2s ease;
-  height: 425px;
+  height: 480px;
 }
 
 .product-card:hover {
@@ -125,6 +126,7 @@ onMounted(async () => {
 }
 .product-info{
   width: 100%;
+  position: relative;
   
 }
 .product-img {
@@ -173,8 +175,9 @@ onMounted(async () => {
 }
 
 .price-section {
-position: absolute ;
-margin-top: 10;
+  position: absolute;
+  top: 190px;
+
 }
 
 .original-price {
@@ -182,6 +185,7 @@ margin-top: 10;
   color: #999;
   text-decoration: line-through;
   margin-top: -10px;
+  
 }
 
 .current-price {
@@ -200,8 +204,10 @@ margin-top: 10;
   border-radius: 8px;
   width: 100px;
   transition: background 0.3s ease;
-  margin-left: 160px;
-  margin-top: 20px;
+  position: absolute;
+  right: 5px;
+  top: 210px;
+  
 }
 
 .add-to-cart-button:hover {
@@ -209,6 +215,7 @@ margin-top: 10;
 }
 .main-2{
   background-color: white !important;
+  
 }
 </style>
 

@@ -86,6 +86,8 @@ Route::prefix('admin')->group(function () {
     Route::post('slide-hienthi', [SlideShowController::class, 'chonSlideHienThi']);
     Route::get('slide-hienthi', [SlideShowController::class, 'getSlideTrangChu']);
     Route::post('slide/image/update-image/{id}', [SlideShowController::class, 'updateImage']);
+    Route::put('/variants/{id}', [SanPhamBienTheController::class, 'update']);
+
 
 
     Route::delete('slide/image/{id}', [SlideShowController::class, 'deleteImage']);
@@ -126,7 +128,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/products/{id}/variants', [SanPhamBienTheController::class, 'index']);
     Route::post('/products/{id}/variants', [SanPhamBienTheController::class, 'store']);
     Route::delete('/variants/{id}', [SanPhamBienTheController::class, 'destroy']);
-
+    Route::put('/products/{id}/toggle-status', [ProductController::class, 'toggleStatus']);
     // Product Images (delete only)
     Route::delete('/product-images/{id}', [ProductImageController::class, 'destroy']);
 });
