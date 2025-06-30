@@ -116,10 +116,15 @@ const routes = [
         meta: { requiresAuth: true, role: 'admin' }
       },
       {
-  path: 'tintuc',
-  component: () => import('../components/admin/Tintuc.vue'),
-  meta: { requiresAuth: true, role: 'admin' }
-},
+      path: 'tintucold',
+      component: () => import('../components/admin/Tintuc.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
+      path: 'tintuc',
+      component: () => import('../components/admin/Tintucnew.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+      },
       {
         path: 'slide',
         name: 'AdminSlide',
