@@ -1,541 +1,722 @@
 <template>
-  <div class="add-product-container">
-    <div v-if="!createdProductId">
-      <div class="add-product">
-        <h2>Thêm sản phẩm mới</h2>
-        <form @submit.prevent="addProduct">
-          <div>
-            <label for="name">Tên sản phẩm:</label>
-            <input
-              type="text"
-              id="name"
-              v-model="product.name"
-              placeholder="Nhập tên sản phẩm"
-              required
-            />
-          </div>
+  <div class="add-product-page">
+    <h2 class="page-title">Thêm sản phẩm mới</h2>
 
-          <div>
-            <label for="slug">Đường Dẫn</label>
-            <input
-              type="text"
-              id="slug"
-              v-model="product.slug"
-              placeholder="Đường dẫn sản phẩm (tự động tạo)"
-              @input="userEditedSlug = true"
-            />
-          </div>
-
-          <div>
-            <label for="category">Danh mục:</label>
-            <select v-model="product.category_id" required>
-              <option value="">Chọn danh mục</option>
-              <option
-                v-for="category in categories"
-                :key="category.category_id"
-                :value="category.category_id"
-              >
-                {{ category.ten_danh_muc }}
-              </option>
-            </select>
-          </div>
-
-          <div>
-            <label for="description">Mô tả:</label>
-            <textarea
-              id="description"
-              v-model="product.description"
-              placeholder="Nhập mô tả sản phẩm"
-              rows="4"
-              required
-            ></textarea>
-          </div>
-
-          <div>
-            <label for="images">Chọn ảnh sản phẩm:</label>
-            <input
-              type="file"
-              id="images"
-              @change="handleImageUpload"
-              accept="image/*"
-              multiple
-              required
-            />
-            <div v-if="imagePreviews.length > 0" class="image-preview-container">
-              <h4>Xem trước ảnh:</h4>
-              <div class="previews">
-                <img v-for="(src, index) in imagePreviews" :key="index" :src="src" alt="Ảnh xem trước" />
+    <form @submit.prevent="handleSubmit" class="add-product-form">
+      <div class="form-grid">
+        <div class="col-main">
+          <div class="card custom-card">
+            <div class="card-content">
+              <h3 class="card-title"><i class="fas fa-info-circle icon-margin"></i> Thông tin chung</h3>
+              <div class="form-group">
+                <label for="ten_san_pham" class="form-label">Tên sản phẩm:*</label>
+                <input type="text" id="ten_san_pham" v-model="product.ten_san_pham" class="form-control"/>
+                <small v-if="errors.ten_san_pham" class="form-error">{{ errors.ten_san_pham[0] }}</small>
+              </div>
+              <div class="form-group">
+                <label for="slug" class="form-label">Đường Dẫn (Slug):*</label>
+                <input type="text" id="slug" v-model="product.slug" class="form-control"/>
+                <small v-if="errors.slug" class="form-error">{{ errors.slug[0] }}</small>
+              </div>
+              <div class="form-group">
+                <label for="mo_ta" class="form-label">Mô tả chi tiết:</label>
+                <textarea id="mo_ta" v-model="product.mo_ta" rows="4" class="form-control"></textarea>
+                <small v-if="errors.mo_ta" class="form-error">{{ errors.mo_ta[0] }}</small>
               </div>
             </div>
           </div>
 
-          <div>
-            <button type="submit" :disabled="isSubmitting">
-              {{ isSubmitting ? 'Đang xử lý...' : 'Thêm sản phẩm & Tiếp tục' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+          <div class="card custom-card">
+            <div class="card-content">
+              <h3 class="card-title"><i class="fas fa-swatchbook icon-margin"></i> Các biến thể sản phẩm*</h3>
+              <small class="form-text">Thêm ít nhất một biến thể cho sản phẩm.</small>
 
-    <div v-if="createdProductId">
-      <section class="variant-section">
-        <h3>Quản lý Biến thể cho sản phẩm: <strong>{{ product.name }}</strong></h3>
-
-        <div v-if="loadingVariants">Đang tải biến thể...</div>
-        <table v-if="!loadingVariants && variants.length > 0" class="variant-table">
-          <thead>
-            <tr>
-              <th>Tên biến thể</th>
-              <th>Kích thước</th>
-              <th>Màu sắc</th>
-              <th>Tồn kho</th>
-              <th>Giá</th>
-              <th>Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="variant in variants" :key="variant.bien_the_id">
-              <td>{{ variant.ten_bien_the }}</td>
-              <td>{{ variant.kich_thuoc }}</td>
-              <td>{{ variant.mau_sac }}</td>
-              <td>{{ variant.so_luong_ton_kho }}</td>
-              <td>{{ formatPrice(variant.gia) }}</td>
-              <td>
-                <button class="edit-btn" @click="startEditVariant(variant)">Sửa</button>
-                <button class="delete-btn" @click="deleteVariant(variant.bien_the_id)">Xóa</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <p v-if="!loadingVariants && variants.length === 0">Sản phẩm này chưa có biến thể nào.</p>
-
-        <hr />
-
-        <div class="form-wrapper">
-          <fieldset v-if="!editingVariantId">
-            <legend>➕ Thêm biến thể mới</legend>
-            <form @submit.prevent="addVariant" class="form-layout">
-              <input v-model="newVariant.ten_bien_the" placeholder="Tên biến thể" required />
-              <input v-model="newVariant.kich_thuoc" placeholder="Kích thước" />
-              <input v-model="newVariant.mau_sac" placeholder="Màu sắc" />
-              <input v-model.number="newVariant.so_luong_ton_kho" placeholder="Tồn kho" type="number" required />
-              <input v-model.number="newVariant.gia" placeholder="Giá" type="number" required />
-              <button type="submit" class="add-btn">Thêm</button>
-            </form>
-          </fieldset>
-
-          <fieldset v-if="editingVariantId">
-            <legend>✏️ Chỉnh sửa biến thể</legend>
-            <form @submit.prevent="updateVariant" class="form-layout">
-              <input v-model="editVariant.ten_bien_the" placeholder="Tên biến thể" required />
-              <input v-model="editVariant.kich_thuoc" placeholder="Kích thước" />
-              <input v-model="editVariant.mau_sac" placeholder="Màu sắc" />
-              <input v-model.number="editVariant.so_luong_ton_kho" placeholder="Tồn kho" type="number" required />
-              <input v-model.number="editVariant.gia" placeholder="Giá" type="number" required />
-              <div class="btn-group">
-                <button type="submit" class="update-btn">Cập nhật</button>
-                <button type="button" @click="cancelEdit" class="cancel-btn">Hủy</button>
+              <div v-if="product.variants.length > 0" class="table-container mt-3">
+                  <table class="variant-table">
+                      <thead><tr><th>Tên biến thể</th><th>Giá</th><th>Kho</th><th>Hành động</th></tr></thead>
+                      <tbody>
+                          <tr v-for="(variant, index) in product.variants" :key="index">
+                              <td>{{variant.ten_bien_the}} ({{variant.mau_sac}} / {{variant.kich_thuoc}})</td>
+                              <td>{{variant.gia}}</td>
+                              <td>{{variant.so_luong_ton_kho}}</td>
+                              <td><button type="button" @click="removeVariant(index)" class="btn btn-outline-danger icon-button"><i class="fas fa-trash-alt"></i></button></td>
+                          </tr>
+                      </tbody>
+                  </table>
               </div>
-            </form>
-          </fieldset>
-        </div>
-        <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
+              <small v-if="errors.variants" class="form-error">{{ errors.variants[0] }}</small>
+              
+              <div v-for="(variant, index) in product.variants" :key="index">
+                <small v-if="errors[`variants.${index}.gia`]" class="form-error">
+                  Lỗi ở biến thể #{{ index + 1 }}: {{ errors[`variants.${index}.gia`][0] }}
+                </small>
+              </div>
 
-        <div class="completion-buttons">
-            <button @click="$router.push('/admin/products')" class="finish-btn">Hoàn tất và về danh sách</button>
+              <hr />
+              <fieldset class="fieldset-style primary-fieldset">
+                  <legend class="fieldset-legend">Thêm biến thể mới</legend>
+                  <form @submit.prevent="addVariant" class="form-inline-grid">
+                      <input v-model="newVariant.ten_bien_the" placeholder="Tên biến thể*" class="form-control"/>
+                      <input v-model="newVariant.kich_thuoc" placeholder="Kích thước" class="form-control"/>
+                      <input v-model="newVariant.mau_sac" placeholder="Màu sắc" class="form-control"/>
+                      <input v-model.number="newVariant.so_luong_ton_kho" placeholder="Tồn kho*" type="number" class="form-control"/>
+                      <input v-model.number="newVariant.gia" placeholder="Giá*" type="number" class="form-control"/>
+                      <input v-model.number="newVariant.chieu_dai" placeholder="Dài (cm)" type="number" class="form-control"/>
+                      <input v-model.number="newVariant.chieu_rong" placeholder="Rộng (cm)" type="number" class="form-control"/>
+                      <input v-model.number="newVariant.chieu_cao" placeholder="Cao (cm)" type="number" class="form-control"/>
+                      <button type="submit" class="btn btn-success"><i class="fas fa-plus"></i> Thêm</button>
+                  </form>
+              </fieldset>
+            </div>
+          </div>
+          
+          <div class="card custom-card">
+            <div class="card-content">
+              <h3 class="card-title"><i class="fas fa-bullhorn icon-margin"></i> Khuyến mãi & SEO</h3>
+                <label class="form-label">Khuyến mãi</label>
+                <input type="number" v-model.number="product.khuyen_mai" class="form-control mb-2" placeholder="VD: 10 (cho 10%)"/>
+                <small v-if="errors.khuyen_mai" class="form-error">{{ errors.khuyen_mai[0] }}</small>
+
+                <label class="form-label">Tiêu đề seo</label>
+                <input type="text" v-model="product.Tieu_de_seo" class="form-control mb-2"/>
+                <small v-if="errors.Tieu_de_seo" class="form-error">{{ errors.Tieu_de_seo[0] }}</small>
+
+                <label class="form-label">Từ khóa seo</label>
+                <input type="text" v-model="product.Tu_khoa" class="form-control mb-2"/>
+                <small v-if="errors.Tu_khoa" class="form-error">{{ errors.Tu_khoa[0] }}</small>
+
+                <label class="form-label">Nội dung seo</label>
+                <textarea v-model="product.Mo_ta_seo" rows="3" class="form-control"></textarea>
+                <small v-if="errors.Mo_ta_seo" class="form-error">{{ errors.Mo_ta_seo[0] }}</small>
+            </div>
+          </div>
         </div>
-      </section>
-    </div>
+
+        <div class="col-sidebar">
+          <div class="card custom-card">
+            <div class="card-content">
+              <h3 class="card-title"><i class="fas fa-cogs icon-margin"></i> Tùy chọn</h3>
+              <div class="form-group toggle-switch">
+                  <input class="switch-input" type="checkbox" id="trang_thai" v-model="product.trang_thai">
+                  <label class="switch-label" for="trang_thai">Hoạt động (Hiển thị)</label>
+              </div>
+              <div class="form-group toggle-switch">
+                  <input class="switch-input" type="checkbox" id="noi_bat" v-model="product.noi_bat">
+                  <label class="switch-label" for="noi_bat">Sản phẩm nổi bật</label>
+              </div>
+              <div class="form-group">
+                  <label for="category" class="form-label">Danh mục:</label>
+                  <select v-model="product.ten_danh_muc_id" class="form-control">
+                      <option :value="null">-- Chọn --</option>
+                      <option v-for="cat in categories" :key="cat.category_id" :value="cat.category_id">{{ cat.ten_danh_muc }}</option>
+                  </select>
+                  <small v-if="errors.ten_danh_muc_id" class="form-error">{{ errors.ten_danh_muc_id[0] }}</small>
+              </div>
+              <div class="form-group">
+                <label for="gia" class="form-label">Giá gốc (tùy chọn):</label>
+                <input type="number" id="gia" v-model.number="product.gia" placeholder="Giá chung nếu cần" class="form-control"/>
+                 <small v-if="errors.gia" class="form-error">{{ errors.gia[0] }}</small>
+              </div>
+              <div class="form-group">
+                <label for="the" class="form-label">Tags:</label>
+                <input type="text" id="the" v-model="product.the" class="form-control"/>
+                 <small v-if="errors.the" class="form-error">{{ errors.the[0] }}</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="card custom-card">
+              <div class="card-content">
+                <h3 class="card-title"><i class="fas fa-image icon-margin"></i> Hình ảnh sản phẩm</h3>
+                <label for="images" class="image-upload-label">
+                  <i class="fas fa-cloud-upload-alt"></i><span>Hình Ảnh</span>
+                  <input type="file" id="images" @change="handleImageUpload" multiple class="hidden-input"/>
+                </label>
+                <div v-if="imagePreviews.length > 0" class="image-preview-container">
+                  <div v-for="(src, index) in imagePreviews" :key="index" class="image-preview-item">
+                    <img :src="src" class="preview-image" />
+                    <button type="button" @click="removeImage(index)" class="remove-image-button">&times;</button>
+                  </div>
+                </div>
+                  <small v-if="errors.images" class="form-error">{{ errors.images[0] }}</small>
+              </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" :disabled="isSubmitting" class="btn btn-primary btn-large">
+          <span v-if="isSubmitting"><i class="fas fa-spinner fa-spin"></i> Đang lưu...</span>
+          <span v-else><i class="fas fa-save"></i> Lưu sản phẩm</span>
+        </button>
+      </div>
+        <p v-if="globalError" class="alert danger-alert">{{ globalError }}</p>
+    </form>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, reactive, onMounted, watch } from 'vue';
 import axios from 'axios';
-import { useRouter } from 'vue-router';
 
-const router = useRouter();
-
-// --- STATE QUẢN LÝ CHUNG ---
-const createdProductId = ref(null); // **Chìa khóa**: Lưu ID sản phẩm sau khi tạo thành công.
-const isSubmitting = ref(false);
-const errorMessage = ref('');
-
-// --- STATE CHO SẢN PHẨM ---
-const product = ref({
-  name: '',
-  category_id: '',
-  description: '',
+// --- STATE MANAGEMENT ---
+const product = reactive({
+  ten_san_pham: '',
   slug: '',
+  ten_danh_muc_id: null,
+  mo_ta: '',
+  gia: null,
+  noi_bat: false,
+  trang_thai: true,
+  khuyen_mai: null,
+  the: '',
+  Tieu_de_seo: '',
+  Tu_khoa: '',
+  Mo_ta_seo: '',
+  ngay_bat_dau_giam_gia: null,
+  ngay_ket_thuc_giam_gia: null,
+  variants: [],
 });
+
+const newVariant = reactive({
+    ten_bien_the: '',
+    kich_thuoc: '',
+    mau_sac: '',
+    gia: null,
+    so_luong_ton_kho: null,
+});
+
+const categories = ref([]);
 const imageFiles = ref([]);
 const imagePreviews = ref([]);
-const categories = ref([]);
-const userEditedSlug = ref(false);
+const isSubmitting = ref(false);
+const errors = ref({});
+const globalError = ref('');
 
-// --- STATE CHO BIẾN THỂ ---
-const variants = ref([]);
-const loadingVariants = ref(false);
-const editingVariantId = ref(null);
-const newVariant = ref({
-  ten_bien_the: '',
-  kich_thuoc: '',
-  mau_sac: '',
-  so_luong_ton_kho: '',
-  gia: '',
+// --- LIFECYCLE & DATA FETCHING ---
+onMounted(async () => {
+    try {
+        const response = await axios.get('categories');
+        categories.value = response.data;
+    } catch (error) {
+        console.error("Không thể tải danh mục:", error);
+    }
 });
-const editVariant = ref({});
 
+// Tự động tạo slug
+watch(() => product.ten_san_pham, (newVal) => {
+    if (newVal) {
+        product.slug = newVal.toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/đ/g, 'd').replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+    }
+});
 
-// --- METHODS LIÊN QUAN ĐẾN SẢN PHẨM ---
-
-const generateSlug = (text) => {
-  return text
-    .toString()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-');
+const addVariant = () => {
+    if (!newVariant.ten_bien_the || !newVariant.gia || !newVariant.so_luong_ton_kho) {
+        alert('Vui lòng điền Tên, Giá và Kho cho biến thể.');
+        return;
+    }
+    product.variants.push({ ...newVariant });
+    Object.assign(newVariant, { ten_bien_the: '', kich_thuoc: '', mau_sac: '', gia: null, so_luong_ton_kho: null, chieu_dai: null, chieu_rong: null, chieu_cao: null });
 };
 
-watch(() => product.value.name, (newVal) => {
-  if (!userEditedSlug.value) {
-    product.value.slug = generateSlug(newVal);
-  }
-});
+const removeVariant = (index) => {
+    product.variants.splice(index, 1);
+};
 
 const handleImageUpload = (event) => {
-  imageFiles.value = Array.from(event.target.files);
-  imagePreviews.value = imageFiles.value.map(file => URL.createObjectURL(file));
-};
-
-const getCategories = async () => {
-  try {
-    const res = await axios.get("http://localhost:8000/api/categories", {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    const files = Array.from(event.target.files);
+    files.forEach(file => {
+        imageFiles.value.push(file);
+        imagePreviews.value.push(URL.createObjectURL(file));
     });
-    categories.value = res.data;
-  } catch (error) {
-    alert("Không thể tải danh mục!");
-  }
 };
 
-const addProduct = async () => {
-  isSubmitting.value = true;
-  errorMessage.value = '';
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert("Bạn cần đăng nhập!");
-      isSubmitting.value = false;
-      return;
-    }
+const removeImage = (index) => {
+    imageFiles.value.splice(index, 1);
+    imagePreviews.value.splice(index, 1);
+};
+
+const handleSubmit = async () => {
+    isSubmitting.value = true;
+    errors.value = {};
+    globalError.value = '';
 
     const formData = new FormData();
-    formData.append("ten_san_pham", product.value.name);
-    formData.append("ten_danh_muc_id", product.value.category_id);
-    formData.append("mo_ta", product.value.description);
-    formData.append("slug", product.value.slug);
-    imageFiles.value.forEach(file => {
-      formData.append("images[]", file);
-    });
-
-    const res = await axios.post("http://localhost:8000/api/products", formData, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (res.status === 201) {
-      alert("Thêm sản phẩm thành công! Bây giờ hãy thêm biến thể.");
-      // **Chìa khóa**: Lưu ID sản phẩm vừa tạo và chuyển sang giao diện biến thể
-      // Giả sử API trả về đối tượng sản phẩm có `product_id`
-      createdProductId.value = res.data.data.san_pham_id;  
-      // Tải các biến thể (ban đầu sẽ rỗng)
-      await getVariants();
+    for (const key in product) {
+      let value = product[key]; 
+      if (typeof value === 'boolean') {
+          value = value ? '1' : '0';
+      }
+      if (key === 'variants') {
+          formData.append('variants', JSON.stringify(product.variants));
+      } else {
+          if (value !== null && value !== undefined) {
+              formData.append(key, value);
+          }
+      }
     }
-  } catch (error) {
-    alert("Có lỗi xảy ra khi thêm sản phẩm!");
-    console.error(error);
-  } finally {
-    isSubmitting.value = false;
-  }
-};
 
-// --- METHODS LIÊN QUAN ĐẾN BIẾN THỂ ---
-
-const getAuthHeaders = () => ({
-  Authorization: `Bearer ${localStorage.getItem('token')}`,
-});
-
-const getVariants = async () => {
-  if (!createdProductId.value) return;
-  loadingVariants.value = true;
-  errorMessage.value = '';
-  try {
-  
-    const res = await axios.get(`http://localhost:8000/api/products/${createdProductId.value}`, {
-      headers: getAuthHeaders(),
+    imageFiles.value.forEach(file => {
+        formData.append('images[]', file);
     });
-    variants.value = res.data.variants || []; 
 
-  } catch (error) {
-    console.error('ERROR when calling getVariants:', error.response || error);
-    errorMessage.value = 'Không thể tải danh sách biến thể.';
-  } finally {
-    loadingVariants.value = false;
-  }
+    try {
+        const response = await axios.post('products', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        alert('Thêm sản phẩm thành công!');
+        window.location.href = '/admin/products';
+
+    } catch (error) {
+        if (error.response && error.response.status === 422) {
+            errors.value = error.response.data.errors;
+            globalError.value = error.response.data.message; 
+        } else {
+            globalError.value = error.response?.data?.message || "Đã có lỗi xảy ra từ máy chủ.";
+        }
+        console.error("Lỗi khi thêm sản phẩm:", error);
+    } finally {
+        isSubmitting.value = false;
+    }
 };
-
-const addVariant = async () => {
-  errorMessage.value = '';
-  try {
-    await axios.post(`http://localhost:8000/api/products/${createdProductId.value}/variants`, newVariant.value, {
-      headers: getAuthHeaders(),
-    });
-    newVariant.value = { ten_bien_the: '', kich_thuoc: '', mau_sac: '', so_luong_ton_kho: '', gia: '' };
-    await getVariants(); // Tải lại danh sách
-  } catch (error) {
-    console.error('Lỗi khi thêm biến thể:', error);
-    errorMessage.value = 'Thêm biến thể thất bại. Vui lòng kiểm tra lại thông tin.';
-  }
-};
-
-const startEditVariant = (variant) => {
-  editingVariantId.value = variant.bien_the_id;
-  editVariant.value = { ...variant };
-};
-
-const cancelEdit = () => {
-    editingVariantId.value = null;
-    editVariant.value = {};
-}
-
-const updateVariant = async () => {
-  errorMessage.value = '';
-  try {
-    await axios.put(`http://localhost:8000/api/variants/${editingVariantId.value}`, editVariant.value, {
-       headers: getAuthHeaders(),
-    });
-    cancelEdit();
-    await getVariants();
-  } catch (error) {
-    console.error('Lỗi khi cập nhật biến thể:', error);
-    errorMessage.value = 'Cập nhật biến thể thất bại.';
-  }
-};
-
-const deleteVariant = async (variantId) => {
-  if (!confirm('Bạn có chắc muốn xóa biến thể này không?')) return;
-  errorMessage.value = '';
-  try {
-    await axios.delete(`http://localhost:8000/api/variants/${variantId}`, {
-      headers: getAuthHeaders(),
-    });
-    await getVariants(); // Tải lại danh sách
-  } catch (error) {
-    console.error('Lỗi khi xóa biến thể:', error);
-    errorMessage.value = 'Xóa biến thể thất bại.';
-  }
-};
-
-const formatPrice = (price) => {
-  if (price === null || price === undefined) return '0 đ';
-  return Number(price).toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
-};
-
-// --- LIFECYCLE HOOK ---
-onMounted(() => {
-  getCategories();
-});
-
 </script>
 
 <style scoped>
-/* --- General Styles --- */
-.add-product-container {
-  max-width: 900px;
-  margin: 20px auto;
-  font-family: sans-serif;
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+
+.add-product-page {
+  padding: 30px;
+  min-height: 100vh;
+  color: #333;
+  box-sizing: border-box;
 }
 
-.error {
-  color: #e53935;
-  margin-top: 15px;
+.page-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2c3e50;
   text-align: center;
+  margin-bottom: 40px;
+  position: relative;
+  padding-bottom: 15px;
 }
 
-hr {
-  border: 0;
-  border-top: 1px solid #eee;
-  margin: 2rem 0;
+.page-title::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 4px;
+  background-color: #007bff;
+  border-radius: 2px;
 }
 
-button:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
+.add-product-form {
+  padding: 35px;
+  border-radius: 15px;
+  box-shadow: none !important;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-/* --- Add Product Form Styles --- */
-.add-product {
-  background: #fff;
+.form-grid {
+  display: grid;
+  grid-template-columns: 3fr 1fr; 
+  gap: 35px;
+  align-items: flex-start;
+}
+
+.card.custom-card {
+  border: 1px solid #e0e6ed;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+  margin-bottom: 25px;
+  overflow: hidden;
+}
+
+.card-content {
   padding: 25px;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
-.add-product h2 {
-    margin-top: 0;
-    text-align: center;
-    color: #333;
+
+.card-title {
+  font-size: 1.45rem;
+  font-weight: 600;
+  color: #34495e;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #f0f2f5;
+  display: flex;
+  align-items: center;
 }
-.add-product form div {
-  margin-bottom: 1.2rem;
+
+.card-title i {
+  color: #007bff;
+  font-size: 1.6rem;
+  margin-right: 12px;
 }
-.add-product label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-    color: #555;
+
+.form-group {
+  margin-bottom: 22px;
 }
-.add-product input[type="text"],
-.add-product input[type="file"],
-.add-product select,
-.add-product textarea {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-sizing: border-box; /* Important */
+
+.form-label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 10px;
+  color: #555;
+  font-size: 1rem;
 }
-.add-product button {
-  padding: 12px 20px;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
+
+.form-control {
+  box-sizing: border-box;
   width: 100%;
-  font-size: 16px;
-  font-weight: bold;
+  border-radius: 8px;
+  padding: 12px 15px;
+  font-size: 1rem;
+  border: 1px solid #dcdfe6;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
 }
-.add-product button:hover {
-    background-color: #218838;
+
+.form-control:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25), inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  background-color: #fcfdff;
+  outline: none;
+}
+
+textarea.form-control {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.form-text {
+  font-size: 0.875rem;
+  color: #777;
+  margin-top: 6px;
+}
+
+.form-error {
+    color: #dc3545;
+    font-size: 0.875em;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+/* --- Image Upload --- */
+.image-upload-label {
+  border: 2px dashed #a8d4ff;
+  background-color: #eaf6ff; 
+  border-radius: 12px;
+  min-height: 140px;
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: #007bff;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  padding: 20px; 
+}
+
+.image-upload-label:hover {
+  border-color: #0056b3;
+  background-color: #d6eaff; 
+  color: #0056b3;
+}
+
+.image-upload-label i {
+  font-size: 3rem; 
+  margin-bottom: 8px; 
+  animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.05); opacity: 1; }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+.hidden-input { 
+  display: none;
 }
 
 .image-preview-container {
-    margin-top: 15px;
-}
-.previews {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 10px;
-}
-.previews img {
-  width: 120px;
-  height: 120px;
-  object-fit: cover;
-  border: 1px solid #ddd;
-  border-radius: 5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px; 
+  margin-top: 20px;
+  justify-content: center; 
 }
 
-/* --- Variant Section Styles --- */
-.variant-section {
-  margin-top: 30px;
-  padding: 25px;
-  background: #f9f9f9;
+.image-preview-item {
+  width: 120px; 
+  height: 120px;
+  border: 1px solid #ced4da;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  position: relative;
+  transition: transform 0.2s ease;
 }
-.variant-section h3 {
-    text-align: center;
-    color: #333;
-    margin-top: 0;
+
+.image-preview-item:hover {
+  transform: translateY(-3px);
 }
-.variant-section strong {
-    color: #1266b3;
+
+.preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block; 
+}
+
+.remove-image-button {
+  background-color: rgba(220, 53, 69, 0.9); 
+  color: white;
+  border: none;
+  width: 32px;
+  height: 32px;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  border-radius: 50%;
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 10;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.remove-image-button:hover {
+  background-color: #c82333;
+  transform: scale(1.1);
+}
+
+/* --- Variants Section (Table and Forms) --- */
+.table-container {
+    overflow-x: auto; 
+    border: 1px solid #e9ecef; 
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
 }
 
 .variant-table {
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 15px;
+  min-width: 600px;
 }
-.variant-table th, .variant-table td {
-  border: 1px solid #ccc;
-  padding: 12px;
+
+.variant-table thead th {
+  background-color: #f5f8fb; 
+  font-weight: 700;
+  color: #444;
+  padding: 15px 10px;
+  border-bottom: 2px solid #e9ecef;
+  border-top: none;
   text-align: center;
-}
-.variant-table th {
-  background-color: #e0e0e0;
+  font-size: 0.95rem;
 }
 
-button {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 4px;
-  color: white;
-  margin: 2px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+.variant-table tbody td {
+  padding: 12px 10px;
+  vertical-align: middle;
+  border-bottom: 1px solid #f0f2f5;
+  text-align: center;
+  font-size: 0.9rem;
 }
 
-.edit-btn { background-color: #1266b3; }
-.edit-btn:hover { background-color: #0d4a81; }
-.delete-btn { background-color: #e53935; }
-.delete-btn:hover { background-color: #c62828; }
-.add-btn { background-color: #28a745; }
-.update-btn { background-color: #f9a825; }
-.cancel-btn { background-color: #757575; }
-.finish-btn {
-    background-color: #17a2b8;
-    padding: 10px 20px;
-    font-size: 16px;
+.variant-table tbody tr:last-child td {
+  border-bottom: none; 
 }
 
-.form-wrapper {
+.variant-table tbody tr:hover {
+  background-color: #fdfdfd;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+.icon-button { 
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+.icon-button i {
+    font-size: 0.9em;
+}
+
+.fieldset-style { 
+  border: 1px solid #d1ecf1 !important; 
+  border-radius: 8px !important;
+  padding: 20px !important;
+  background-color: #e9f5f8; 
+  margin-top: 25px;
+}
+
+.fieldset-legend {
+  font-size: 1.2rem;
+  font-weight: 700;
+  width: auto;
+  padding: 0 15px;
+  margin-bottom: 0;
+  color: #007bff;
+  border-bottom: none;
+  background-color: #e9f5f8; 
+}
+
+.form-inline-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); 
+    gap: 10px; 
+    align-items: flex-end;
+}
+
+/* --- Toggle Switch (Trạng thái) --- */
+.toggle-switch {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f2f5;
+}
+.toggle-switch:last-child {
+    border-bottom: none;
+}
+.toggle-switch .switch-input {
+    appearance: none;
+    width: 48px;
+    height: 28px;
+    background-color: #e0e0e0;
+    border-radius: 14px;
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    outline: none;
+}
+.toggle-switch .switch-input:checked {
+    background-color: #28a745; 
+}
+.toggle-switch .switch-input::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 24px;
+    height: 24px;
+    background-color: #fff;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.toggle-switch .switch-input:checked::before {
+    transform: translateX(20px);
+}
+.toggle-switch .switch-label {
+    margin-left: 10px; 
+    cursor: pointer;
+    font-weight: 500;
+    color: #495057;
+    flex-grow: 1; 
+}
+
+/* --- Form Actions and Alerts --- */
+.form-actions {
   display: flex;
-  flex-direction: column;
-  gap: 30px;
-  margin-top: 20px;
+  justify-content: flex-end;
+  padding-top: 30px;
+  border-top: 1px solid #eee;
+  margin-top: 30px;
 }
 
-form.form-layout {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+.btn {
+  font-weight: 600;
+  padding: 12px 25px;
+  border-radius: 8px;
+  transition: all 0.25s ease-in-out;
+  display: inline-flex;
   align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
 }
 
-input {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  flex: 1 1 150px;
+.btn i {
+  font-size: 1.1rem;
 }
 
-fieldset {
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  padding: 15px;
-  background-color: #fff;
+.btn-primary {
+  background-color: #007bff;
+  border-color: #007bff;
+  color: white;
+  box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2);
+}
+.btn-primary:hover:not(:disabled) {
+  background-color: #0056b3;
+  border-color: #004085;
+  box-shadow: 0 6px 15px rgba(0, 123, 255, 0.3);
+  transform: translateY(-2px);
 }
 
-legend {
-  font-weight: bold;
-  padding: 0 8px;
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+.btn-success:hover:not(:disabled) {
+    background-color: #218838;
+    border-color: #1e7e34;
 }
 
-.btn-group {
+.btn-outline-danger {
+  color: #dc3545;
+  border-color: #dc3545;
+  background-color: transparent;
+}
+.btn-outline-danger:hover:not(:disabled) {
+  color: #fff;
+  background-color: #dc3545;
+}
+
+.btn-large { 
+    padding: 14px 30px;
+    font-size: 1.1rem;
+}
+
+.alert {
+  padding: 15px 25px;
+  border-radius: 10px;
+  font-weight: 500;
+  font-size: 1rem;
   display: flex;
+  align-items: center;
   gap: 10px;
-  margin-left: auto;
+  margin-top: 25px;
+  text-align: center;
+  justify-content: center;
+}
+.danger-alert {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
 }
 
-.completion-buttons {
-    text-align: center;
-    margin-top: 30px;
-}
 </style>

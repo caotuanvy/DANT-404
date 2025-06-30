@@ -11,7 +11,23 @@ class SanPham extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'ten_san_pham', 'gia', 'ten_danh_muc_id', "mo_ta","noi_bat","khuyen_mai", 'slug',
+        'ten_san_pham',
+        'gia',
+        'ten_danh_muc_id',
+        "mo_ta",
+        "noi_bat",
+        "khuyen_mai",
+        'slug',
+        'the',
+        'trang_thai',
+        // Thông tin SEO
+        'Tieu_de_seo',
+        'Tu_khoa',
+        'Mo_ta_seo',
+
+        // Hệ thống khuyến mãi
+        'ngay_bat_dau_giam_gia',
+        'ngay_ket_thuc_giam_gia',
     ];
 
    public function danhMuc()
