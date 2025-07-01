@@ -22,7 +22,10 @@ use App\Http\Controllers\Api\IntroduceController;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/kich-hoat/{token}', [AuthController::class, 'activate']);
-Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+// Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/send-reset-code', [AuthController::class, 'sendResetCode']);
+Route::post('/verify-reset-code', [AuthController::class, 'verifyResetCode']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 // Public Product Routes
 Route::apiResource('products', ProductController::class);
