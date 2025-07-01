@@ -37,8 +37,11 @@
           />
           <div class="product-details">
             <span class="product-name">
-              {{ item.bien_the?.san_pham?.ten_san_pham || 'Không rõ tên sản phẩm' }}
-            </span>
+  {{ item.bien_the?.san_pham?.ten_san_pham || 'Không rõ tên sản phẩm' }}
+  <span v-if="item.bien_the?.ten_bien_the">
+    - {{ item.bien_the.ten_bien_the }}
+  </span>
+</span>
             <span class="product-variant" v-if="item.bien_the?.mau_sac || item.bien_the?.kich_thuoc">
               Phân loại:
               {{ item.bien_the.mau_sac || 'Màu không xác định' }}
