@@ -46,36 +46,43 @@ class TintucController extends Controller
     }
 
     // Cập nhật tin tức
-        public function update(Request $request, $id)
+       public function update(Request $request, $id)
     {
-        $tintuc = Tintuc::findOrFail($id);
-        $data = $request->validate([
-            'id_danh_muc_tin_tuc' => 'sometimes|integer',
-            'tieude' => 'sometimes|string|max:255',
-            'noidung' => 'sometimes|string',
-            'ngay_dang' => 'nullable|date',
-            'noi_bat' => 'nullable|boolean',
-            'duyet_tin_tuc' => 'nullable|boolean',
-            'hinh_anh' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
-            'slug' => 'nullable|string|max:225', // Thêm dòng này
-        ]);
+    $tintuc = Tintuc::findOrFail($id);
+    $data = $request->validate([
+        'id_danh_muc_tin_tuc' => 'sometimes|integer',
+        'tieude' => 'sometimes|string|max:255',
+        'noidung' => 'sometimes|string',
+        'ngay_dang' => 'nullable|date',
+        'noi_bat' => 'nullable|boolean',
+        'duyet_tin_tuc' => 'nullable|boolean',
+        'trang_thai' => 'nullable|boolean', // Thêm dòng này để nhận trạng thái
+        'hinh_anh' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+        'slug' => 'nullable|string|max:225',
+    ]);
 
-        if ($request->hasFile('hinh_anh')) {
-            $file = $request->file('hinh_anh');
-            $path = $file->store('Tintuc', 'public');
-            $data['hinh_anh'] = $path;
-        }
+    if ($request->hasFile('hinh_anh')) {
+        $file = $request->file('hinh_anh');
+        $path = $file->store('Tintuc', 'public');
+        $data['hinh_anh'] = $path;
+    }
 
-        $tintuc->update($data);
-        return response()->json($tintuc);
+    // Nếu có trường trạng thái thì cập nhật
+    if ($request->has('trang_thai')) {
+        $tintuc->trang_thai = $request->input('trang_thai');
+    }
+
+    $tintuc->update($data);
+    return response()->json($tintuc);
     }
 
     // Xóa tin tức
-    public function destroy($id)
+   public function destroy($id)
     {
-        $tintuc = Tintuc::findOrFail($id);
-        $tintuc->delete();
-        return response()->json(['message' => 'Đã xóa thành công']);
+    $tintuc = Tintuc::findOrFail($id);
+    $tintuc->trang_thai = 0;
+    $tintuc->save();
+    return response()->json(['message' => 'Tin tức đã được ẩn thành công']);
     }
 
     //xem chi tiet tintuc admin

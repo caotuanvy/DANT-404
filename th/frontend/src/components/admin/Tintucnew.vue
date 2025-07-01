@@ -30,15 +30,16 @@
               <th class="text-center">Nổi bật</th>
               <th class="text-center">Duyệt</th>
               <th class="text-center">Lượt xem</th>
+              <th class="text-center">Trạng thái</th>
               <th class="text-center">Hành động</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="loading">
-              <td colspan="9" class="text-center py-8">Đang tải dữ liệu...</td>
+              <td colspan="10" class="text-center py-8">Đang tải dữ liệu...</td>
             </tr>
             <tr v-else-if="filteredNews.length === 0">
-              <td colspan="9" class="text-center py-8">Không tìm thấy tin tức nào.</td>
+              <td colspan="10" class="text-center py-8">Không tìm thấy tin tức nào.</td>
             </tr>
             <tr v-for="news in filteredNews" :key="news.id" class="table-row">
               <td><input type="checkbox"></td>
@@ -76,6 +77,18 @@
               </td>
               <td class="text-center">{{ news.luot_xem || 0 }}</td>
               <td class="text-center">
+                <button
+                  @click="toggleTrangThai(news)"
+                  class="toggle-switch"
+                  :class="{ 'is-active': news.trang_thai == 1 }"
+                  style="margin-right: 8px;"
+                  :title="news.trang_thai == 1 ? 'Bấm để ẩn' : 'Bấm để hiện lại'"
+                >
+                  <span class="toggle-circle"></span>
+                </button>
+                <!-- ĐÃ XÓA DÒNG HIỂN THỊ TRẠNG THÁI -->
+              </td>
+              <td class="text-center">
                 <div class="action-buttons">
                   <router-link :to="`/tintuc/${news.slug}`" class="action-icon" title="Xem chi tiết">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
@@ -83,9 +96,6 @@
                   <router-link :to="`/admin/tintuc/${news.id}/edit`" class="action-icon" title="Sửa">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
                   </router-link>
-                  <button @click="deleteNews(news)" class="action-icon text-danger" title="Xóa">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 8a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm2 4a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1z" clip-rule="evenodd" /></svg>
-                  </button>
                 </div>
               </td>
             </tr>
@@ -167,18 +177,22 @@ const toggleDuyet = async (news) => {
   }
 };
 
-const deleteNews = async (news) => {
-  if (!confirm('Bạn có chắc muốn xóa tin tức này?')) return;
+// Toggle trạng thái hiện/ẩn (KHÔNG hiện alert)
+const toggleTrangThai = async (news) => {
+  const oldStatus = news.trang_thai;
+  const newStatus = oldStatus === 1 ? 0 : 1;
+  news.trang_thai = newStatus;
   try {
-    await axios.delete(`http://localhost:8000/api/tintuc/${news.id}`, {
+    await axios.put(`http://localhost:8000/api/tintuc/${news.id}`, {
+      trang_thai: newStatus,
+    }, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
     });
-    newsList.value = newsList.value.filter(n => n.id !== news.id);
-    alert('Đã xóa tin tức thành công!');
   } catch (error) {
-    alert('Xóa tin tức thất bại!');
+    news.trang_thai = oldStatus;
+    // alert('Cập nhật trạng thái hiển thị thất bại!');
   }
 };
 
