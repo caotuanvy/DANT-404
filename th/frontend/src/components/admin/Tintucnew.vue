@@ -70,9 +70,9 @@
                 </button>
               </td>
               <td class="text-center">
-                <span class="status-badge" :class="news.duyet_tin_tuc == 1 ? 'is-active' : 'is-inactive'">
-                  {{ news.duyet_tin_tuc == 1 ? 'Đã duyệt' : 'Chờ duyệt' }}
-                </span>
+                <button @click="toggleDuyet(news)" class="toggle-switch" :class="{ 'is-active': news.duyet_tin_tuc == 1 }">
+                  <span class="toggle-circle"></span>
+                </button>
               </td>
               <td class="text-center">{{ news.luot_xem || 0 }}</td>
               <td class="text-center">
@@ -132,18 +132,38 @@ const getNews = async () => {
 };
 
 const toggleNoiBat = async (news) => {
-  const newStatus = news.noi_bat === 1 ? 0 : 1;
+  const oldStatus = news.noi_bat;
+  const newStatus = oldStatus === 1 ? 0 : 1;
+  news.noi_bat = newStatus;
   try {
-    await axios.put(`http://localhost:8000/api/tintuc/${news.id}/toggle-noi-bat`, {
+    await axios.put(`http://localhost:8000/api/tintuc/${news.id}`, {
       noi_bat: newStatus,
     }, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
     });
-    news.noi_bat = newStatus;
   } catch (error) {
+    news.noi_bat = oldStatus;
     alert('Cập nhật trạng thái nổi bật thất bại!');
+  }
+};
+
+const toggleDuyet = async (news) => {
+  const oldStatus = news.duyet_tin_tuc;
+  const newStatus = oldStatus === 1 ? 0 : 1;
+  news.duyet_tin_tuc = newStatus;
+  try {
+    await axios.put(`http://localhost:8000/api/tintuc/${news.id}`, {
+      duyet_tin_tuc: newStatus,
+    }, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+  } catch (error) {
+    news.duyet_tin_tuc = oldStatus;
+    alert('Cập nhật trạng thái duyệt thất bại!');
   }
 };
 
