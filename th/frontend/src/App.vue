@@ -643,7 +643,7 @@ body {
   /* Đảm bảo menu hiển thị trên các nội dung khác */
   overflow: hidden;
   /* Để bo góc của ul */
-  padding: 8px 0;
+  /* padding: 8px 0; */
   /* Đệm trên dưới cho các item menu */
 }
 

@@ -172,6 +172,7 @@ const handleLogin = async () => {
 
         closeModal();
         localStorage.setItem('token', token);
+        
         localStorage.setItem('user', JSON.stringify(user));
         localStorage.setItem('vai_tro_id', user.vai_tro_id);
         localStorage.setItem('sdt', user.sdt);

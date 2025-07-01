@@ -23,6 +23,7 @@
     "@editorjs/simple-image": "^1.6.0",
     "@tinymce/tinymce-vue": "^6.2.0",
     "axios": "^1.8.4",
+    "bootstrap": "^5.3.7",
     "chart.js": "^4.4.9",
     "editorjs-text-color-plugin": "^2.0.4",
     "sweetalert2": "^11.22.1",
