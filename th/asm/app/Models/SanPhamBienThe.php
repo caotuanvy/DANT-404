@@ -19,10 +19,15 @@ class SanPhamBienThe extends Model
         'mau_sac',
         'so_luong_ton_kho',
         'gia',
-        'hinh_anh',       // cần có
-        'trong_luong',    // cần có
+        'hinh_anh',
+        'trong_luong',
         'ngay_tao',
         'ngay_sua',
+        'trong_luong',
+        'chieu_dai',
+        'chieu_rong',
+        'chieu_cao',
+
     ];
 
     public function sanPham()

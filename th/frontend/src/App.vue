@@ -52,9 +52,9 @@
       <div class="container">
         <ul>
           <li>
-            <a href="#"><i class="fas fa-bars"></i> Danh mục sản phẩm</a>
+            <a href="/Danh-muc-san-pham"><i class="fas fa-bars"></i> Danh mục sản phẩm</a>
           </li>
-          <li><a href="#">Trang Chủ</a></li>
+          <li><a href="/">Trang Chủ</a></li>
           <li><router-link to="/gioi-thieu">Giới Thiệu</router-link></li>
           <li><a href="#">Tin Tức</a></li>
           <li><a href="#">Liên Hệ</a></li>
@@ -643,7 +643,7 @@ body {
   /* Đảm bảo menu hiển thị trên các nội dung khác */
   overflow: hidden;
   /* Để bo góc của ul */
-  padding: 8px 0;
+  /* padding: 8px 0; */
   /* Đệm trên dưới cho các item menu */
 }
 

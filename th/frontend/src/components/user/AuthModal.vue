@@ -1,7 +1,7 @@
 <script setup>
 import Swal from 'sweetalert2';
 import axios from 'axios';
-import { ref, reactive, watch, onMounted } from 'vue'; // Thêm onMounted
+import { ref, reactive, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
@@ -15,39 +15,50 @@ const props = defineProps({
 
 const emit = defineEmits(['update:show']);
 
-const currentView = ref('login');
+const currentView = ref('login'); // Có thể là 'login', 'register', 'forgot-password', 'verify-otp', 'reset-password'
 
 const loginForm = reactive({
     email: '',
     password: ''
 });
-const loginError = ref('');
+const loginError = ref(''); // Biến lỗi tổng hợp cho form đăng nhập
 
 const registerForm = reactive({
     email: '',
     password: '',
     confirmPassword: ''
 });
-const registerError = ref('');
+const registerError = ref(''); // Biến lỗi tổng hợp cho form đăng ký
 
 const forgotPasswordForm = reactive({
     email: ''
 });
-const forgotPasswordError = ref('');
+const forgotPasswordError = ref(''); // Biến lỗi tổng hợp cho form quên mật khẩu
+
+const otpForm = reactive({
+    email: '', // Sẽ được điền từ forgotPasswordForm.email
+    code: ''
+});
+const otpError = ref(''); // Biến lỗi tổng hợp cho form OTP
+
+const resetPasswordForm = reactive({
+    email: '', // Sẽ được điền từ forgotPasswordForm.email
+    new_password: '',
+    new_password_confirmation: ''
+});
+const resetPasswordError = ref(''); // Biến lỗi tổng hợp cho form đặt lại mật khẩu
 
 const isSubmitting = ref(false);
 
 watch(() => props.show, (newVal) => {
     if (!newVal) {
-        currentView.value = 'login';
-        resetForms();
-    } else {
-        // Nếu modal được mở, kiểm tra và hiển thị Google One Tap
-        // displayGoogleOneTap(); // Bỏ bình luận nếu muốn dùng One Tap
+        // Khi modal đóng, reset tất cả form và về view login
+        resetAllFormsAndState(); // Đổi tên hàm để rõ ràng hơn
     }
 });
 
-const resetForms = () => {
+// Hàm mới: reset tất cả form và trạng thái, đưa về view mặc định
+const resetAllFormsAndState = () => {
     loginForm.email = '';
     loginForm.password = '';
     loginError.value = '';
@@ -58,20 +69,82 @@ const resetForms = () => {
     registerError.value = '';
 
     forgotPasswordForm.email = '';
-    forgotPasswordForm.error = '';
+    forgotPasswordError.value = '';
+
+    otpForm.email = '';
+    otpForm.code = '';
+    otpError.value = '';
+
+    resetPasswordForm.email = '';
+    resetPasswordForm.new_password = '';
+    resetPasswordForm.new_password_confirmation = '';
+    resetPasswordError.value = '';
+
+    currentView.value = 'login'; // Đảm bảo view trở về login khi đóng hoặc reset
 };
 
 const changeView = (viewName) => {
-    currentView.value = viewName;
-    resetForms();
+    // Luôn reset các lỗi và form của view hiện tại trước khi chuyển,
+    // nhưng không reset toàn bộ modal trừ khi chuyển về login/register từ ngoài
+    switch (currentView.value) {
+        case 'login':
+            loginError.value = '';
+            break;
+        case 'register':
+            registerError.value = '';
+            break;
+        case 'forgot-password':
+            forgotPasswordError.value = '';
+            break;
+        case 'verify-otp':
+            otpError.value = '';
+            otpForm.code = ''; // Reset mã OTP khi rời view xác nhận
+            break;
+        case 'reset-password':
+            resetPasswordError.value = '';
+            resetPasswordForm.new_password = ''; // Reset mật khẩu mới khi rời view đặt lại
+            resetPasswordForm.new_password_confirmation = '';
+            break;
+    }
+
+    // Thiết lập email cho các bước quên mật khẩu nếu chuyển từ forgot-password
+    if (viewName === 'verify-otp' && forgotPasswordForm.email) {
+        otpForm.email = forgotPasswordForm.email;
+        resetPasswordForm.email = forgotPasswordForm.email; // Đảm bảo email được truyền qua
+    } else if (viewName === 'reset-password' && forgotPasswordForm.email) {
+        // Nếu đến thẳng reset-password mà không qua verify-otp (trường hợp không mong muốn)
+        // hoặc nếu người dùng refresh trang, email sẽ bị mất. Cần cơ chế lưu email khác.
+        // Tạm thời giữ nguyên logic nếu nó đang hoạt động trong luồng bình thường.
+        otpForm.email = forgotPasswordForm.email;
+        resetPasswordForm.email = forgotPasswordForm.email;
+    }
+
+
+    currentView.value = viewName; // Đặt view mới
 };
+
 
 const closeModal = () => {
     emit('update:show', false);
 };
 
+// Hàm hỗ trợ để lấy thông báo lỗi từ đối tượng lỗi của backend
+const getValidationErrorMessage = (errors) => {
+    let messages = [];
+    for (const key in errors) {
+        if (Object.hasOwnProperty.call(errors, key)) {
+            // Lấy thông báo đầu tiên của mỗi trường lỗi
+            messages.push(errors[key][0]);
+        }
+    }
+    // Ghép các thông báo thành một chuỗi, mỗi thông báo trên một dòng
+    return messages.join('<br>');
+};
+
 const handleLogin = async () => {
-    loginError.value = '';
+    loginError.value = ''; // Reset lỗi
+    isSubmitting.value = true;
+
     try {
         const res = await axios.post('/login', {
             email: loginForm.email,
@@ -83,10 +156,23 @@ const handleLogin = async () => {
 
         if (user.is_active !== 1) {
             loginError.value = 'Tài khoản của bạn chưa được kích hoạt.';
+            Swal.fire({
+                icon: 'error',
+                title: 'Kích hoạt tài khoản',
+                text: 'Tài khoản của bạn chưa được kích hoạt. Vui lòng kiểm tra email để kích hoạt.',
+                toast: true,
+                position: 'top-end',
+                timer: 4000,
+                timerProgressBar: true,
+                showConfirmButton: false
+            });
+            isSubmitting.value = false;
             return;
         }
+
         closeModal();
         localStorage.setItem('token', token);
+        
         localStorage.setItem('user', JSON.stringify(user));
         localStorage.setItem('vai_tro_id', user.vai_tro_id);
         localStorage.setItem('sdt', user.sdt);
@@ -101,38 +187,39 @@ const handleLogin = async () => {
             showConfirmButton: false
         });
     } catch (err) {
-        loginError.value = err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại email và mật khẩu.';
+        console.error('Đăng nhập thất bại:', err);
+        if (err.response && err.response.data) {
+            if (err.response.data.errors) {
+                loginError.value = getValidationErrorMessage(err.response.data.errors);
+            } else {
+                loginError.value = err.response.data.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại email và mật khẩu.';
+            }
+        } else {
+            loginError.value = 'Đăng nhập thất bại. Lỗi kết nối mạng hoặc server.';
+        }
+    } finally {
+        isSubmitting.value = false;
     }
 };
 
 const handleRegister = async () => {
+    registerError.value = ''; // Reset lỗi
     isSubmitting.value = true;
 
     if (registerForm.password !== registerForm.confirmPassword) {
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'error',
-            title: 'Mật khẩu và xác nhận mật khẩu không khớp.',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true
-        });
+        registerError.value = 'Mật khẩu và xác nhận mật khẩu không khớp.';
+        isSubmitting.value = false;
+        return;
+    }
+    if (registerForm.password.length < 8) {
+        registerError.value = 'Mật khẩu phải có ít nhất 8 ký tự.';
         isSubmitting.value = false;
         return;
     }
 
     const atIndex = registerForm.email.indexOf('@');
     if (atIndex === -1 || atIndex === 0 || atIndex === registerForm.email.length - 1) {
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'error',
-            title: 'Địa chỉ email không hợp lệ.',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true
-        });
+        registerError.value = 'Địa chỉ email không hợp lệ.';
         isSubmitting.value = false;
         return;
     }
@@ -185,118 +272,189 @@ const handleRegister = async () => {
             Swal.close(toastLoading);
         }
 
-        let errorMessage = 'Đăng ký thất bại. Vui lòng thử lại.';
-
-        if (err.response && err.response.data && err.response.data.errors) {
-            const errors = err.response.data.errors;
-
-            if (errors.email) {
-                if (errors.email.includes('The email has already been taken.')) {
-                    errorMessage = 'Email này đã được sử dụng. Vui lòng chọn email khác.';
+        if (err.response && err.response.data) {
+            if (err.response.data.errors) {
+                const backendErrors = err.response.data.errors;
+                // Kiểm tra lỗi email cụ thể từ backend validation errors
+                if (backendErrors.email && backendErrors.email.includes('The email has already been taken.')) {
+                    registerError.value = 'Email này đã được sử dụng. Vui lòng chọn một email khác.';
                 } else {
-                    errorMessage = 'Email không hợp lệ: ' + errors.email[0];
+                    registerError.value = getValidationErrorMessage(backendErrors);
                 }
-            } else if (errors.mat_khau) {
-                if (errors.mat_khau.includes('The mat khau field must be at least 8 characters.')) {
-                    errorMessage = 'Mật khẩu phải có ít nhất 8 ký tự.';
-                } else if (errors.mat_khau.includes('The password confirmation does not match.')) {
-                    errorMessage = 'Mật khẩu xác nhận không khớp.';
-                } else {
-                    errorMessage = 'Mật khẩu không hợp lệ: ' + errors.mat_khau[0];
-                }
-            } else if (errors.sdt) {
-                errorMessage = 'Số điện thoại không hợp lệ: ' + errors.sdt[0];
-            } else if (errors.ho_ten) {
-                errorMessage = 'Họ tên không hợp lệ: ' + errors.ho_ten[0];
             } else {
-                const firstErrorKey = Object.keys(errors)[0];
-                if (firstErrorKey) {
-                    errorMessage = errors[firstErrorKey][0];
+                // Kiểm tra lỗi chung từ backend message (ít phổ biến hơn cho validation nhưng vẫn có thể xảy ra)
+                if (err.response.data.message === 'The email has already been taken.') {
+                    registerError.value = 'Email này đã được sử dụng. Vui lòng chọn một email khác.';
+                } else {
+                    registerError.value = err.response.data.message || 'Đăng ký thất bại. Vui lòng thử lại.';
                 }
             }
-
-        } else if (err.response && err.response.data && err.response.data.message) {
-            errorMessage = err.response.data.message;
+        } else {
+            registerError.value = 'Đăng ký thất bại. Lỗi kết nối mạng hoặc server.';
         }
-
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'error',
-            title: errorMessage,
-            showConfirmButton: false,
-            timer: 5000,
-            timerProgressBar: true
-        });
     } finally {
         isSubmitting.value = false;
     }
 };
 
 const handleForgotPassword = async () => {
-    forgotPasswordError.value = '';
+    forgotPasswordError.value = ''; // Reset lỗi
+    isSubmitting.value = true;
     try {
-        const res = await axios.post('/forgot-password', { email: forgotPasswordForm.email });
+        const res = await axios.post('/send-reset-code', { email: forgotPasswordForm.email });
+
+        otpForm.email = forgotPasswordForm.email;
+        resetPasswordForm.email = forgotPasswordForm.email;
+
         Swal.fire({
             toast: true,
             position: 'top-end',
             icon: 'success',
-            title: res.data.message || `Hướng dẫn khôi phục mật khẩu đã được gửi đến ${forgotPasswordForm.email}.`,
+            title: res.data.message || `Mã xác nhận đã được gửi đến ${forgotPasswordForm.email}.`,
             showConfirmButton: false,
             timer: 5000,
             timerProgressBar: true
+        }).then(() => {
+            changeView('verify-otp');
         });
-        changeView('login');
     } catch (err) {
         console.error('Lỗi khi gửi yêu cầu quên mật khẩu:', err);
-        const errorMessage = err.response?.data?.message || 'Không thể gửi yêu cầu. Vui lòng kiểm tra lại email.';
+        if (err.response && err.response.data) {
+            if (err.response.data.errors) {
+                forgotPasswordError.value = getValidationErrorMessage(err.response.data.errors);
+            } else {
+                forgotPasswordError.value = err.response.data.message || 'Không thể gửi yêu cầu. Vui lòng kiểm tra lại email.';
+            }
+        } else {
+            forgotPasswordError.value = 'Lỗi kết nối mạng hoặc server. Không thể gửi yêu cầu.';
+        }
+    } finally {
+        isSubmitting.value = false;
+    }
+};
+
+const handleVerifyOtp = async () => {
+    otpError.value = ''; // Reset lỗi
+    isSubmitting.value = true;
+    try {
+        const res = await axios.post('/verify-reset-code', {
+            email: otpForm.email,
+            code: otpForm.code
+        });
+
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: res.data.message || 'Mã xác nhận đúng. Bạn có thể đặt lại mật khẩu.',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        }).then(() => {
+            changeView('reset-password');
+        });
+    } catch (err) {
+        console.error('Lỗi khi xác nhận OTP:', err);
+        if (err.response && err.response.data) {
+            if (err.response.data.errors) {
+                otpError.value = getValidationErrorMessage(err.response.data.errors);
+            } else {
+                otpError.value = err.response.data.message || 'Mã xác nhận không đúng hoặc đã hết hạn.';
+            }
+        } else {
+            otpError.value = 'Lỗi kết nối mạng hoặc server. Không thể xác nhận mã.';
+        }
+    } finally {
+        isSubmitting.value = false;
+    }
+};
+
+const handleResetPassword = async () => {
+    resetPasswordError.value = ''; // Reset lỗi
+    isSubmitting.value = true;
+
+    if (resetPasswordForm.new_password.length < 8) {
+        resetPasswordError.value = 'Mật khẩu mới phải có ít nhất 8 ký tự.';
+        isSubmitting.value = false;
+        return;
+    }
+    if (resetPasswordForm.new_password !== resetPasswordForm.new_password_confirmation) {
+        resetPasswordError.value = 'Mật khẩu mới và xác nhận mật khẩu không khớp.';
+        isSubmitting.value = false;
+        return;
+    }
+
+    try {
+        const res = await axios.post('/reset-password', {
+            email: resetPasswordForm.email,
+            new_password: resetPasswordForm.new_password,
+            new_password_confirmation: resetPasswordForm.new_password_confirmation
+        });
+
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: res.data.message || 'Mật khẩu của bạn đã được đặt lại thành công.',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        }).then(() => {
+            changeView('login');
+        });
+    } catch (err) {
+        console.error('Lỗi khi đặt lại mật khẩu:', err);
+        if (err.response && err.response.data) {
+            if (err.response.data.errors) {
+                resetPasswordError.value = getValidationErrorMessage(err.response.data.errors);
+            } else {
+                resetPasswordError.value = err.response.data.message || 'Không thể đặt lại mật khẩu. Vui lòng thử lại.';
+            }
+        } else {
+            resetPasswordError.value = 'Lỗi kết nối mạng hoặc server. Không thể đặt lại mật khẩu.';
+        }
+    } finally {
+        isSubmitting.value = false;
+    }
+};
+
+
+// --- Thêm các hàm xử lý đăng nhập Google/Facebook ---
+// (Giữ nguyên các hàm này)
+// Google Login
+const handleGoogleLogin = () => {
+    // THAY THẾ BẰNG CLIENT ID THỰC TẾ CỦA BẠN
+    const googleClientId = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+
+    if (window.google && window.google.accounts && window.google.accounts.id) {
+        window.google.accounts.id.initialize({
+            client_id: googleClientId,
+            callback: handleGoogleCredentialResponse,
+            ux_mode: 'popup'
+        });
+
+        window.google.accounts.id.prompt();
+    } else {
+        console.error('Google One Tap SDK chưa được tải.');
         Swal.fire({
             toast: true,
             position: 'top-end',
             icon: 'error',
-            title: errorMessage,
+            title: 'Không thể kết nối Google. Vui lòng thử lại sau.',
             showConfirmButton: false,
-            timer: 5000,
+            timer: 3000,
             timerProgressBar: true
         });
-        forgotPasswordError.value = errorMessage;
     }
 };
 
-// --- Thêm các hàm xử lý đăng nhập Google/Facebook ---
-
-// Google Login
-const handleGoogleLogin = () => {
-    // Để tích hợp Google Login, bạn cần dùng Google Identity Services SDK
-    // Tham khảo: https://developers.google.com/identity/gsi/web/guides/overview
-    // Cách 1: Sử dụng popup hoặc redirect (khuyến nghị cho button)
-    const googleClientId = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com'; // Thay thế bằng Client ID của bạn
-
-    window.google.accounts.id.initialize({
-        client_id: googleClientId,
-        callback: handleGoogleCredentialResponse, // Hàm callback sau khi nhận được thông tin
-        ux_mode: 'popup' // hoặc 'redirect'
-    });
-
-    // Mở popup đăng nhập Google
-    window.google.accounts.id.prompt(); // Hoặc bạn có thể đính kèm vào nút của mình
-                                       // window.google.accounts.id.renderButton(
-                                       //   document.getElementById("google-login-button"),
-                                       //   { theme: "outline", size: "large" }  // tùy chỉnh nút
-                                       // );
-};
-
 const handleGoogleCredentialResponse = async (response) => {
-    // 'response' chứa id_token từ Google
     if (response.credential) {
         try {
-            // Gửi id_token này về backend của bạn để xác minh
-            // Backend sẽ dùng Google API để xác minh token và lấy thông tin người dùng
             const res = await axios.post('/api/auth/google', {
                 id_token: response.credential
             });
 
-            // Xử lý phản hồi từ backend tương tự như handleLogin
             const user = res.data.user;
             const token = res.data.token;
 
@@ -333,22 +491,17 @@ const handleGoogleCredentialResponse = async (response) => {
 
 // Facebook Login
 const handleFacebookLogin = () => {
-    // Đảm bảo Facebook SDK đã được tải
     if (window.FB) {
         window.FB.login(async function(response) {
             if (response.authResponse) {
-                // Người dùng đã đăng nhập và cấp quyền
                 const accessToken = response.authResponse.accessToken;
                 console.log('Access Token Facebook:', accessToken);
 
                 try {
-                    // Gửi accessToken này về backend của bạn để xác minh
-                    // Backend sẽ dùng accessToken để lấy thông tin người dùng từ Facebook API
                     const res = await axios.post('/api/auth/facebook', {
                         access_token: accessToken
                     });
 
-                    // Xử lý phản hồi từ backend tương tự như handleLogin
                     const user = res.data.user;
                     const token = res.data.token;
 
@@ -393,7 +546,7 @@ const handleFacebookLogin = () => {
                     timerProgressBar: true
                 });
             }
-        }, { scope: 'email,public_profile' }); // Yêu cầu quyền truy cập email và public profile
+        }, { scope: 'email,public_profile' });
     } else {
         console.error('Facebook SDK chưa được tải.');
         Swal.fire({
@@ -408,12 +561,6 @@ const handleFacebookLogin = () => {
     }
 };
 
-// Gán các hàm xử lý vào nút
-// onMounted(() => {
-//     // Nếu bạn muốn hiển thị Google One Tap khi modal mở, có thể gọi ở đây
-//     // Nhưng thường thì chỉ cần gắn vào button
-// });
-
 </script>
 
 <template>
@@ -427,15 +574,18 @@ const handleFacebookLogin = () => {
                 <div class="modal-header">
                     <h2 v-if="currentView === 'login'">Đăng nhập</h2>
                     <h2 v-else-if="currentView === 'register'">Đăng ký tài khoản</h2>
-                    <h2 v-else>Quên mật khẩu?</h2>
-                    <p class="modal-description" v-if="currentView === 'login'">Đăng nhập để mở khóa nhiều chức
-                        năng<br>Dễ dàng tìm kiếm nhạc cụ mong muốn</p>
-                    <p class="modal-description" v-else-if="currentView === 'register'">Đăng ký để khám phá thêm và nhận
-                        thông báo mới nhất</p>
-                    <p class="modal-description" v-else>Nhập email của bạn để nhận hướng dẫn khôi phục mật khẩu.</p>
+                    <h2 v-else-if="currentView === 'forgot-password'">Quên mật khẩu?</h2>
+                    <h2 v-else-if="currentView === 'verify-otp'">Xác nhận mã bảo mật</h2>
+                    <h2 v-else-if="currentView === 'reset-password'">Đặt lại mật khẩu</h2>
+                    
+                    <p class="modal-description" v-if="currentView === 'login'">Đăng nhập để mở khóa nhiều chức năng<br>Dễ dàng tìm kiếm nhạc cụ mong muốn</p>
+                    <p class="modal-description" v-else-if="currentView === 'register'">Đăng ký để khám phá thêm và nhận thông báo mới nhất</p>
+                    <p class="modal-description" v-else-if="currentView === 'forgot-password'">Nhập email của bạn để nhận mã xác nhận khôi phục mật khẩu.</p>
+                    <p class="modal-description" v-else-if="currentView === 'verify-otp'">Chúng tôi đã gửi một mã xác nhận 6 chữ số đến email <span class="email-display">{{ otpForm.email }}</span>. Vui lòng kiểm tra hộp thư đến và nhập mã tại đây.</p>
+                    <p class="modal-description" v-else-if="currentView === 'reset-password'">Tạo mật khẩu mới cho tài khoản <span class="email-display">{{ resetPasswordForm.email }}</span> của bạn.</p>
                 </div>
 
-                <template v-if="currentView !== 'forgot-password'">
+                <template v-if="currentView === 'login' || currentView === 'register'">
                     <div class="social-login-buttons">
                         <button class="social-btn google-btn" @click="handleGoogleLogin">
                             <img src="https://img.icons8.com/color/16/000000/google-logo.png" alt="Google icon">
@@ -451,9 +601,19 @@ const handleFacebookLogin = () => {
                         <span v-else-if="currentView === 'register'">Hoặc đăng ký với</span>
                     </div>
                 </template>
-                <template v-else>
+                <template v-else-if="currentView === 'forgot-password'">
                     <div class="divider">
                         <span>Nhập email của bạn</span>
+                    </div>
+                </template>
+                   <template v-else-if="currentView === 'verify-otp'">
+                    <div class="divider">
+                        <span>Nhập mã xác nhận</span>
+                    </div>
+                </template>
+                   <template v-else-if="currentView === 'reset-password'">
+                    <div class="divider">
+                        <span>Tạo mật khẩu mới</span>
                     </div>
                 </template>
 
@@ -461,20 +621,25 @@ const handleFacebookLogin = () => {
                     <div class="form-group input-with-icon">
                         <i class="far fa-envelope"></i>
                         <input type="email" id="email" placeholder="Nhập email của bạn" required
-                            v-model="loginForm.email">
+                            v-model="loginForm.email"
+                            :class="{ 'is-invalid': loginError }">
                     </div>
                     <div class="form-group input-with-icon">
                         <i class="fas fa-lock"></i>
                         <input type="password" id="password" placeholder="Nhập mật khẩu của bạn" required
-                            v-model="loginForm.password">
+                            v-model="loginForm.password"
+                            :class="{ 'is-invalid': loginError }">
                     </div>
-                    <button type="submit" class="login-btn">Đăng nhập</button>
-                    <p style="color: red" v-if="loginError">{{ loginError }}</p>
+                    
+                    <button type="submit" class="login-btn" :disabled="isSubmitting">
+                        <span v-if="isSubmitting">Đang xử lý...</span>
+                        <span v-else>Đăng nhập</span>
+                    </button>
+                    <p class="error-message" v-if="loginError" v-html="loginError"></p>
                     <p class="form-footer">
                         Bạn chưa có tài khoản? <a href="#" @click.prevent="changeView('register')">Đăng ký</a> <span
                             class="footer-separator">|</span> <a href="#"
-                            @click.prevent="changeView('forgot-password')">Quên mật
-                            khẩu?</a>
+                            @click.prevent="changeView('forgot-password')">Quên mật khẩu?</a>
                     </p>
                 </form>
 
@@ -482,40 +647,93 @@ const handleFacebookLogin = () => {
                     <div class="form-group input-with-icon">
                         <i class="far fa-envelope"></i>
                         <input type="email" id="registerEmail" placeholder="Nhập email của bạn" required
-                            v-model="registerForm.email">
+                            v-model="registerForm.email"
+                            :class="{ 'is-invalid': registerError }">
                     </div>
                     <div class="form-group input-with-icon">
                         <i class="fas fa-lock"></i>
                         <input type="password" id="registerPassword" placeholder="Tạo mật khẩu" required
-                            v-model="registerForm.password">
+                            v-model="registerForm.password"
+                            :class="{ 'is-invalid': registerError }">
                     </div>
                     <div class="form-group input-with-icon">
                         <i class="fas fa-lock"></i>
                         <input type="password" id="confirmPassword" placeholder="Xác nhận mật khẩu" required
-                            v-model="registerForm.confirmPassword">
+                            v-model="registerForm.confirmPassword"
+                            :class="{ 'is-invalid': registerError }">
                     </div>
+                    
                     <button type="submit" class="login-btn" :disabled="isSubmitting">
                         <span v-if="isSubmitting">Đang xử lý...</span>
                         <span v-else>Đăng ký</span>
                     </button>
-                    <p style="color: red" v-if="registerError">{{ registerError }}</p>
+                    <p class="error-message" v-if="registerError" v-html="registerError"></p>
                     <p class="form-footer">
                         Bạn đã có tài khoản? <a href="#" @click.prevent="changeView('login')">Đăng nhập</a>
                     </p>
                 </form>
 
-                <form @submit.prevent="handleForgotPassword" v-else>
+                <form @submit.prevent="handleForgotPassword" v-else-if="currentView === 'forgot-password'">
                     <div class="form-group input-with-icon">
                         <i class="far fa-envelope"></i>
                         <input type="email" id="forgotPasswordEmail" placeholder="Nhập email của bạn" required
-                            v-model="forgotPasswordForm.email">
+                            v-model="forgotPasswordForm.email"
+                            :class="{ 'is-invalid': forgotPasswordError }">
                     </div>
-                    <button type="submit" class="login-btn">Gửi yêu cầu</button>
-                    <p style="color: red" v-if="forgotPasswordError">{{ forgotPasswordError }}</p>
+                    
+                    <button type="submit" class="login-btn" :disabled="isSubmitting">
+                        <span v-if="isSubmitting">Đang gửi...</span>
+                        <span v-else>Gửi mã xác nhận</span>
+                    </button>
+                    <p class="error-message" v-if="forgotPasswordError" v-html="forgotPasswordError"></p>
                     <p class="form-footer">
                         <a href="#" @click.prevent="changeView('login')">Quay lại Đăng nhập</a>
                     </p>
                 </form>
+
+                <form @submit.prevent="handleVerifyOtp" v-else-if="currentView === 'verify-otp'">
+                    <div class="form-group input-with-icon">
+                        <i class="fas fa-key"></i>
+                        <input type="text" id="otpCode" placeholder="Nhập mã xác nhận (6 chữ số)" required
+                            v-model="otpForm.code" maxlength="6"
+                            :class="{ 'is-invalid': otpError }">
+                    </div>
+                    
+                    <button type="submit" class="login-btn" :disabled="isSubmitting">
+                        <span v-if="isSubmitting">Đang xác nhận...</span>
+                        <span v-else>Xác nhận mã</span>
+                    </button>
+                    <p class="error-message" v-if="otpError" v-html="otpError"></p>
+                    <p class="form-footer">
+                        <a href="#" @click.prevent="handleForgotPassword">Gửi lại mã</a> <span class="footer-separator">|</span> 
+                        <a href="#" @click.prevent="changeView('login')">Quay lại Đăng nhập</a>
+                    </p>
+                </form>
+
+                <form @submit.prevent="handleResetPassword" v-else-if="currentView === 'reset-password'">
+                    <div class="form-group input-with-icon">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="newPassword" placeholder="Nhập mật khẩu mới" required
+                            v-model="resetPasswordForm.new_password"
+                            :class="{ 'is-invalid': resetPasswordError }">
+                    </div>
+                    <div class="form-group input-with-icon">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="confirmNewPassword" placeholder="Xác nhận mật khẩu mới" required
+                            v-model="resetPasswordForm.new_password_confirmation"
+                            :class="{ 'is-invalid': resetPasswordError }">
+                    </div>
+                    
+                    <button type="submit" class="login-btn" :disabled="isSubmitting">
+                        <span v-if="isSubmitting">Đang đặt lại...</span>
+                        <span v-else>Đặt lại mật khẩu</span>
+                    </button>
+                    <p class="error-message" v-if="resetPasswordError" v-html="resetPasswordError"></p>
+                    <p class="form-footer">
+                        <a href="#" @click.prevent="changeView('login')">Quay lại Đăng nhập</a>
+                    </p>
+                </form>
+
             </div>
         </div>
     </div>
@@ -749,33 +967,43 @@ body {
 }
 
 .login-modal-content {
-    width: 800px;
-    max-width: 90%;
-    height: 600px;
-    max-height: 90%;
-    background-color: white;
-    border-radius: 12px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-    position: relative;
+    /* Điều chỉnh chiều rộng và chiều cao tối đa của modal */
+    max-width: 800px; /* Có thể điều chỉnh tùy ý */
+    max-height: 600px; /* Điều chỉnh chiều cao tối đa để tránh scroll */
+    width: 90%; /* Tương thích trên các màn hình khác nhau */
+    height: 90%; /* Tương thích trên các màn hình khác nhau */
     display: flex;
-    overflow: hidden;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    overflow: hidden; /* Quan trọng: Đảm bảo không có scrollbar không mong muốn trên modal chính */
 }
+
 
 .login-left {
     flex: 0.45;
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: #f0f2f5;
-    /* padding: 20px; */
+    background-color: #ffffff;
+    /* THÊM border-top-left-radius và border-bottom-left-radius cho .login-left */
+    /* Đồng thời đảm bảo phần bên phải của nó không bo góc */
+    border-top-left-radius: 10px; /* Khớp với border-radius của modal */
+    border-bottom-left-radius: 10px; /* Khớp với border-radius của modal */
+    /* Đảm bảo không có border-radius ở bên phải của .login-left */
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    /* Đặt overflow: hidden cho .login-left để cắt ảnh bên trong nếu cần */
+    overflow: hidden;
+    box-shadow: 1px 0 0 #f0f2f5;
 }
 
 .login-left img {
     max-width: 100%;
-    height: auto;
+    height: auto; 
+    object-fit: cover; 
     display: block;
-    border-top-left-radius: 8px;
-    border-bottom-left-radius: 8px;
+    border-radius: 0;
 }
 
 .login-right {
@@ -790,15 +1018,11 @@ body {
 
 .login-right form {
     padding: 0;
-    /* Đặt padding về 0 */
     background-color: transparent;
-    /* Loại bỏ background */
     border: none;
-    /* Loại bỏ border */
     box-shadow: none;
-    /* Loại bỏ box-shadow */
     width: 100%;
-    /* Giữ nguyên chiều dài 100% của phần tử cha */
+    margin: 0;
 }
 
 .close-button {
@@ -990,5 +1214,19 @@ body {
 
 .form-footer a:hover {
     text-decoration: underline;
+}
+/* Trong phần <style scoped> của bạn */
+.error-message {
+    color: #dc3545; /* Màu đỏ cho lỗi */
+    font-size: 0.85em;
+    margin-top: 5px;
+    margin-bottom: 10px; /* Tạo khoảng cách với element tiếp theo */
+    text-align: left; /* Căn lề trái */
+    padding-left: 5px; /* Thụt vào một chút để khớp với input */
+}
+
+/* Tùy chọn: Thêm viền đỏ cho input khi có lỗi */
+.form-group input.is-invalid {
+    border-color: #dc3545 !important;
 }
 </style>
