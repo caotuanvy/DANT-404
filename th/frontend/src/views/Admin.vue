@@ -1,85 +1,101 @@
 <template>
-  <div class="d-flex flex-column min-vh-100">
-  <header class="myheader">
-  <div class="myheader-left">
-    <img :src =logo alt="Logo" class="myheader-logo" />
-    <span class="myheader-greeting">Xin chào: <strong>Administrator</strong></span>
-  </div>
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <img :src="logo1" alt="Logo" class="sidebar-logo" />
+      </div>
 
-  <div class="myheader-center">
-    <input type="search" class="app123_searchInput" placeholder="Tìm kiếm..." />
-  </div>
+      <nav class="sidebar-nav">
+        <div v-for="section in menu" :key="section.label" class="menu-section">
+          <div class="section-header" @click="toggleSection(section.label)">
+            <span>{{ section.label }}</span>
+            <i class="bi bi-chevron-down chevron-icon" :class="{ 'is-open': openSection === section.label }"></i>
+          </div>
 
-  <div class="myheader-right">
-    <span class="myheader-version">VERSION 1.5.4</span>
-    <i class="myheader-icon bi bi-person-circle"></i>
-  </div>
-</header>
-
-
-
-
-    <!-- Body -->
-    <div class="d-flex flex-grow-1">
-      <!-- Sidebar -->
-      <aside class="sidebar bg-white border-end px-3 py-4" style="width: 260px;">
-        <div class="text-center mb-4">
-          <img :src="logo1" alt="Logo" style="max-width: 120px;" />
-        </div>
-
-        <div v-for="section in menu" :key="section.label" class="mb-3">
-          <div class="section-label mb-2">{{ section.label }}</div>
-          <ul class="nav flex-column">
-            <li v-for="item in section.items" :key="item.label" class="nav-item">
-              <router-link
-                :to="item.to"
-                class="nav-link d-flex align-items-center px-2 py-2"
-              >
-                <i :class="[item.icon, 'me-2']"></i> {{ item.label }}
+          <ul class="nav-items" v-if="openSection === section.label">
+            <li v-for="item in section.items" :key="item.label">
+              <router-link :to="item.to" class="nav-link">
+                <i :class="[item.icon, 'nav-icon']"></i>
+                <span>{{ item.label }}</span>
               </router-link>
             </li>
           </ul>
         </div>
-      </aside>
+      </nav>
+    </aside>
 
-      
-      <main class="flex-grow-1 p-4 bg-light">
-        <br><br><br>
-        <div class="d-flex justify-content-end mb-4">
+    <div class="main-content">
+     <header class="app-header">
+    <div class="header-left">
+        <i class="bi bi-list menu-toggle-icon"></i> 
+        <input type="search" class="search-input" placeholder="Tìm kiếm..." />
+    </div>
 
-          <button class="btn btn-outline-danger btn-sm" @click="logout">Quay Lại Trang Trước</button>
+    <div class="header-right">
+        <span class="version-text">VERSION 1.5.4</span>
+
+        <div class="notification-badge">
+            <i class="bi bi-bell"></i>
+            <span class="badge">3</span>
         </div>
+
+        <div class="user-menu">
+            <img :src="logo" alt="Admin" class="admin-avatar" />
+            <div class="user-info">
+                <span class="admin-name">Administrator</span>
+                <span class="admin-role">Super Admin</span>
+            </div>
+            <i class="bi bi-chevron-down dropdown-icon"></i>
+        </div>
+    </div>
+</header>
+
+      <main class="page-content">
         
 
         <div class="container-table">
+          
+          <button class="btn btn-outline-secondary btn-sm" @click="goBack" style="margin-left: 88%; margin-bottom: -30px;">
+            <i class="bi bi-arrow-left me-1"></i> Quay Lại
+          </button>
+        
           <router-view />
         </div>
-
       </main>
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import logo from '@/assets/images/icon-admin.png';
 import logo1 from '@/assets/images/image60.png';
+
 const router = useRouter();
 
-const logout = () => {
-  // localStorage.removeItem('token')
-  // localStorage.removeItem('role')
-router.back()
-}
-const back = () => {
-  router.push('/')
+// State to control which menu section is open
+const openSection = ref('Quản lý sản phẩm'); // Mặc định mở mục đầu tiên
+
+const toggleSection = (sectionLabel) => {
+  if (openSection.value === sectionLabel) {
+    openSection.value = null; // Close if clicking the same one
+  } else {
+    openSection.value = sectionLabel; // Open the new one
+  }
+};
+
+const goBack = () => {
+  router.back();
 }
 
 const menu = [
   {
     label: 'Quản lý sản phẩm',
-    items: [{ to: '/admin/products', label: 'Sản phẩm', icon: 'bi bi-box' },
-    { to: '/admin/Category', label: 'Danh mục sản phẩm', icon: 'bi bi-newspaper' },]
+    items: [
+        { to: '/admin/products', label: 'Sản phẩm', icon: 'bi bi-box' },
+        { to: '/admin/Category', label: 'Danh mục sản phẩm', icon: 'bi bi-newspaper' },
+    ]
   },
   {
     label: 'Quản lý đơn hàng',
@@ -110,127 +126,232 @@ const menu = [
     items: [
       { to: '/admin/slide', label: 'Slide Show', icon: 'bi bi-calendar-week' },
       { to: '/admin/introduce',label : 'Trang Tĩnh', icon: 'bi bi-info-circle' },
-      
-      
     ],
   },
 ];
 </script>
 
 <style scoped>
-
-.container {
-  width: 100%;
-  height: 60px; 
+/* Main Layout */
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-
-.myheader {
-  width: 80%;
-  margin-left: 19%;
-  position: absolute;
+/* Sidebar */
+.sidebar {
+  width: 260px;
   background-color: #ffffff;
-  border: 1px solid #d8dce0;
+  border-right: 1px solid #dee2e6;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
+}
+.sidebar-header {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  border-bottom: 1px solid #dee2e6;
+}
+.sidebar-logo {
+  max-width: 120px;
+}
+.sidebar-nav {
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+/* Menu Section */
+.menu-section {
+  border-bottom: 1px solid #f0f0f0;
+}
+.section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 32px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
- 
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  z-index: 10;
+  padding: 14px 20px;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  font-size: 14px;
+  color: #343a40;
+  transition: background-color 0.2s ease;
+}
+.section-header:hover {
+  background-color: #f8f9fa;
+}
+.chevron-icon {
+  font-size: 12px;
+  transition: transform 0.3s ease;
+}
+.chevron-icon.is-open {
+  transform: rotate(180deg);
 }
 
-.myheader-left,
-.myheader-center,
-.myheader-right {
+/* Nav Items */
+.nav-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background-color: #fdfdfd;
+}
+.nav-link {
   display: flex;
   align-items: center;
-}
-
-.myheader-left {
-  flex: 1;
-  gap: 10px;
-}
-
-.myheader-center {
-  flex: 1;
-  justify-content: center;
-}
-
-.myheader-right {
-  flex: 1;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.sidebar {
-  border-right: 1px solid #dee2e6;
-  height: 100%;
-  overflow-y: auto;
-}
-
-.section-label {
-  color: #1266b3;
-  font-weight:bolder;
-  text-transform: uppercase;
-  font-size: 13px;
-  margin: 10px;
-}
-
-.sidebar .nav-link {
-  color: #333;
+  padding: 12px 20px 12px 30px; /* Indent child items */
+  color: #495057;
+  text-decoration: none;
   font-size: 14px;
-  transition: background-color 0.3s ease, color 0.3s ease;
-  margin: 10px;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
-
-.sidebar .nav-link.router-link-exact-active {
-  background-color: #f0f0f0;
-  border-radius: 5px;
+.nav-icon {
+  margin-right: 12px;
+  width: 20px;
+  text-align: center;
+  font-size: 16px;
+}
+.nav-link:hover {
+  background-color: #e9ecef;
+}
+.nav-link.router-link-exact-active {
+  background-color: #e7f1ff;
+  color: #0d6efd;
   font-weight: 600;
-  margin: 10px;
+  border-right: 3px solid #0d6efd;
 }
 
-.sidebar .nav-link.router-link-exact-active i {
-  color: #1266b3 !important;
-}
-.app123_searchForm {
-  display: inline-block;
+/* Main Content Area */
+.main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-.app123_searchInput {
-  width: 320px;
+/* App Header */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24px;
+  height: 64px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #dee2e6;
+  flex-shrink: 0;
+  width: 96%;
+  margin-left: 25px;
+  margin-top: -20px;
+}
+.header-left, .header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.header-right {
+    
+    gap: 24px; /* Tăng khoảng cách giữa các mục */
+}
+
+.notification-badge {
+    position: relative;
+    cursor: pointer;
+    font-size: 20px;
+    color: #555;
+}
+
+.notification-badge .badge {
+    position: absolute;
+    top: -5px;
+    right: -8px;
+    background-color: #dc3545;
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+}
+
+.user-menu {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.user-menu:hover {
+    background-color: #f8f9fa;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.2;
+}
+
+.admin-name {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.admin-role {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.dropdown-icon {
+    font-size: 14px;
+    color: #6c757d;
+}
+.search-input {
   padding: 8px 12px;
   font-size: 14px;
-  border: 1.5px solid #c2c2c2;
-  border-radius: 5px;
+  border: 1.5px solid #ced4da;
+  border-radius: 6px;
   outline: none;
+  width: 320px;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
-
-.app123_searchInput:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 6px rgba(37, 99, 235, 0.5);
+.search-input:focus {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+.version-text {
+  font-size: 12px;
+  color: #6c757d;
+  font-weight: 500;
+}
+.admin-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+.admin-name {
+  font-weight: 600;
 }
 
-.app123_searchInput::placeholder {
-  color: #9ca3af;
-  font-style: italic;
+
+/* Page Content */
+.page-content {
+  padding: 24px;
+  overflow-y: auto;
+  flex-grow: 1;
 }
-.myheader-logo{
-  height: 30px;
-}
-.container-table{
-  width: 100%;
-  height: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 10px;
+.container-table {
   background-color: #ffffff;
   border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
-.justify-content-end button{
-  margin: 0 5px;
+.sidebar-logo {
+  box-shadow: none !important;
 }
 </style>
