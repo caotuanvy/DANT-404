@@ -30,6 +30,7 @@ Route::put('/products/{id}/toggle-noi-bat', [ProductController::class, 'toggleNo
 Route::get('/categories/{id}/products', [CategoryController::class, 'getProductsByCategory']);
 
 
+
 // Product Image Upload (public add, delete protected)
 Route::post('/products/{product_id}/images', [ProductImageController::class, 'store']);
 Route::delete('/products/{product_id}/images/{image_id}', [ProductImageController::class, 'destroy']);
@@ -100,7 +101,10 @@ Route::prefix('admin')->group(function () {
     Route::get('trang-tinh/{slug}', [IntroduceController::class, 'show']);
     Route::get('/products-sell-top', [ProductController::class, 'getTopSelling']);
     Route::get('products-featured', [ProductController::class, 'getFeatured']);
+    Route::get('/products/detail/{slug}', [ProductController::class, 'showSpDetail']);
+
 });
+Route::post('/tinymce/upload-image', [ProductController::class, 'uploadEditorImage']);
 
 // Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -131,4 +135,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/products/{id}/toggle-status', [ProductController::class, 'toggleStatus']);
     // Product Images (delete only)
     Route::delete('/product-images/{id}', [ProductImageController::class, 'destroy']);
+    Route::post('/products/generate-seo', [ProductController::class, 'generateSeoContent']);
+
 });

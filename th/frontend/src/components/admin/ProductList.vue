@@ -67,7 +67,7 @@
                   </button>
               </td>
               <td class="text-center font-medium">
-                {{ formatPrice(product.gia_trung_binh) }}
+                {{ formatPrice(product.gia || product.gia_trung_binh) }}
               </td>
               <td class="text-center">
                 <span v-if="product.danh_muc" class="badge">
@@ -76,7 +76,7 @@
                  <span v-else class="text-secondary text-sm">N/A</span>
               </td>
               <td class="text-center font-medium text-red-600">
-                {{ product.khuyen_mai ? `${product.khuyen_mai}%` : '—' }}
+                {{ product.khuyen_mai ? `${parseInt(product.khuyen_mai)}%` : '—' }}
               </td>
                <td class="text-center">
                 <span class="status-badge" :class="product.trang_thai ? 'is-active' : 'is-inactive'">

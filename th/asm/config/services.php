@@ -27,6 +27,9 @@ return [
     'resend' => [
         'key' => env('RESEND_KEY'),
     ],
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+    ],
 
     'slack' => [
         'notifications' => [
