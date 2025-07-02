@@ -142,64 +142,104 @@ const getValidationErrorMessage = (errors) => {
 };
 
 const handleLogin = async () => {
-    loginError.value = ''; // Reset lỗi
-    isSubmitting.value = true;
+  loginError.value = '';
+  isSubmitting.value = true;
 
-    try {
-        const res = await axios.post('/login', {
-            email: loginForm.email,
-            mat_khau: loginForm.password
+  try {
+    const res = await axios.post('/login', {
+      email: loginForm.email,
+      mat_khau: loginForm.password
+    });
+
+    const user = res.data.user;
+    const token = res.data.token;
+
+    // ✅ Nếu thành công, lưu token và chuyển tiếp
+    closeModal();
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem('vai_tro_id', user.vai_tro_id);
+    localStorage.setItem('sdt', user.sdt);
+
+    await Swal.fire({
+      icon: 'success',
+      title: 'Chào mừng!',
+      text: `Xin chào ${user.ho_ten || user.email}, chúc bạn một ngày tuyệt vời!`,
+      toast: true,
+      position: 'top-end',
+      timer: 3000,
+      showConfirmButton: false
+    });
+  } catch (err) {
+    isSubmitting.value = false;
+
+    const res = err.response;
+
+    // ✅ Kiểm tra lỗi kích hoạt từ backend
+    if (res?.status === 403 && res.data?.require_activation) {
+      loginError.value = 'Tài khoản chưa được kích hoạt.';
+
+      const result = await Swal.fire({
+        icon: 'error',
+        title: 'Tài khoản chưa kích hoạt',
+        html: 'Vui lòng kiểm tra email để kích hoạt tài khoản.<br>Bạn muốn gửi lại email kích hoạt?',
+        showCancelButton: true,
+        confirmButtonText: 'Gửi lại',
+        cancelButtonText: 'Để sau',
+        timer: 5000,
+        timerProgressBar: true
+      });
+
+      if (result.isConfirmed) {
+        // Hiển thị popup đang gửi (không await để không chặn)
+        Swal.fire({
+          title: 'Đang gửi email kích hoạt...',
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading();
+          }
         });
 
-        const user = res.data.user;
-        const token = res.data.token;
+        try {
+          await axios.post('/resend-activation', { email: loginForm.email });
 
-        if (user.is_active !== 1) {
-            loginError.value = 'Tài khoản của bạn chưa được kích hoạt.';
-            Swal.fire({
-                icon: 'error',
-                title: 'Kích hoạt tài khoản',
-                text: 'Tài khoản của bạn chưa được kích hoạt. Vui lòng kiểm tra email để kích hoạt.',
-                toast: true,
-                position: 'top-end',
-                timer: 4000,
-                timerProgressBar: true,
-                showConfirmButton: false
-            });
-            isSubmitting.value = false;
-            return;
-        }
+          // Đóng popup loading
+          Swal.close();
 
-        closeModal();
-        localStorage.setItem('token', token);
-        
-        localStorage.setItem('user', JSON.stringify(user));
-        localStorage.setItem('vai_tro_id', user.vai_tro_id);
-        localStorage.setItem('sdt', user.sdt);
-        await Swal.fire({
+          // Thông báo thành công
+          await Swal.fire({
             icon: 'success',
-            title: 'Chào mừng!',
-            text: `Xin chào ${user.ho_ten || user.email}, chúc bạn một ngày tuyệt vời!`,
+            title: 'Đã gửi lại email kích hoạt!',
             toast: true,
             position: 'top-end',
             timer: 3000,
-            timerProgressBar: true,
             showConfirmButton: false
-        });
-    } catch (err) {
-        console.error('Đăng nhập thất bại:', err);
-        if (err.response && err.response.data) {
-            if (err.response.data.errors) {
-                loginError.value = getValidationErrorMessage(err.response.data.errors);
-            } else {
-                loginError.value = err.response.data.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại email và mật khẩu.';
-            }
-        } else {
-            loginError.value = 'Đăng nhập thất bại. Lỗi kết nối mạng hoặc server.';
+          });
+        } catch (err) {
+          Swal.close();
+
+          await Swal.fire({
+            icon: 'error',
+            title: 'Gửi lại thất bại!',
+            text: err.response?.data?.message || 'Vui lòng thử lại sau.',
+            toast: true,
+            position: 'top-end',
+            timer: 3000,
+            showConfirmButton: false
+          });
         }
-    } finally {
-        isSubmitting.value = false;
+      }
+
+      return; // ❌ Không tiếp tục xử lý nữa
     }
+
+    // Các lỗi khác
+    if (res?.data?.errors) {
+      loginError.value = getValidationErrorMessage(res.data.errors);
+    } else {
+      loginError.value = res?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại.';
+    }
+  }
 };
 
 const handleRegister = async () => {

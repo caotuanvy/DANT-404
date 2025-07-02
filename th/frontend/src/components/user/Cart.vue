@@ -5,34 +5,9 @@
     </header>
 
     <div class="main-content">
-      <div class="product-list">
+      <div class="product-list" v-if="products.length > 0">
         <div v-for="product in products" :key="product.id" class="product-item">
-          <img :src="product.image" :alt="product.name" class="product-image" />
-          <div class="product-details">
-            <h3 class="product-name">{{ product.name }}</h3>
-            <p class="product-weight">{{ product.weight }}</p>
-            <p class="product-price">
-              <span v-if="product.originalPrice" class="original">{{
-                formatPrice(product.originalPrice)
-              }}</span>
-              {{ formatPrice(product.price) }}
-            </p>
-          </div>
-          <div class="product-quantity-control">
-            <button @click="decreaseQuantity(product.id)" class="quantity-button">
-              -
-            </button>
-            <span class="quantity">{{ product.quantity }}</span>
-            <button @click="increaseQuantity(product.id)" class="quantity-button">
-              +
-            </button>
-            <button class="remove-button">
-              <img
-                src="https://img.icons8.com/material-outlined/24/000000/trash--v1.png"
-                alt="Xóa"
-              />
-            </button>
-          </div>
+          <!-- Sản phẩm trong giỏ -->
         </div>
 
         <div class="discount-code">
@@ -44,210 +19,23 @@
         </div>
       </div>
 
-      <div class="order-summary-panel">
-        <div class="delivery-address">
-          <h2 class="panel-title">Địa chỉ giao hàng</h2>
+      <!-- ✅ Nếu giỏ hàng trống -->
+      <div v-if="products.length === 0" class="empty-cart-message">
+  <p>Giỏ hàng của bạn đang trống.</p>
+</div>
 
-          <div v-if="!showAddressForm">
-            <p><strong>Họ tên:</strong> {{ displayedAddress.ho_ten || "Chưa có" }}</p>
-            <p><strong>SĐT:</strong> {{ displayedAddress.sdt || "Chưa có" }}</p>
-            <p><strong>Địa chỉ:</strong> {{ displayedAddress.dia_chi || "Chưa có" }}</p>
-            <button @click="changeAddress" class="apply-button">
-              Thay đổi địa chỉ
-            </button>
-          </div>
 
-          <div v-else class="address-edit-form">
-            <div class="form-group">
-              <label for="nameRecipient">Họ tên người nhận</label>
-              <input
-                type="text"
-                id="nameRecipient"
-                v-model="displayedAddress.ho_ten"
-                placeholder="Họ tên người nhận"
-                class="discount-input"
-              />
-            </div>
-            <div class="form-group">
-              <label for="phoneRecipient">Số điện thoại</label>
-              <input
-                type="text"
-                id="phoneRecipient"
-                v-model="displayedAddress.sdt"
-                placeholder="Số điện thoại"
-                class="discount-input"
-              />
-            </div>
-            <div class="form-group">
-              <label for="province">Tỉnh/Thành phố</label>
-              <select id="province" v-model="selectedProvinceCode" class="discount-input">
-                <option value="">Chọn Tỉnh/Thành phố</option>
-                <option v-for="province in provinces" :key="province.code" :value="province.code">
-                  {{ province.name_with_type || province.name }}
-                </option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="district">Quận/Huyện</label>
-              <select id="district" v-model="selectedDistrictCode" :disabled="!selectedProvinceCode || isLoadingAddressData" class="discount-input">
-                <option value="">Chọn Quận/Huyện</option>
-                <option v-for="district in districts" :key="district.code" :value="district.code">
-                  {{ district.name_with_type || district.name }}
-                </option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="ward">Phường/Xã</label>
-              <select id="ward" v-model="selectedWardCode" :disabled="!selectedDistrictCode || isLoadingAddressData" class="discount-input">
-                <option value="">Chọn Phường/Xã</option>
-                <option v-for="ward in wards" :key="ward.code" :value="ward.code">
-                  {{ ward.name_with_type || ward.name }}
-                </option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="street">Số nhà, Tên đường</label>
-              <input
-                type="text"
-                id="street"
-                v-model="streetAddress"
-                placeholder="Ví dụ: Số 123, đường ABC"
-                class="discount-input"
-              />
-            </div>
-            <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
-            <div class="form-actions">
-              <button @click="handleUpdateAddress" class="save-btn" :disabled="isLoadingAddressData">
-                LƯU ĐỊA CHỈ
-              </button>
-              <button @click="cancelAddressChange" class="cancel-btn">
-                HỦY BỎ
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="delivery-options">
-          <h2 class="panel-title">Phương thức giao hàng</h2>
-          <label
-            class="delivery-option"
-            :class="{ selected: deliveryMethod === 'express' }"
-          >
-            <input
-              type="radio"
-              name="deliveryMethod"
-              value="express"
-              v-model="deliveryMethod"
-            />
-            <div class="option-details">
-              <span class="option-name">Giao hàng nhanh</span>
-              <span class="option-time">30-60 phút</span>
-              <span class="option-price"> 25.000 ₫</span>
-            </div>
-          </label>
-          <label
-            class="delivery-option"
-            :class="{ selected: deliveryMethod === 'standard' }"
-          >
-            <input
-              type="radio"
-              name="deliveryMethod"
-              value="standard"
-              v-model="deliveryMethod"
-            />
-            <div class="option-details">
-              <span class="option-name">Giao hàng tiêu chuẩn</span>
-              <span class="option-time">2-4 giờ</span>
-              <span class="option-price"> 15.000 ₫</span>
-            </div>
-          </label>
-          <label
-            class="delivery-option"
-            :class="{ selected: deliveryMethod === 'pickup' }"
-          >
-            <input
-              type="radio"
-              name="deliveryMethod"
-              value="pickup"
-              v-model="deliveryMethod"
-            />
-            <div class="option-details">
-              <span class="option-name">Nhận tại cửa hàng</span>
-              <span class="option-time">Sẵn sàng trong 30 phút</span>
-              <span class="option-price"> Miễn phí</span>
-            </div>
-          </label>
-        </div>
-
-        <div class="payment-methods">
-          <h2 class="panel-title">Phương thức thanh toán</h2>
-          <label class="payment-method" :class="{ selected: paymentMethod === 'cod' }">
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="cod"
-              v-model="paymentMethod"
-            />
-            <div class="option-details">
-              <span class="option-name">Thanh toán khi nhận hàng</span>
-              <span class="option-description">Tiền mặt hoặc thẻ khi giao hàng</span>
-            </div>
-          </label>
-          <label
-            class="payment-method"
-            :class="{ selected: paymentMethod === 'creditcard' }"
-          >
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="creditcard"
-              v-model="paymentMethod"
-            />
-            <div class="option-details">
-              <span class="option-name">Thẻ tín dụng/ghi nợ</span>
-              <span class="option-description">Visa, Mastercard, JCB</span>
-            </div>
-          </label>
-          <label
-            class="payment-method"
-            :class="{ selected: paymentMethod === 'e-wallet' }"
-          >
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="e-wallet"
-              v-model="paymentMethod"
-            />
-            <div class="option-details">
-              <span class="option-name">Ví điện tử</span>
-              <span class="option-description">MoMo, ZaloPay, VNPay</span>
-            </div>
-          </label>
-        </div>
-
-        <div class="order-summary">
-          <h2 class="panel-title">Tóm tắt đơn hàng</h2>
-          <div class="summary-item">
-            <span>Tạm tính</span>
-            <span>{{ formatPrice(subtotal) }}</span>
-          </div>
-          <div class="summary-item">
-            <span>Phí giao hàng</span>
-            <span>{{ formatPrice(deliveryFee) }}</span>
-          </div>
-          <div class="summary-total">
-            <span>Tổng cộng</span>
-            <span>{{ formatPrice(totalAmount) }}</span>
-          </div>
-          <button class="place-order-button" @click="placeOrder">Đặt hàng ngay</button>
-          <p class="terms-text">
-            Bằng cách đặt hàng, bạn đồng ý với điều khoản sử dụng của chúng tôi
-          </p>
-        </div>
+      <!-- ✅ Thanh toán chỉ hiển thị khi có sản phẩm -->
+      <div class="order-summary-panel" v-if="products.length > 0">
+        <!-- Địa chỉ giao hàng -->
+        <!-- Phương thức giao hàng -->
+        <!-- Phương thức thanh toán -->
+        <!-- Tóm tắt đơn hàng -->
       </div>
     </div>
   </div>
 </template>
+
 
 <script>
 import { onMounted, ref, watch } from "vue";
@@ -1186,4 +974,30 @@ export default {
     width: 100%;
   }
 }
+.empty-cart-message {
+  font-size: 1.2rem;
+  color: #555;
+  text-align: center;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Căn giữa theo chiều ngang */
+  margin-top: 40px;
+}
+
+
+.back-to-shop {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 8px 16px;
+  background-color: #3498db;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: bold;
+}
+.back-to-shop:hover {
+  background-color: #2980b9;
+}
+
 </style>

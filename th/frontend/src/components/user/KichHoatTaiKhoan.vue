@@ -15,30 +15,37 @@ onMounted(async () => {
       const response = await axios.get(`http://localhost:8000/api/kich-hoat/${token}`)
 
       await Swal.fire({
-        icon: 'success',
-        title: 'Kích hoạt thành công!',
-        text: response.data.message || 'Tài khoản của bạn đã được kích hoạt.',
-        confirmButtonText: 'Đăng nhập'
-      })
+      icon: 'success',
+      title: 'Kích hoạt thành công!',
+      text: response.data.message || 'Tài khoản của bạn đã được kích hoạt.',
+      timer: 3000,
+      showConfirmButton: false,
+      timerProgressBar: true
+    });
 
-      router.push('/')
-
-    } catch (error) {
-      await Swal.fire({
-        icon: 'error',
-        title: 'Kích hoạt thất bại!',
-        text: error.response?.data?.message || 'Đã xảy ra lỗi trong quá trình kích hoạt.',
-        confirmButtonText: 'Thử lại sau'
-      })
-    }
-  } else {
+    router.push('/');
+  } catch (error) {
     await Swal.fire({
-      icon: 'warning',
-      title: 'Thiếu mã kích hoạt',
-      text: 'Không tìm thấy token kích hoạt trong đường dẫn.',
-      confirmButtonText: 'OK'
-    })
+      icon: 'error',
+      title: 'Kích hoạt thất bại!',
+      text: error.response?.data?.message || 'Đã xảy ra lỗi trong quá trình kích hoạt.',
+      timer: 3000,
+      showConfirmButton: false,
+      timerProgressBar: true
+    });
+    router.push('/');
   }
+} else {
+  await Swal.fire({
+    icon: 'warning',
+    title: 'Thiếu mã kích hoạt',
+    text: 'Không tìm thấy token kích hoạt trong đường dẫn.',
+    timer: 3000,
+    showConfirmButton: false,
+    timerProgressBar: true
+  });
+  router.push('/');
+}
 })
 </script>
 
