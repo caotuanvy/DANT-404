@@ -5,6 +5,7 @@ import axios from 'axios';
 import './assets/styles.css';
 import 'bootstrap/dist/css/bootstrap.min.css'; // Dòng này import CSS
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import { createHead } from '@vueuse/head';
 
 
 axios.defaults.baseURL = 'http://localhost:8000/api';
@@ -15,6 +16,9 @@ if (token) {
 }
 
 const app = createApp(App);
+const head = createHead();
+app.use(head);
 app.use(router);
+
 app.mount('#app');
 
