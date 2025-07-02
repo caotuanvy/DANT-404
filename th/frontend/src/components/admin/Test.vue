@@ -6,7 +6,7 @@
         <p class="page-subtitle">Tạo và quản lý nội dung slideshow của bạn</p>
       </div>
       <button class="btn btn-primary" @click="showAddForm = !showAddForm">
-        <span v-if="!showAddForm">＋ Thêm Slide mới</span>
+        <span v-if="!showAddForm">＋ Add Slide</span>
         <span v-else>Đóng Form</span>
       </button>
     </header>
@@ -40,8 +40,8 @@
         <div class="slide-content">
           <h4 class="slide-name">{{ slide.ten_slide }}</h4>
           <div class="slide-meta">
-            <span class="status-badge" :class="slide.hien_thi ? 'Đã hiển thị' : 'Chưa hiển thị'">
-              {{ slide.hien_thi ? 'Đã hiển thị' : 'Chưa hiển thị' }}
+            <span class="status-badge" :class="slide.hien_thi ? 'active' : 'inactive'">
+              {{ slide.hien_thi ? 'Active' : 'Inactive' }}
             </span>
           </div>
         </div>
@@ -491,11 +491,12 @@ img {
   align-items: center;
   gap: 1.5rem;
   padding: 1rem;
+  background-color: var(--color-bg-card);
   border-radius: var(--radius-lg);
-  border: 1px solid #4FC3F7;
+  border: 1px solid var(--color-border);
   box-shadow: var(--shadow-sm);
   transition: box-shadow 0.2s ease, transform 0.2s ease;
-  background-color:#9bdfff ;
+  background-color: #4FC3F7;
 }
 
 .slide-item:hover {
@@ -688,7 +689,7 @@ img {
 .modal-body {
   padding: 1.5rem;
   display: grid;
-  grid-template-columns: 1fr 1.5fr; 
+  grid-template-columns: 1fr 1.5fr; /* Cột trái nhỏ hơn */
   gap: 2rem;
   overflow-y: auto;
   background-color: white;

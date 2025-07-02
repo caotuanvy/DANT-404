@@ -1,39 +1,28 @@
 <template>
   <div class="news-details-layout">
     <!-- Bên trái: Nội dung chi tiết tin tức -->
-    <div class="news-details-container">
+    <div class="news-details-container" v-if="news">
       <div class="news-banner"></div>
       <h1 class="news-title">
         <i class="fa-solid fa-bullhorn"></i>
-        Tiêu đề tin tức
+        {{ news.tieude }}
       </h1>
       <div class="news-meta">
-        <span class="meta-date"><i class="fa-regular fa-calendar"></i> 01/01/2024</span>
-        <span class="meta-view"><i class="fa-solid fa-eye"></i> 123 lượt xem</span>
+        <span class="meta-date">
+          <i class="fa-regular fa-calendar"></i>
+          {{ news.ngay_dang }}
+        </span>
+        <span class="meta-view">
+          <i class="fa-solid fa-eye"></i>
+          {{ news.luot_xem }} lượt xem
+        </span>
       </div>
       <img
         class="news-image"
-        src="https://via.placeholder.com/800x350"
+        :src="news.hinh_anh ? (news.hinh_anh.startsWith('http') ? news.hinh_anh : `http://localhost:8000/storage/${news.hinh_anh}`) : 'https://via.placeholder.com/800x350'"
         alt="Hình ảnh"
       >
-      <div class="news-content">
-        <h2>Khuyến mãi đặc biệt cho khách hàng siêu thị</h2>
-        <p>
-          Chào mừng bạn đến với chương trình khuyến mãi hấp dẫn tại siêu thị của chúng tôi! Hãy nhanh tay lựa chọn những sản phẩm yêu thích với giá ưu đãi chưa từng có.
-        </p>
-        <ul>
-          <li>Giảm giá 20% cho tất cả các loại rau củ quả tươi.</li>
-          <li>Mua 1 tặng 1 cho các sản phẩm sữa tươi.</li>
-          <li>Combo thịt cá chỉ từ 99.000đ.</li>
-        </ul>
-        <blockquote>
-          “Mua sắm tiết kiệm, chất lượng đảm bảo – chỉ có tại siêu thị của chúng tôi!”
-        </blockquote>
-        <hr />
-        <p>
-          Đừng bỏ lỡ cơ hội nhận nhiều phần quà hấp dẫn khi mua sắm tại siêu thị trong tuần này. Xin cảm ơn quý khách đã tin tưởng và đồng hành cùng chúng tôi!
-        </p>
-      </div>
+      <div class="news-content" v-html="getNoiDungHtml(news.noidung)"></div>
     </div>
 
     <!-- Bên phải: Tin liên quan có hình và nội dung -->
@@ -55,6 +44,84 @@
     </aside>
   </div>
 </template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+const news = ref(null)
+
+onMounted(() => {
+  fetchNewsDetails()
+})
+
+async function fetchNewsDetails() {
+  try {
+    const res = await fetch(`http://localhost:8000/api/tintuc-cong-khai/${route.params.id}`)
+    news.value = await res.json()
+  } catch {
+    news.value = null
+  }
+}
+
+// Hàm chuyển EditorJS sang HTML nếu cần
+function isJSON(str) {
+  if (typeof str === 'object' && str !== null) return true
+  try {
+    const parsed = JSON.parse(str)
+    return parsed && typeof parsed === 'object'
+  } catch {
+    return false
+  }
+}
+function convertBlocksToHtml(data) {
+  if (!data || !data.blocks) return ''
+  return data.blocks.map(block => {
+    switch (block.type) {
+      case 'header':
+        return `<h${block.data.level}>${block.data.text}</h${block.data.level}>`
+      case 'paragraph':
+        return `<p>${block.data.text}</p>`
+      case 'list':
+        const tag = block.data.style === 'ordered' ? 'ol' : 'ul'
+        return `<${tag}>${block.data.items.map(i => {
+          if (typeof i === 'string') return `<li>${i}</li>`
+          if (typeof i === 'object' && i !== null) {
+            // Lấy tất cả value là string trong object, nối lại
+            const values = Object.values(i).filter(v => typeof v === 'string')
+            if (values.length) return `<li>${values.join(' ')}</li>`
+            return ''
+          }
+          return ''
+        }).join('')}</${tag}>`
+      case 'quote':
+        return `<blockquote>${block.data.text}</blockquote>`
+      case 'delimiter':
+        return `<hr />`
+      default:
+        return ''
+    }
+  }).join('')
+}
+function getNoiDungHtml(noidung) {
+  // Nếu là object (EditorJS), dùng luôn
+  if (typeof noidung === 'object' && noidung !== null && noidung.blocks) {
+    return convertBlocksToHtml(noidung)
+  }
+  // Nếu là string JSON, parse ra object
+  if (typeof noidung === 'string' && isJSON(noidung)) {
+    const blockData = JSON.parse(noidung)
+    if (blockData.blocks) return convertBlocksToHtml(blockData)
+  }
+  // Nếu là object nhưng không phải EditorJS, trả về rỗng (không hiển thị gì)
+  if (typeof noidung === 'object') {
+    return ''
+  }
+  // Nếu là string HTML thường
+  return noidung || ''
+}
+</script>
 
 <style scoped>
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css');
@@ -141,7 +208,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 .news-details-container {

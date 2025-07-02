@@ -12,8 +12,9 @@ class Slide extends Model
 
     protected $fillable = ['ten_slide', 'hien_thi'];
 
+    // Quan hệ 1 slide có nhiều hình ảnh
     public function hinhAnh()
     {
-        return $this->hasMany(SlideShow::class, 'slide_id', 'slide_id');
+        return $this->hasMany(SlideHinhAnh::class, 'slide_id', 'slide_id');
     }
 }

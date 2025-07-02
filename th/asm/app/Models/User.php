@@ -74,4 +74,12 @@ class User extends Authenticatable
         // 'nguoi_dung_id' là khóa chính trong bảng 'nguoi_dung' (bảng hiện tại).
         return $this->hasMany(DiaChi::class, 'nguoi_dung_id', 'nguoi_dung_id');
     }
+    // app/Models/User.php
+
+public function diaChiMacDinh()
+{
+    return $this->hasOne(DiaChi::class, 'nguoi_dung_id', 'nguoi_dung_id')->latestOfMany('id_dia_chi');
+}
+
+
 }

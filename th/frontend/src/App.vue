@@ -38,7 +38,11 @@
                         </div>
                     </template>
 
-          <div class="cart-info"><i class="fas fa-shopping-cart"></i> Giỏ hàng (0)</div>
+          <div class="cart-info">
+  <router-link to="/cart">
+    <i class="fas fa-shopping-cart"></i> Giỏ hàng (0)
+  </router-link>
+</div>
           <div class="notification"><i class="fas fa-bell"></i> Thông báo</div>
         </div>
       </div>
@@ -48,9 +52,9 @@
       <div class="container">
         <ul>
           <li>
-            <a href="#"><i class="fas fa-bars"></i> Danh mục sản phẩm</a>
+            <a href="/Danh-muc-san-pham"><i class="fas fa-bars"></i> Danh mục sản phẩm</a>
           </li>
-          <li><a href="#">Trang Chủ</a></li>
+          <li><a href="/">Trang Chủ</a></li>
           <li><router-link to="/gioi-thieu">Giới Thiệu</router-link></li>
           <li><a href="#">Tin Tức</a></li>
           <li><a href="#">Liên Hệ</a></li>
@@ -380,7 +384,30 @@ body {
   color: #33ccff;
   /* Đổi màu khi hover */
 }
+.top-bar .cart-info {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #555; /* Màu mặc định cho toàn bộ khối cart-info */
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.2s ease;
+}
 
+/* Đảm bảo link bên trong cart-info không bị gạch chân và có màu kế thừa */
+.top-bar .cart-info a {
+    text-decoration: none; /* Bỏ gạch chân link */
+    color: inherit; /* Kế thừa màu từ parent (.cart-info) */
+    display: flex; /* Để icon và text trên cùng một hàng và căn giữa */
+    align-items: center;
+    gap: 5px; /* Giữ khoảng cách giữa icon và text */
+}
+
+/* Khi hover lên toàn bộ khối cart-info, đổi màu cho nó và các phần tử con kế thừa */
+.top-bar .cart-info:hover {
+    color: #33ccff; /* Đổi màu khi hover */
+}
 .top-bar .country-selector img.flag {
   width: 30px;
   height: 20px;
@@ -616,7 +643,7 @@ body {
   /* Đảm bảo menu hiển thị trên các nội dung khác */
   overflow: hidden;
   /* Để bo góc của ul */
-  padding: 8px 0;
+  /* padding: 8px 0; */
   /* Đệm trên dưới cho các item menu */
 }
 

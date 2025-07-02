@@ -38,8 +38,8 @@
         <legend>➕ Thêm biến thể mới</legend>
         <form @submit.prevent="addVariant" class="form-layout">
           <input v-model="newVariant.ten_bien_the" placeholder="Tên biến thể" required />
-          <input v-model="newVariant.kich_thuoc" placeholder="Kích thước" required />
-          <input v-model="newVariant.mau_sac" placeholder="Màu sắc" required />
+          <input v-model="newVariant.kich_thuoc" placeholder="Kích thước"  />
+          <input v-model="newVariant.mau_sac" placeholder="Màu sắc"  />
           <input v-model.number="newVariant.so_luong_ton_kho" placeholder="Tồn kho" type="number" required />
           <input v-model.number="newVariant.gia" placeholder="Giá" type="number" required />
           <button type="submit" class="add-btn">Thêm</button>

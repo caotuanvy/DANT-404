@@ -8,15 +8,18 @@ import UserAccountLayout from '../components/user/UserAccountLayout.vue';
 import UserProfile from '../components/user/UserProfile.vue'; 
 import UserOrders from '../components/user/UserOrders.vue';
 import ChangePassword from '../components/user/ChangePassword.vue';
+import Cart from '../components/user/Cart.vue';
 import axios from 'axios';
+
 
 const routes = [
   { path: '/', component: Home },
+  { path: '/cart', component: Cart, meta: { requiresAuth: true } },
   { path: '/infor', component: Infor },
   {
     path: '/admin/test',
     name: 'test',
-    component: () => import('../components/user/BestSellProduct.vue'),
+    component: () => import('../components/user/EightProductGrid.vue'),
     meta: { requiresAuth: true, role: 'admin' }
   },
   {
@@ -45,6 +48,11 @@ const routes = [
   component: () => import('../components/user/NewsDetails.vue')
   },
   {
+  path: '/tin-tuc-chi-tiet/:id',
+  name: 'ChiTietTinTucCongKhai',
+  component: () => import('../components/user/NewsDetails.vue')
+  },
+  {
     path: '/user',
     component: UserAccountLayout,
     meta: { requiresAuth: true },
@@ -62,6 +70,7 @@ const routes = [
     component: UserAccountLayout, 
     meta: { requiresAuth: true }, // Yêu cầu xác thực cho tất cả các route con
     children: [
+      
       {
         path: '', // Đường dẫn mặc định khi truy cập /user, chuyển hướng đến profile
         redirect: '/user/profile'
@@ -91,7 +100,8 @@ const routes = [
       { path: '', component: () => import('../views/admin/AdminDashboard.vue') },
       { path: 'products', component: () => import('../components/admin/ProductList.vue') },
       { path: 'category', component: () => import('../components/admin/CategoryList.vue') },
-      {
+       { path: 'testt', component: () => import('../components/admin/Test.vue') },
+       {
         path: 'orders',
         component: () => import('../components/admin/OrderList.vue'),
         meta: { requiresAuth: true, role: 'admin' }
@@ -107,10 +117,15 @@ const routes = [
         meta: { requiresAuth: true, role: 'admin' }
       },
       {
-  path: 'tintuc',
-  component: () => import('../components/admin/Tintuc.vue'),
-  meta: { requiresAuth: true, role: 'admin' }
-},
+      path: 'tintucold',
+      component: () => import('../components/admin/Tintuc.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
+      path: 'tintuc',
+      component: () => import('../components/admin/Tintucnew.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+      },
       {
         path: 'slide',
         name: 'AdminSlide',
