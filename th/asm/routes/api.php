@@ -44,6 +44,7 @@ Route::apiResource('categories', CategoryController::class);
 
 // Tin tuc
 Route::apiResource('tintuc', TintucController::class);
+Route::post('/tintuc/generate-seo', [TintucController::class, 'generateSeoContent']);
 Route::get('/tintuc', [TintucController::class, 'index']);
 Route::post('/tintuc', [TintucController::class, 'store']);
 Route::get('/tintuc/{id}', [TintucController::class, 'show']);

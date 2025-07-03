@@ -12,16 +12,20 @@ class Tintuc extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'trang_thai',
         'id_danh_muc_tin_tuc',
         'tieude',
         'hinh_anh',
         'noidung',
         'ngay_dang',
-        'noi_bat',
         'duyet_tin_tuc',
+        'noi_bat',
         'slug',
         'luot_like',
         'luot_xem',
+        'tieu_de_seo',
+        'mo_ta_seo',
+        'tu_khoa_seo',
     ];
 
     public function danhMuc()
