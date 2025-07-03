@@ -238,7 +238,7 @@ class TintucController extends Controller
         }
 
         $promptLong = "Bạn là một người viết bài SEO chuyên nghiệp cho website tin tức tại Việt Nam. "
-            . "Hãy viết một bài mô tả chi tiết, hấp dẫn, có cấu trúc tốt cho tin tức với tiêu đề: \"{$tieude}\" và nội dung tóm tắt: \"{$noidung}\". "
+            . "Hãy viết một bài mô tả chi tiết, hấp dẫn, có cấu trúc tốt cho tin tức với tiêu đề: \"{$tieude}\" và nội dung tóm tắt: \"{$noidung}\".(không viết lại dòng này) "
             . "Bài viết nên có các phần: Giới thiệu, Nội dung chính, Phân tích, Kết luận, Lời kêu gọi hành động. "
             . "Sử dụng các thẻ tiêu đề H1, H2, H3 phù hợp. Độ dài bài viết khoảng 800-1100 từ.";
         $generatedTextLong = $callGeminiApi($promptLong, false, 60);
