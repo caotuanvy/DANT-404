@@ -9,7 +9,7 @@
       <router-link
         v-for="sp in products"
         :key="sp.san_pham_id"
-        :to="`/san-pham/${sp.slug || sp.san_pham_id}`"
+        :to="`san-pham/${sp.slug}`"
         class="product-card-link"
       >
         <div class="product-card">

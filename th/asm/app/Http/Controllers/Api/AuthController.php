@@ -4,15 +4,17 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Mail\KichHoatTaiKhoan;
-use App\Mail\SendOtpCodeMail; // Đảm bảo đã import Mailable này
+use App\Mail\SendOtpCodeMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use App\Models\User;
-use Illuminate\Support\Facades\Cache; // Đảm bảo đã import Cache
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+
 
 
 class AuthController extends Controller
@@ -61,34 +63,32 @@ class AuthController extends Controller
 
 
     public function login(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email',
-            'mat_khau' => 'required|string',
-        ]);
+{
+    $request->validate([
+        'email' => 'required|email',
+        'mat_khau' => 'required|string',
+    ]);
 
-        $user = User::where('email', $request->email)->first();
+    $user = User::where('email', $request->email)->first();
 
-        if (!$user || !Hash::check($request->mat_khau, $user->mat_khau)) {
-            return response()->json(['message' => 'Sai email hoặc mật khẩu'], 401);
-        }
-
-        // Tạo token cho người dùng (nếu bạn dùng Sanctum hoặc Passport)
-        $token = $user->createToken('api_token')->plainTextToken;
-
-        return response()->json([
-            'message' => 'Đăng nhập thành công',
-            'user' => [
-                'nguoi_dung_id' => $user->nguoi_dung_id,
-                'ho_ten' => $user->ho_ten,
-                'email' => $user->email,
-                'sdt' => $user->sdt,
-                'vai_tro_id' => $user->vai_tro_id,
-                'is_active' => $user->is_active,
-            ],
-            'token' => $token,
-        ]);
+    if (!$user || !Hash::check($request->mat_khau, $user->mat_khau)) {
+        return response()->json(['message' => 'Sai email hoặc mật khẩu'], 401);
     }
+    $token = $user->createToken('api_token')->plainTextToken;
+
+    return response()->json([
+        'message' => 'Đăng nhập thành công',
+        'user' => [
+            'nguoi_dung_id' => $user->nguoi_dung_id,
+            'ho_ten' => $user->ho_ten,
+            'email' => $user->email,
+            'sdt' => $user->sdt,
+            'vai_tro_id' => $user->vai_tro_id,
+            'is_active' => $user->is_active,
+        ],
+        'token' => $token,
+    ]);
+}
 
     // Kích hoạt tài khoản qua email
     public function activate($token)

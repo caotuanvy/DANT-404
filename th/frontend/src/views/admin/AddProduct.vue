@@ -779,7 +779,7 @@ const evaluateUniqueness = computed(() => {
 .seo-criteria-list {
     display: flex;
     flex-direction: column;
-    font-size: 14px;
+    
    
 }
 .seo-criteria-item {

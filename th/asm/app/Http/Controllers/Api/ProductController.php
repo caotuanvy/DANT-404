@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Log;
 
 class ProductController extends Controller
 {
+
             public function index()
         {
             try {
@@ -349,6 +350,7 @@ public function getTopSelling()
                 'sp.san_pham_id',
                 'sp.ten_san_pham',
                 'sp.khuyen_mai',
+                'sp.slug',
                 DB::raw('MIN(img.duongdan) as hinh_anh'),
                 DB::raw('SUM(CASE WHEN dh.trang_thai = 1 THEN ctdh.so_luong ELSE 0 END) as so_luong_ban'),
                 DB::raw('MIN(sbt.gia) as gia'),
@@ -356,6 +358,7 @@ public function getTopSelling()
             )
             ->where('sp.trang_thai', '!=', 0)
             ->groupBy(
+                'sp.slug',
                 'sp.san_pham_id',
                 'sp.ten_san_pham',
                 'sp.khuyen_mai'
@@ -371,6 +374,7 @@ public function getTopSelling()
                 'hinh_anh'      => $item->hinh_anh,
                 'gia'           => $item->gia,
                 'khuyen_mai'    => $item->khuyen_mai,
+                'slug'          => $item->slug,
                 'so_luong_ton_kho'  => $item->tong_ton_kho,
                 'tong_so_luong' => $item->tong_ton_kho + $item->so_luong_ban,
             ];
@@ -391,6 +395,7 @@ public function getFeatured()
             'sp.ten_san_pham',
             'sp.khuyen_mai',
             'sp.mo_ta',
+            'sp.Mo_ta_seo',
             'dm.ten_danh_muc',
             DB::raw('MIN(img.duongdan) as hinh_anh'),
             DB::raw('SUM(CASE WHEN dh.trang_thai = 1 THEN ctdh.so_luong ELSE 0 END) as so_luong_ban'),
@@ -404,6 +409,7 @@ public function getFeatured()
             'sp.ten_san_pham',
             'sp.khuyen_mai',
             'sp.mo_ta',
+            'sp.Mo_ta_seo',
             'dm.ten_danh_muc'
         )
         ->limit(8)
@@ -419,6 +425,7 @@ public function getFeatured()
             'hinh_anh'         => $item->hinh_anh,
             'gia'              => $item->gia,
             'khuyen_mai'       => $item->khuyen_mai,
+            'Mo_ta_seo'    => $item->Mo_ta_seo,
             'tong_ton_kho'     => $item->tong_ton_kho,
             'tong_so_luong'    => $item->tong_ton_kho + $item->so_luong_ban,
             'diem_danh_gia'    => 4.8,
@@ -569,6 +576,42 @@ public function toggleStatus($id)
             return response()->json(['error' => 'Đã xảy ra lỗi khi tạo nội dung AI: ' . $e->getMessage()], 500);
         }
     }
+
+    public function showBySlug($slug)
+{
+    // Dùng firstOrFail() để tự động tìm hoặc trả về lỗi 404 nếu không thấy
+    $product = \App\Models\SanPham::where('slug', $slug)
+                                  ->with(['hinhAnhSanPham', 'bienThe', 'danhMuc'])
+                                  ->firstOrFail();
+
+    // Tái cấu trúc dữ liệu trả về để khớp với frontend
+    $formattedProduct = [
+        'product_id' => $product->san_pham_id,
+        'product_name' => $product->ten_san_pham,
+        'price' => $product->gia,
+        'description' => $product->mo_ta,
+        'trang_thai' => $product->trang_thai,
+        'noi_bat' => $product->noi_bat,
+        'khuyen_mai' => $product->khuyen_mai,
+        'slug' => $product->slug,
+        'the' => $product->the,
+        'Tieu_de_seo' => $product->tieu_de_seo,
+        'Tu_khoa' => $product->tu_khoa_seo,
+        'Mo_ta_seo' => $product->mo_ta_seo,
+        'danh_muc' => $product->danhMuc,
+        'images' => $product->hinhAnhSanPham->map(function ($img) {
+            return [
+                'id' => $img->hinh_anh_id,
+                'image_path' => $img->duongdan,
+                'url' => asset('storage/' . $img->duongdan),
+            ];
+        }),
+        'variants' => $product->bienThe,
+    ];
+
+    return response()->json($formattedProduct);
+}
+
    public function uploadEditorImage(Request $request)
 {
     $request->validate([
@@ -586,4 +629,5 @@ public function toggleStatus($id)
 
     return response()->json(['location' => $url]);
 }
+
 }

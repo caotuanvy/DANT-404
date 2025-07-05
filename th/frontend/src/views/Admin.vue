@@ -54,11 +54,9 @@
         
 
         <div class="container-table">
-          
-          <button class="btn btn-outline-secondary btn-sm" @click="goBack" style="margin-left: 88%; margin-bottom: -30px;">
+          <button class="btn btn-outline-secondary btn-sm" @click="goBack" style="position: absolute; right: 115px;">
             <i class="bi bi-arrow-left me-1"></i> Quay Lại
           </button>
-        
           <router-view />
         </div>
       </main>
@@ -199,7 +197,7 @@ const menu = [
 .nav-link {
   display: flex;
   align-items: center;
-  padding: 12px 20px 12px 30px; /* Indent child items */
+  padding: 12px 20px 12px 30px;
   color: #495057;
   text-decoration: none;
   font-size: 14px;
@@ -210,9 +208,13 @@ const menu = [
   width: 20px;
   text-align: center;
   font-size: 16px;
+  
 }
 .nav-link:hover {
   background-color: #e9ecef;
+  color: #000;
+  list-style-type: none;
+  text-decoration: none;
 }
 .nav-link.router-link-exact-active {
   background-color: #e7f1ff;

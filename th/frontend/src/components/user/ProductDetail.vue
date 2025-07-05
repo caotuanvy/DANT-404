@@ -1,976 +1,656 @@
-
 <template>
   <div class="product-page" v-if="product">
+    <nav class="breadcrumbs">
+      <a href="/">Trang chủ</a>
+      <span>/</span>
+      <a href="/products">{{ product.danh_muc.ten_danh_muc }}</a>
+      <span>/</span>
+      <span class="current">{{ product.product_name }}</span>
+    </nav>
+
     <div class="product-container">
       <div class="product-images">
-        <img :src="imgUrl(product.hinh_anh[0])" alt="Ảnh sản phẩm" class="main-img" v-if="product.hinh_anh && product.hinh_anh.length" />
+        <div class="main-image-wrapper">
+          <img v-if="selectedImage" :src="selectedImage.url" :alt="product.product_name" class="main-img" />
+        </div>
         <div class="thumbnails">
-          <img v-for="(img, idx) in product.hinh_anh" :key="idx" :src="imgUrl(img)" class="thumb" />
+          <img
+            v-for="image in product.images"
+            :key="image.id"
+            :src="image.url"
+            :alt="`Thumbnail ${image.id}`"
+            class="thumb"
+            :class="{ active: selectedImage && selectedImage.id === image.id }"
+            @click="selectImage(image)"
+          />
         </div>
       </div>
 
       <div class="product-info">
-        <h2 class="product-name">{{ product.product_name }}</h2>
-        <div class="rating">
-          ⭐⭐⭐⭐☆ <span class="rating-count">(128 reviews)</span>
+        <h1 class="product-name">{{ product.product_name }}</h1>
+        
+        <div class="meta-info">
+          <div class="rating">
+            <span class="stars">★★★★☆</span>
+            <span class="rating-count">(249 đánh giá)</span>
+          </div>
+          <span class="featured-tag" v-if="product.noi_bat">Nổi bật</span>
         </div>
 
         <div class="price-box">
-          <template v-if="product?.khuyen_mai > 0">
-            <span class="sale">{{ formatCurrency(finalPrice) }}</span>
-            <span class="original">{{ formatCurrency(selectedVariant.gia) }}</span>
-            <span class="discount">
-              -{{ product.khuyen_mai }}%
-            </span>
+          <template v-if="product.khuyen_mai > 0 && selectedVariant">
+            <span class="sale-price">{{ formatCurrency(finalPrice) }}</span>
+            <span class="original-price">{{ formatCurrency(selectedVariant.gia) }}</span>
+            <span class="discount-badge">-{{ product.khuyen_mai }}%</span>
           </template>
           <template v-else>
-            <span class="sale">{{ formatCurrency(selectedVariant?.gia || 0) }}</span>
+            <span class="sale-price">{{ formatCurrency(selectedVariant?.gia || 0) }}</span>
           </template>
         </div>
 
-        <div class="stock">🟢 In Stock ({{ selectedVariant?.so_luong_ton_kho || 0 }} available)</div>
-
-        <div class="section">
-          <label>Màu sắc:</label>
-          <div class="color-options">
-            <div
-              v-for="variant in product.variants"
-              :key="variant.san_pham_bien_the_id"
-              class="color-dot"
-              :style="{ backgroundColor: convertColor(variant.mau_sac) }"
-              :class="{ selected: selectedVariantId === variant.san_pham_bien_the_id }"
-              @click="selectedVariantId = variant.san_pham_bien_the_id"
-            ></div>
+        <div class="variant-selection">
+          <div class="option-group" v-if="uniqueSizes.length > 0">
+            <label class="option-label">Kích thước:</label>
+            <div class="option-buttons">
+              <button 
+                v-for="size in uniqueSizes" 
+                :key="size" 
+                class="option-btn"
+                :class="{ active: selectedSize === size }"
+                @click="selectSize(size)"
+              >
+                {{ size }}
+              </button>
+            </div>
+          </div>
+          
+          <div class="option-group" v-if="uniqueColors.length > 0">
+            <label class="option-label">Màu sắc:</label>
+            <div class="option-buttons">
+              <div 
+                v-for="color in uniqueColors" 
+                :key="color"
+                class="color-swatch"
+                :style="{ backgroundColor: convertColor(color) }"
+                :class="{ active: selectedColor === color }"
+                @click="selectColor(color)"
+              ></div>
+            </div>
           </div>
         </div>
 
-        <div class="section">
-          <label>Kích thước:</label>
-          <div class="size-options">
-            <div class="size-btn selected">One Size</div>
+        <div class="quantity-stock-section">
+          <label class="option-label">Số lượng:</label>
+          <div class="quantity-selector">
+            <button class="quantity-btn" @click="decreaseQuantity">-</button>
+            <span class="quantity-display">{{ quantity }}</span>
+            <button class="quantity-btn" @click="increaseQuantity">+</button>
+          </div>
+          <div class="stock-status" v-if="selectedVariant">
+            Còn lại: {{ selectedVariant.so_luong_ton_kho }} sản phẩm
           </div>
         </div>
 
-        <div class="quantity">
-          <label>Số lượng:</label>
-          <input type="number" v-model="quantity" min="1" :max="selectedVariant?.so_luong_ton_kho" />
+        <div class="action-buttons">
+          <button class="add-cart-btn" @click="addToCart" :disabled="!canAddToCart">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+            Thêm vào giỏ hàng
+          </button>
+          <button class="icon-btn wishlist-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+          </button>
+          <button class="icon-btn share-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+          </button>
         </div>
 
-        <button class="add-cart-btn" @click="addToCart">🛒 Add to Cart</button>
-
-        <div class="description">
-          <h3>Mô tả</h3>
-          <p>{{ product.description }}</p>
-        </div>
-
-        <div class="section key-features">
-          <h3>Key Features:</h3>
-          <ul>
-            <li>• Hand-picked organic apples</li>
-            <li>• Variety of popular and flavorful types</li>
-            <li>• Crisp texture and sweet taste</li>
-            <li>• Excellent source of fiber and vitamins</li>
-            <li>• Perfect for snacks, salads, and baking</li>
-            <li>• Grown with sustainable farming practices</li>
-          </ul>
-        </div>
-
-        <div class="section shipping-returns">
-          <h3>Shipping & Returns</h3>
-          <div class="shipping-option">
-            <input type="radio" id="standard" name="shipping" checked>
-            <label for="standard">Standard Shipping: $5.00 <br> <small>Delivers in 3-5 business days</small></label>
+        <div class="commitments">
           </div>
-          <div class="shipping-option">
-            <input type="radio" id="express" name="shipping">
-            <label for="express">Express Shipping: $12.00 <br> <small>Delivers in 1-2 business days</small></label>
-          </div>
-          <p class="return-policy">Easy 30-day returns. <a href="#">Learn More</a></p>
-        </div>
       </div>
     </div>
 
-    <div class="product-reviews-section">
-      <div class="review-summary">
-        <h3>Reviews (128)</h3>
-        <div class="overall-rating">
-          <span class="rating-number">4.8</span>
-          <span class="stars">⭐⭐⭐⭐⭐</span>
-          <span class="total-reviews">128 reviews</span>
-        </div>
-        <button class="write-review-btn">Write a review</button>
-      </div>
-
-      <div class="rating-breakdown">
-        <div class="rating-bar-item">
-          <span class="star-count">5 Stars</span>
-          <div class="bar-bg">
-            <div class="bar-fill" style="width: 80%;"></div>
-          </div>
-          <span class="percentage">80%</span>
-        </div>
-        <div class="rating-bar-item">
-          <span class="star-count">4 Stars</span>
-          <div class="bar-bg">
-            <div class="bar-fill" style="width: 15%;"></div>
-          </div>
-          <span class="percentage">15%</span>
-        </div>
-        <div class="rating-bar-item">
-          <span class="star-count">3 Stars</span>
-          <div class="bar-bg">
-            <div class="bar-fill" style="width: 3%;"></div>
-          </div>
-          <span class="percentage">3%</span>
-        </div>
-        <div class="rating-bar-item">
-          <span class="star-count">2 Stars</span>
-          <div class="bar-bg">
-            <div class="bar-fill" style="width: 1%;"></div>
-          </div>
-          <span class="percentage">1%</span>
-        </div>
-        <div class="rating-bar-item">
-          <span class="star-count">1 Star</span>
-          <div class="bar-bg">
-            <div class="bar-fill" style="width: 1%;"></div>
-          </div>
-          <span class="percentage">1%</span>
-        </div>
-      </div>
-
-      <div class="customer-reviews">
-        <h4>Top reviews</h4>
-        <div class="review-item">
-          <div class="review-header">
-            <span class="review-stars">⭐⭐⭐⭐⭐</span>
-            <span class="review-date">2 days ago</span>
-          </div>
-          <p class="review-text">This product exceeded my expectations! The quality is outstanding, and I'm very happy with my purchase. Highly recommend.</p>
-          <div class="review-meta">
-            <span>By John Doe</span> | <span>Verified Purchase</span>
-          </div>
-        </div>
-        <div class="review-item">
-          <div class="review-header">
-            <span class="review-stars">⭐⭐⭐⭐☆</span>
-            <span class="review-date">1 week ago</span>
-          </div>
-          <p class="review-text">Good value for money. The product itself is well-made and durable. Shipping was a bit slow, but overall a solid delivery.</p>
-          <div class="review-meta">
-            <span>By Jane Smith</span> | <span>Verified Purchase</span>
-          </div>
-        </div>
-        <div class="review-item">
-          <div class="review-header">
-            <span class="review-stars">⭐⭐⭐⭐⭐</span>
-            <span class="review-date">2 weeks ago</span>
-          </div>
-          <p class="review-text">Absolutely delicious! These organic apples were crisp, sweet, and perfectly fresh. Definitely my go-to for healthy snacks now.</p>
-          <div class="review-meta">
-            <span>By Emily White</span> | <span>Verified Purchase</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="you-might-also-like">
-      <h2>You Might Also Like</h2>
-      <div class="related-products-grid">
-        <div class="related-product-card">
-          <img src="https://via.placeholder.com/150/FF6347/FFFFFF?text=Organic+Pomegranates" alt="Organic Pomegranates" />
-          <p class="related-product-name">Organic Pomegranates</p>
-          <p class="related-product-price">$5.99</p>
-        </div>
-        <div class="related-product-card">
-          <img src="https://via.placeholder.com/150/FF4500/FFFFFF?text=Fresh+Strawberries" alt="Fresh Strawberries" />
-          <p class="related-product-name">Fresh Strawberries</p>
-          <p class="related-product-price">$4.99</p>
-        </div>
-        <div class="related-product-card">
-          <img src="https://via.placeholder.com/150/B22222/FFFFFF?text=Organic+Tomatoes" alt="Organic Tomatoes" />
-          <p class="related-product-name">Organic Tomatoes</p>
-          <p class="related-product-price">$2.49</p>
-        </div>
-        <div class="related-product-card">
-          <img src="https://via.placeholder.com/150/8B0000/FFFFFF?text=Macin+Bottle" alt="Macin Bottle" />
-          <p class="related-product-name">Macin Bottle</p>
-          <p class="related-product-price">$6.99</p>
-        </div>
-      </div>
+    <div class="product-description-section">
+      <h3>Mô tả sản phẩm</h3>
+      <div v-html="product.description" class="description-content"></div>
     </div>
   </div>
+  <div v-else class="loading-state">
+    <p>Đang tải thông tin sản phẩm...</p>
+  </div>
 </template>
-
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
 
+// --- STATE ---
 const product = ref(null);
-const selectedVariantId = ref(null);
+const selectedImage = ref(null);
 const quantity = ref(1);
 const route = useRoute();
+const selectedSize = ref(null);
+const selectedColor = ref(null);
 
-const formatCurrency = (value) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value); // Changed to USD for image consistency
+// --- COMPUTED PROPERTIES ---
+
+const uniqueSizes = computed(() => {
+  if (!product.value?.variants) return [];
+  const sizes = product.value.variants.map(v => v.kich_thuoc).filter(Boolean);
+  return [...new Set(sizes)];
+});
+
+const uniqueColors = computed(() => {
+  if (!product.value?.variants) return [];
+  const colors = product.value.variants.map(v => v.mau_sac).filter(Boolean);
+  return [...new Set(colors)];
+});
 
 const selectedVariant = computed(() => {
-  if (!product.value || !product.value.variants) return null;
-  return product.value.variants.find(v => v.san_pham_bien_the_id === selectedVariantId.value);
-});
-
-
-const addToCart = async () => {
-  if (!selectedVariant.value) return;
-  try {
-    // Lấy token từ localStorage (nếu dùng JWT)
-    const token = localStorage.getItem('token');
-    await axios.post(
-      '/cart/add',
-      {
-        san_pham_bien_the_id: selectedVariant.value.san_pham_bien_the_id,
-        quantity: Number(quantity.value)
-      },
-      {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        withCredentials: true // Nếu backend dùng cookie/session
-      }
-    );
-    alert('Đã thêm vào giỏ hàng!');
-  } catch (e) {
-    // Debug lỗi BE nếu cần
-    if (e.response) {
-      console.error('Lỗi BE:', e.response.data);
-      if (e.response.data && e.response.data.message) {
-        alert('Lỗi: ' + e.response.data.message);
-      }
-    }
-    // Nếu lỗi (chưa đăng nhập), fallback lưu localStorage
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    const idx = cart.findIndex(
-      item => item.san_pham_bien_the_id === selectedVariant.value.san_pham_bien_the_id
-    );
-    if (idx !== -1) {
-      cart[idx].quantity += Number(quantity.value);
-    } else {
-      cart.push({
-        san_pham_bien_the_id: selectedVariant.value.san_pham_bien_the_id,
-        product_name: product.value.product_name,
-        mau_sac: selectedVariant.value.mau_sac,
-        kich_thuoc: selectedVariant.value.kich_thuoc,
-        gia: selectedVariant.value.gia,
-        hinh_anh: product.value.hinh_anh,
-        quantity: Number(quantity.value)
-      });
-    }
-    localStorage.setItem('cart', JSON.stringify(cart));
-    alert('Đã thêm vào giỏ hàng (local)!');
+  if (!product.value?.variants) {
+    return null;
   }
-};
-
-onMounted(async () => {
-  const id = route.params.id;
-  try {
-    const res = await axios.get(`http://localhost:8000/api/products/${id}`); // Assuming your API is at /api/products
-    product.value = res.data;
-    // Set a dummy product data if API call fails for demonstration purposes
-    if (!product.value) {
-      product.value = {
-        product_name: "Premium Organic Apple Variety Pack",
-        description: "Enjoy the fresh taste of organic apples with our premium variety pack. Each apple is hand-picked for quality, crispness, and delicious flavor, perfect for healthy snacking and meals.",
-        hinh_anh: ["https://via.placeholder.com/340/8A2BE2/FFFFFF?text=Apple+Variety+Pack", "https://via.placeholder.com/64/8A2BE2/FFFFFF?text=Thumb1", "https://via.placeholder.com/64/8A2BE2/FFFFFF?text=Thumb2", "https://via.placeholder.com/64/8A2BE2/FFFFFF?text=Thumb3"],
-        khuyen_mai: 13, // 13% discount for $12.99 from $14.99
-        variants: [
-          { san_pham_bien_the_id: 1, mau_sac: "đỏ", gia: 14.99, so_luong_ton_kho: 24, kich_thuoc: "One Size" },
-          { san_pham_bien_the_id: 2, mau_sac: "xanh", gia: 14.99, so_luong_ton_kho: 15, kich_thuoc: "One Size" },
-          { san_pham_bien_the_id: 3, mau_sac: "vàng", gia: 14.99, so_luong_ton_kho: 10, kich_thuoc: "One Size" }
-        ],
-        // You can add more dummy data if needed
-      };
-    }
-    // Chọn biến thể đầu tiên mặc định
-    if (product.value.variants && product.value.variants.length > 0) {
-      selectedVariantId.value = product.value.variants[0].san_pham_bien_the_id;
-    }
-  } catch (error) {
-    console.error("Error fetching product data:", error);
-    // Fallback to dummy data if API fails
-    product.value = {
-      product_name: "Premium Organic Apple Variety Pack",
-      description: "Enjoy the fresh taste of organic apples with our premium variety pack. Each apple is hand-picked for quality, crispness, and delicious flavor, perfect for healthy snacking and meals.",
-      hinh_anh: ["https://via.placeholder.com/340/8A2BE2/FFFFFF?text=Apple+Variety+Pack", "https://via.placeholder.com/64/8A2BE2/FFFFFF?text=Thumb1", "https://via.placeholder.com/64/8A2BE2/FFFFFF?text=Thumb2", "https://via.placeholder.com/64/8A2BE2/FFFFFF?text=Thumb3"],
-      khuyen_mai: 13, // 13% discount for $12.99 from $14.99
-      variants: [
-        { san_pham_bien_the_id: 1, mau_sac: "đỏ", gia: 14.99, so_luong_ton_kho: 24, kich_thuoc: "One Size" },
-        { san_pham_bien_the_id: 2, mau_sac: "xanh", gia: 14.99, so_luong_ton_kho: 15, kich_thuoc: "One Size" },
-        { san_pham_bien_the_id: 3, mau_sac: "vàng", gia: 14.99, so_luong_ton_kho: 10, kich_thuoc: "One Size" }
-      ],
-      // You can add more dummy data if needed
-    };
-    if (product.value.variants && product.value.variants.length > 0) {
-      selectedVariantId.value = product.value.variants[0].san_pham_bien_the_id;
-    }
+  // TRƯỜNG HỢP 1: Sản phẩm chỉ có 1 biến thể (không có size/color để chọn)
+  if (product.value.variants.length === 1) {
+    return product.value.variants[0];
   }
+  // TRƯỜG HỢP 2: Sản phẩm có nhiều biến thể, yêu cầu chọn đủ
+  if (uniqueSizes.value.length > 0 && !selectedSize.value) {
+    return null;
+  }
+  if (uniqueColors.value.length > 0 && !selectedColor.value) {
+    return null;
+  }
+  return product.value.variants.find(v => {
+    const sizeMatch = uniqueSizes.value.length === 0 || v.kich_thuoc === selectedSize.value;
+    const colorMatch = uniqueColors.value.length === 0 || v.mau_sac === selectedColor.value;
+    return sizeMatch && colorMatch;
+  });
 });
-
-const imgUrl = (img) => {
-  // This is a placeholder. In a real application, you'd likely have a base URL for your images.
-  // For the dummy data, we are using placeholder images directly.
-  return img.startsWith('http') ? img : `http://localhost:8000/storage/${img}`;
-};
 
 const finalPrice = computed(() => {
   if (!selectedVariant.value) return 0;
-  const price = Number(selectedVariant.value.gia) || 0;
-  const percent = Number(product.value?.khuyen_mai) || 0;
-  if (percent > 0) {
-    return price * (1 - percent / 100); // Calculate discount
-  }
-  return price;
+  const price = Number(selectedVariant.value.gia);
+  const discountPercent = Number(product.value?.khuyen_mai);
+  return discountPercent > 0 ? price * (1 - discountPercent / 100) : price;
 });
 
-const convertColor = (colorName) => {
-  switch (colorName.toLowerCase()) {
-    case 'đen': return '#000';
-    case 'trắng': return '#fff';
-    case 'xám': return '#ccc';
-    case 'xanh': return '#1e40af'; // A shade of blue
-    case 'hồng': return '#f472b6'; // A shade of pink
-    case 'đỏ': return '#dc2626'; // A shade of red, similar to the image
-    case 'vàng': return '#facc15'; // A shade of yellow
-    default: return '#ddd';
+const canAddToCart = computed(() => {
+  return selectedVariant.value && selectedVariant.value.so_luong_ton_kho > 0;
+});
+
+// --- METHODS ---
+
+const formatCurrency = (value) => {
+  if (isNaN(value)) return 'N/A';
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+};
+
+const selectImage = (image) => {
+  selectedImage.value = image;
+};
+
+const selectSize = (size) => {
+  selectedSize.value = size;
+  const availableColors = product.value.variants
+    .filter(v => v.kich_thuoc === size)
+    .map(v => v.mau_sac);
+  if ([...new Set(availableColors)].length === 1) {
+    selectedColor.value = availableColors[0];
   }
 };
+
+const selectColor = (color) => {
+  selectedColor.value = color;
+  const availableSizes = product.value.variants
+    .filter(v => v.mau_sac === color)
+    .map(v => v.kich_thuoc);
+  if ([...new Set(availableSizes)].length === 1) {
+    selectedSize.value = availableSizes[0];
+  }
+};
+
+const convertColor = (colorName) => {
+  if (typeof colorName !== 'string') return '#ddd';
+  switch (colorName.toLowerCase()) {
+    case 'đen': return '#000000';
+    case 'trắng': return '#ffffff';
+    case 'xám': return '#cccccc';
+    case 'vàng': return '#facc15';
+    case 'xanh': return '#1e40af';
+    case 'hồng': return '#f472b6';
+    case 'đỏ': return '#dc2626';
+    default: return '#e9ecef00';
+  }
+};
+
+const increaseQuantity = () => {
+  const maxStock = selectedVariant.value?.so_luong_ton_kho || 1;
+  if (quantity.value < maxStock) {
+    quantity.value++;
+  }
+};
+
+const decreaseQuantity = () => {
+  if (quantity.value > 1) {
+    quantity.value--;
+  }
+};
+
+const addToCart = async () => {
+    if (!selectedVariant.value) {
+        alert('Vui lòng chọn đầy đủ thuộc tính của sản phẩm.');
+        return;
+    }
+    if (quantity.value > selectedVariant.value.so_luong_ton_kho) {
+        alert('Số lượng yêu cầu vượt quá số lượng tồn kho.');
+        return;
+    }
+    try {
+        const payload = {
+          san_pham_bien_the_id: selectedVariant.value.bien_the_id,
+          quantity: quantity.value,
+        };
+        const token = localStorage.getItem('token');
+        const response = await axios.post('/carts/add', payload, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        alert(response.data.message);
+    } catch (error) {
+        if (error.response && error.response.data && error.response.data.message) {
+            alert(error.response.data.message);
+        } else {
+            alert('Có lỗi xảy ra, vui lòng thử lại sau.');
+        }
+        console.error("Lỗi khi thêm vào giỏ hàng:", error);
+    }
+};
+
+// --- WATCHERS & LIFECYCLE ---
+
+watch(selectedVariant, (newVariant) => {
+  if (newVariant && quantity.value > newVariant.so_luong_ton_kho) {
+    quantity.value = newVariant.so_luong_ton_kho > 0 ? 1 : 0;
+  } else if (!newVariant || newVariant.so_luong_ton_kho === 0) {
+    quantity.value = 0;
+  } else if (quantity.value === 0 && newVariant?.so_luong_ton_kho > 0) {
+    quantity.value = 1;
+  }
+});
+
+onMounted(async () => {
+  const productSlug = route.params.slug;
+  try {
+    const response = await axios.get(`/user/${productSlug}`);
+    product.value = response.data;
+
+    if (product.value.images?.length > 0) {
+      selectedImage.value = product.value.images[0];
+    }
+    // Tự động chọn nếu có lựa chọn
+    if (uniqueSizes.value.length > 0) {
+      selectSize(uniqueSizes.value[0]);
+    }
+    if (uniqueColors.value.length > 0) {
+      selectColor(uniqueColors.value[0]);
+    }
+  } catch (error) {
+    console.error("Lỗi khi tải dữ liệu sản phẩm:", error);
+    product.value = null;
+  }
+});
 </script>
-
 <style scoped>
+/* === General & Layout === */
+
 .product-page {
-  padding: 40px 20px;
-  font-family: 'Segoe UI', sans-serif;
-  background-color: #f5f5f5; /* Light grey background for the whole page */
-}
-
-.product-container {
-  display: flex;
-  gap: 40px;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-  padding: 32px;
-  max-width: 1100px;
+  font-family: "Lora", serif;
+  padding: 2rem 1rem;
+  max-width: 1200px;
   margin: auto;
+  
+}
+.loading-state {
+  text-align: center;
+  padding: 5rem 1rem;
+  font-size: 1.25rem;
+  color: #6c757d;
+}
+.product-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  background: #fff;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 25px rgba(0,0,0,0.05);
 }
 
+/* === Breadcrumbs === */
+.breadcrumbs {
+  margin-bottom: 1.5rem;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+.breadcrumbs a {
+  color: #495057;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.breadcrumbs a:hover {
+  color: #0d6efd;
+}
+.breadcrumbs span {
+  margin: 0 0.5rem;
+}
+.breadcrumbs .current {
+  color: #212529;
+  font-weight: 500;
+}
+
+/* === Images Section === */
 .product-images {
-  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
+.main-image-wrapper {
+  border-radius: 12px;
+  overflow: hidden;
 
+}
 .main-img {
   width: 100%;
-  max-width: 340px; /* Adjust if necessary */
-  height: auto; /* Maintain aspect ratio */
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  object-fit: cover; /* Ensures image covers the area without distortion */
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
 }
-
 .thumbnails {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 0.75rem;
 }
 .thumb {
-  width: 64px;
-  height: 64px;
+  width: 100%;
+  height: 70px;
   object-fit: cover;
   border-radius: 8px;
-  border: 1px solid #ddd;
+  border: 2px solid #e9ecef;
   cursor: pointer;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
+  opacity: 0.7;
 }
 .thumb:hover {
-  border-color: #2563eb;
+  opacity: 1;
+  border-color: #adb5bd;
+}
+.thumb.active {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 2px #0d6efd;
+  opacity: 1;
 }
 
+/* === Info Section === */
 .product-info {
-  flex: 1.2;
+  display: flex;
+  flex-direction: column;
 }
-
 .product-name {
-  font-size: 28px;
-  font-weight: bold;
-  margin-bottom: 8px;
-  color: #333;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #212529;
+  line-height: 1.2;
 }
-
+.meta-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
 .rating {
-  font-size: 16px;
-  color: #f59e0b; /* Gold color for stars */
-  margin-bottom: 10px;
   display: flex;
   align-items: center;
+  gap: 0.5rem;
 }
-.rating-count {
-  color: #555;
-  font-size: 14px;
-  margin-left: 6px;
+.stars { color: #ffc107; font-size: 1.1rem; }
+.rating-count { color: #6c757d; font-size: 0.9rem; }
+.featured-tag {
+  background-color: #198754;
+  color: white;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 4px;
 }
-
 .price-box {
-  margin: 16px 0;
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: baseline;
+  gap: 1rem;
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 0.5rem 0;
 }
-.sale {
-  font-size: 28px; /* Slightly larger for emphasis */
-  color: #dc2626; /* Red for sale price */
-  font-weight: bold;
+.sale-price {
+  font-size: 2rem;
+  color: #dc3545;
+  font-weight: 700;
 }
-.original {
+.original-price {
   text-decoration: line-through;
-  color: #888;
-  font-size: 18px; /* Slightly smaller than sale price */
+  color: #6c757d;
+  font-size: 1.1rem;
 }
-.discount {
-  background: #fee2e2; /* Light red background */
-  color: #dc2626; /* Red text */
-  padding: 4px 8px; /* More padding */
-  font-size: 14px;
+.discount-badge {
+  background: #0d6efd;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
   border-radius: 4px;
   font-weight: 600;
 }
-
-.stock {
-  color: #22c55e; /* Green for in stock */
-  font-size: 15px;
-  margin-bottom: 12px;
-  font-weight: 500;
+.vat-shipping-note {
+  font-size: 0.85rem;
+  color: #6c757d;
+  margin-bottom: 1.5rem;
 }
-
-.section {
-  margin: 20px 0; /* More spacing between sections */
+.option-group {
+  margin-bottom: 1.5rem;
 }
-.section label {
-  font-weight: bold;
-  margin-bottom: 8px;
+.option-label {
+  font-weight: 600;
+  margin-bottom: 0.75rem;
   display: block;
-  color: #333;
+  color: #495057;
 }
-.color-options {
+.option-buttons {
   display: flex;
-  gap: 12px; /* More gap */
-  margin-top: 8px;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
-.color-dot {
-  width: 36px; /* Slightly larger */
-  height: 36px; /* Slightly larger */
-  border-radius: 50%;
-  border: 2px solid transparent;
-  cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Subtle shadow */
-  transition: all 0.2s ease-in-out;
-}
-.color-dot.selected {
-  border: 2px solid #2563eb; /* Blue border when selected */
-  transform: scale(1.1); /* Slight enlarge effect */
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4); /* Stronger shadow when selected */
-}
-
-.size-options {
-  display: flex;
-  gap: 10px;
-  margin-top: 8px;
-}
-.size-btn {
-  padding: 10px 18px; /* More padding */
-  border: 1px solid #ccc;
+.option-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ced4da;
   border-radius: 6px;
-  cursor: pointer;
-  background-color: #f9f9f9; /* Light background */
-  transition: all 0.2s ease-in-out;
-  font-weight: 500;
-  color: #555;
-}
-.size-btn:hover {
-  border-color: #2563eb;
-  color: #2563eb;
-}
-.size-btn.selected {
-  background: #2563eb;
-  color: #fff;
-  border-color: #2563eb;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
-}
-
-.quantity {
-  margin-top: 20px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.quantity label {
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 0; /* Reset margin for alignment */
-}
-.quantity input {
-  width: 70px; /* Wider input */
-  padding: 8px 10px; /* More padding */
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  font-size: 16px;
-  text-align: center;
-  -moz-appearance: textfield; /* Hide arrows for Firefox */
-}
-/* Hide arrows for Chrome, Safari, Edge */
-.quantity input::-webkit-outer-spin-button,
-.quantity input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-
-.add-cart-btn {
-  margin-top: 30px; /* More space */
-  padding: 14px 28px; /* Larger button */
-  background: #2563eb;
-  color: white;
-  font-weight: 700; /* Bolder text */
-  border: none;
-  border-radius: 8px;
-  font-size: 17px; /* Slightly larger font */
-  cursor: pointer;
-  transition: background 0.3s ease, transform 0.1s ease;
-  width: 100%; /* Make button full width */
-  max-width: 300px; /* Max width for the button */
-  display: block; /* To center with margin auto */
-  margin-left: 0; /* Ensure it's not affected by previous margin-left */
-}
-.add-cart-btn:hover {
-  background: #1e40af;
-  transform: translateY(-1px); /* Slight lift effect */
-}
-.add-cart-btn:active {
-  transform: translateY(0);
-}
-
-.description {
-  margin-top: 24px;
-  border-top: 1px solid #eee; /* Separator line */
-  padding-top: 20px;
-}
-.description h3 {
-  font-size: 20px;
-  font-weight: bold;
-  margin-bottom: 10px;
-  color: #333;
-}
-.description p {
-  margin-top: 8px;
-  color: #444;
-  line-height: 1.7; /* Better readability */
-}
-
-/* Key Features styling */
-.key-features ul {
-  list-style: none;
-  padding: 0;
-  margin-top: 10px;
-}
-.key-features ul li {
-  margin-bottom: 8px;
-  color: #444;
-  font-size: 15px;
-  line-height: 1.5;
-}
-
-/* Shipping & Returns Styling */
-.shipping-returns {
-  border-top: 1px solid #eee;
-  padding-top: 20px;
-}
-.shipping-returns h3 {
-  font-size: 20px;
-  font-weight: bold;
-  margin-bottom: 15px;
-  color: #333;
-}
-.shipping-option {
-  display: flex;
-  align-items: flex-start;
-  margin-bottom: 12px;
-}
-.shipping-option input[type="radio"] {
-  margin-top: 4px;
-  margin-right: 10px;
-}
-.shipping-option label {
-  font-weight: normal;
-  color: #444;
-  cursor: pointer;
-}
-.shipping-option label small {
-  display: block;
-  color: #777;
-  font-size: 13px;
-  margin-top: 2px;
-}
-.return-policy {
-  margin-top: 15px;
-  font-size: 14px;
-  color: #555;
-}
-.return-policy a {
-  color: #2563eb;
-  text-decoration: none;
-}
-.return-policy a:hover {
-  text-decoration: underline;
-}
-
-/* Product Reviews Section */
-.product-reviews-section {
-  max-width: 1100px;
-  margin: 40px auto;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-  padding: 32px;
-  display: flex;
-  flex-wrap: wrap; /* Allows wrapping for smaller screens */
-  gap: 40px;
-}
-
-.review-summary {
-  flex: 1;
-  min-width: 280px; /* Minimum width before wrapping */
-}
-.review-summary h3 {
-  font-size: 22px;
-  font-weight: bold;
-  margin-bottom: 15px;
-  color: #333;
-}
-.overall-rating {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-.overall-rating .rating-number {
-  font-size: 48px;
-  font-weight: bold;
-  color: #333;
-}
-.overall-rating .stars {
-  font-size: 24px;
-  color: #f59e0b;
-}
-.overall-rating .total-reviews {
-  font-size: 16px;
-  color: #777;
-  margin-left: 5px;
-}
-.write-review-btn {
-  background: #2563eb;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-.write-review-btn:hover {
-  background: #1e40af;
-}
-
-.rating-breakdown {
-  flex: 2;
-  min-width: 350px; /* Minimum width before wrapping */
-}
-.rating-bar-item {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-  gap: 10px;
-}
-.rating-bar-item .star-count {
-  width: 80px;
-  color: #555;
-  font-size: 15px;
-}
-.rating-bar-item .bar-bg {
-  flex-grow: 1;
-  height: 8px;
-  background-color: #eee;
-  border-radius: 4px;
-  overflow: hidden;
-}
-.rating-bar-item .bar-fill {
-  height: 100%;
-  background-color: #22c55e; /* Green for fill */
-  border-radius: 4px;
-}
-.rating-bar-item .percentage {
-  width: 40px;
-  text-align: right;
-  color: #555;
-  font-size: 15px;
-}
-
-.customer-reviews {
-  width: 100%; /* Take full width below summary and breakdown */
-  margin-top: 30px;
-  border-top: 1px solid #eee;
-  padding-top: 20px;
-}
-.customer-reviews h4 {
-  font-size: 20px;
-  font-weight: bold;
-  margin-bottom: 20px;
-  color: #333;
-}
-.review-item {
-  border: 1px solid #eee;
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 20px;
-  background-color: #fcfcfc;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-.review-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-.review-stars {
-  color: #f59e0b;
-  font-size: 18px;
-}
-.review-date {
-  font-size: 14px;
-  color: #888;
-}
-.review-text {
-  font-size: 15px;
-  color: #333;
-  line-height: 1.6;
-  margin-bottom: 10px;
-}
-.review-meta {
-  font-size: 13px;
-  color: #666;
-}
-.review-meta span:first-child {
-  font-weight: bold;
-}
-
-
-/* You Might Also Like Section */
-.you-might-also-like {
-  max-width: 1100px;
-  margin: 40px auto;
-  padding: 32px;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-}
-.you-might-also-like h2 {
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 25px;
-  text-align: center;
-  color: #333;
-}
-.related-products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 25px;
-  justify-items: center;
-}
-.related-product-card {
-  text-align: center;
   background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  padding: 15px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  width: 100%; /* Ensure cards take full grid column width */
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
 }
-.related-product-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+.option-btn:hover {
+  background-color: #f1f3f5;
+  border-color: #adb5bd;
 }
-.related-product-card img {
-  width: 100%;
-  max-width: 150px;
-  height: 150px;
-  object-fit: cover;
-  border-radius: 8px;
-  margin-bottom: 10px;
-}
-.related-product-name {
+.option-btn.active {
+  background-color: #e7f1ff;
+  border-color: #0d6efd;
+  color: #0d6efd;
   font-weight: 600;
-  color: #333;
-  margin-bottom: 5px;
-  font-size: 16px;
 }
-.related-product-price {
-  font-weight: bold;
-  color: #2563eb;
-  font-size: 15px;
+.color-swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid #e9ecef;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.color-swatch.active {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 1px #0d6efd;
+}
+.quantity-stock-section {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+.quantity-selector {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+}
+.quantity-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: #f8f9fa;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #495057;
+}
+.quantity-btn:first-child { border-radius: 5px 0 0 5px; }
+.quantity-btn:last-child { border-radius: 0 5px 5px 0; }
+.quantity-display {
+  width: 50px;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.stock-status {
+  font-size: 0.9rem;
+  color: #198754;
+  font-weight: 500;
+}
+.action-buttons {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+.add-cart-btn {
+  flex-grow: 1;
+  padding: 0.85rem 1rem;
+  background: #0d6efd;
+  color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.add-cart-btn:hover:not(:disabled) {
+  background: #0b5ed7;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(13,110,253,0.2);
+}
+.add-cart-btn:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.icon-btn {
+  width: 50px;
+  height: 50px;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #495057;
+  transition: all 0.2s;
+}
+.icon-btn:hover {
+  background-color: #f1f3f5;
+  color: #0d6efd;
 }
 
-/* Responsive adjustments */
+/* === Commitments & Description === */
+.commitments {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  border-top: 1px solid #e9ecef;
+  padding-top: 1.5rem;
+  margin-top: auto; /* Pushes to the bottom */
+}
+.commitment-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: #495057;
+}
+.commitment-item svg {
+  color: #0d6efd;
+  flex-shrink: 0;
+}
+.product-description-section {
+  max-width: 1400px;
+  margin: 2rem auto 0 auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 25px rgba(0,0,0,0.05);
+  padding: 2rem;
+}
+.product-description-section h3 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e9ecef;
+}
+.description-content {
+  color: #495057;
+  line-height: 1.7;
+  font-size: 16px;
+  width: 90%;
+  margin: auto;
+}
+.description-content p img {
+  box-shadow: 0 !important;
+}
+.description-content :deep(*) {
+  margin-bottom: 1em;
+}
+
+/* === Responsive adjustments === */
 @media (max-width: 992px) {
   .product-container {
-    flex-direction: column;
-    align-items: center;
-    gap: 30px;
-    padding: 25px;
-  }
-  .main-img {
-    max-width: 100%;
-  }
-  .product-info {
-    width: 100%;
-  }
-  .add-cart-btn {
-    max-width: none; /* Allow button to take full width on smaller screens */
-  }
-  .product-reviews-section {
-    flex-direction: column;
-    gap: 30px;
-    padding: 25px;
-  }
-  .review-summary, .rating-breakdown {
-    min-width: unset; /* Remove min-width to allow full flexibility */
-    width: 100%;
+    grid-template-columns: 1fr;
   }
 }
-
-@media (max-width: 768px) {
+@media (max-width: 576px) {
   .product-page {
-    padding: 20px 10px;
+    padding: 1rem;
   }
-  .product-container {
-    padding: 20px;
+  .product-container, .product-description-section {
+    padding: 1.5rem;
   }
   .product-name {
-    font-size: 24px;
+    font-size: 1.75rem;
   }
-  .sale {
-    font-size: 24px;
-  }
-  .original {
-    font-size: 16px;
-  }
-  .add-cart-btn {
-    font-size: 15px;
-    padding: 12px 20px;
-  }
-  .overall-rating .rating-number {
-    font-size: 40px;
-  }
-  .overall-rating .stars {
-    font-size: 20px;
-  }
-  .overall-rating .total-reviews {
-    font-size: 14px;
-  }
-  .you-might-also-like h2 {
-    font-size: 20px;
-  }
-  .related-products-grid {
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 15px;
-  }
-  .related-product-card img {
-    max-width: 120px;
-    height: 120px;
-  }
-  .related-product-name {
-    font-size: 14px;
-  }
-  .related-product-price {
-    font-size: 13px;
-  }
-}
-
-@media (max-width: 480px) {
-  .product-page {
-    padding: 15px 5px;
-  }
-  .product-container {
-    padding: 15px;
-    gap: 20px;
-  }
-  .thumbnails {
-    justify-content: center; /* Center thumbnails */
-  }
-  .thumb {
-    width: 50px;
-    height: 50px;
-  }
-  .price-box {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
-  }
-  .stock {
-    text-align: center;
-    width: 100%;
-  }
-  .section label {
-    text-align: center;
-    width: 100%;
-  }
-  .color-options, .size-options {
-    justify-content: center;
-  }
-  .quantity {
-    justify-content: center;
-  }
-  .add-cart-btn {
-    padding: 10px 15px;
-    font-size: 14px;
-  }
-  .product-reviews-section {
-    padding: 15px;
-  }
-  .review-summary {
-    text-align: center;
-  }
-  .overall-rating {
-    justify-content: center;
-  }
-  .write-review-btn {
-    width: 100%;
-  }
-  .rating-bar-item .star-count,
-  .rating-bar-item .percentage {
-    font-size: 13px;
-  }
-  .review-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
-  }
-  .review-date {
-    align-self: flex-end;
-  }
-  .related-products-grid {
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  }
-  .related-product-card img {
-    max-width: 100px;
-    height: 100px;
+  .commitments {
+    grid-template-columns: 1fr;
   }
 }
 </style>
-
-```

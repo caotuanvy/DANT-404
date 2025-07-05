@@ -10,6 +10,7 @@ class GioHang extends Model
     protected $primaryKey = 'gio_hang_id';
     public $timestamps = false;
 
+
     protected $fillable = [
         'nguoi_dung_id',
         'ngay_tao',

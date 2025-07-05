@@ -267,7 +267,7 @@ watch(showLoginModal, (newVal) => {
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background-color: #f4f6f8;
+  background-color: #ffffff;
   color: #333;
 }
 

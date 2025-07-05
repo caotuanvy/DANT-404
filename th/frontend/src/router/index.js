@@ -52,6 +52,7 @@ const routes = [
   name: 'ChiTietTinTucCongKhai',
   component: () => import('../components/user/NewsDetails.vue')
   },
+  { path: '/san-pham/:slug', name: 'ProductDetailUser', component: () => import('../components/user/ProductDetail.vue'),},
   {
     path: '/user',
     component: UserAccountLayout,
@@ -101,6 +102,7 @@ const routes = [
       { path: 'products', component: () => import('../components/admin/ProductList.vue') },
       { path: 'category', component: () => import('../components/admin/CategoryList.vue') },
        { path: 'testt', component: () => import('../components/admin/Test.vue') },
+       
        {
         path: 'orders',
         component: () => import('../components/admin/OrderList.vue'),
@@ -239,10 +241,7 @@ const routes = [
   name: 'ProductDetail',
   component: () => import('@/components/user/ProductDetail.vue')
 },
-{
-  path: '/:pathMatch(.*)*',
-  redirect: '/'
-}
+
 ];
 
 const router = createRouter({
