@@ -7,7 +7,33 @@
     <div class="main-content">
       <div class="product-list" v-if="products.length > 0">
         <div v-for="product in products" :key="product.id" class="product-item">
-          <!-- Sản phẩm trong giỏ -->
+         <img :src="'http://localhost:8000/storage/' + product.image" :alt="product.name" class="product-image" />
+          <div class="product-details">
+            <h3 class="product-name">{{ product.name }}</h3>
+            <p class="product-weight">{{ product.weight }}</p>
+            <p class="product-price">
+              <span v-if="product.originalPrice" class="original">{{
+                formatPrice(product.originalPrice)
+              }}</span>
+              {{ formatPrice(product.price) }}
+            </p>
+          </div>
+          <div class="product-quantity-control">
+            <button @click="decreaseQuantity(product.id)" class="quantity-button">
+              -
+            </button>
+            <span class="quantity">{{ product.quantity }}</span>
+            <button @click="increaseQuantity(product.id)" class="quantity-button">
+              +
+            </button>
+            <button @click="removeProduct(product.id)" class="remove-button">
+              <img
+                src="https://img.icons8.com/material-outlined/24/000000/trash--v1.png"
+                alt="Xóa"
+              />
+            </button>
+          </div>
+
         </div>
 
         <div class="discount-code">
@@ -372,6 +398,47 @@ export default {
             this.isLoadingAddressData = false;
         }
     },
+    async removeProduct(productId) {
+    try {
+      const result = await Swal.fire({
+        title: 'Bạn có chắc chắn muốn xóa sản phẩm này?',
+        text: "Sản phẩm sẽ bị loại bỏ khỏi giỏ hàng của bạn!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Có, xóa nó đi!',
+        cancelButtonText: 'Hủy bỏ'
+      });
+
+      if (result.isConfirmed) {
+        const user = JSON.parse(localStorage.getItem("user"));
+        const userId = user?.nguoi_dung_id || user?.id;
+
+        if (!userId) {
+          Swal.fire("Lỗi", "Không tìm thấy thông tin người dùng. Vui lòng đăng nhập.", "error");
+          return;
+        }
+        const itemIdentifier = this.products.find(p => p.id === productId)?.bien_the_id || productId;
+        await axios.delete(`http://localhost:8000/api/gio-hang/${userId}/${itemIdentifier}`);
+        this.products = this.products.filter(p => p.id !== productId);
+
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'Sản phẩm đã được xóa khỏi giỏ hàng!',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true
+        });
+      }
+    } catch (error) {
+      console.error("Lỗi khi xóa sản phẩm:", error.response?.data || error.message);
+      Swal.fire("Lỗi", "Không thể xóa sản phẩm. Vui lòng thử lại.", "error");
+    }
+  },
+
     async placeOrder() {
       const user = JSON.parse(localStorage.getItem("user"));
       const userId = user?.nguoi_dung_id || user?.id;

@@ -44,7 +44,7 @@
               <td><input type="checkbox"></td>
               <td>
                 <div class="product-name-cell">
-                    <router-link :to="`/product/${product.slug}`" class="product-name product-name-link">
+                    <router-link :to="`/san-pham/${product.slug}`" class="product-name product-name-link">
                         {{ product.product_name }}
                     </router-link>
                     <span class="product-variant-count">{{ product.so_bien_the || 0 }} biến thể</span>
@@ -372,6 +372,7 @@ onMounted(() => {
 .product-name {
   font-weight: 500;
   color: var(--color-text-primary);
+  text-decoration: none;
 }
 .product-variant-count {
   font-size: 0.875rem;
