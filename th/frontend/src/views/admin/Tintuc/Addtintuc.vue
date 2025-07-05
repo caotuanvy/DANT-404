@@ -36,7 +36,7 @@
               <div class="form-group">
                 <label class="form-label">Nội dung *</label>
                 <editor
-                  :api-key="'Ytybxi5binushm14hreotxk86vfsdjfaw6qk7vmsj9gv9iw5u'"
+                  :api-key="'41eu6h6iewknwxlxtm1mh0dge0z3tg5ubvt2clbc0dq85wgo'"
                   v-model="newsDescriptionLong"
                   :init="{
                     height: 500,
