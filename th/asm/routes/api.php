@@ -17,8 +17,9 @@ use App\Http\Controllers\Api\DiaChiController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\GioHangController;
 use App\Http\Controllers\Api\IntroduceController;
-
+use App\Http\Controllers\Api\GoogleAuthController;
 // Public Auth Routes
+Route::post('/auth/google', [GoogleAuthController::class, 'handleGoogleLogin']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/kich-hoat/{token}', [AuthController::class, 'activate']);
