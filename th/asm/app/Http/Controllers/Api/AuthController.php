@@ -16,7 +16,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
 
-
 class AuthController extends Controller
 {
     // Đăng ký
@@ -61,58 +60,45 @@ class AuthController extends Controller
         ]);
     }
 
-
+    // Đăng nhập
     public function login(Request $request)
-{
-    $request->validate([
-        'email' => 'required|email',
-        'mat_khau' => 'required|string',
-    ]);
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'mat_khau' => 'required|string',
+        ]);
 
-    $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)->first();
 
-    if (!$user || !Hash::check($request->mat_khau, $user->mat_khau)) {
-        return response()->json(['message' => 'Sai email hoặc mật khẩu'], 401);
-    }
-    $token = $user->createToken('api_token')->plainTextToken;
+        // 1. Kiểm tra tồn tại người dùng và mật khẩu
+        if (!$user || !Hash::check($request->mat_khau, $user->mat_khau)) {
+            return response()->json(['message' => 'Sai email hoặc mật khẩu'], 401);
+        }
 
-    return response()->json([
-        'message' => 'Đăng nhập thành công',
-        'user' => [
-            'nguoi_dung_id' => $user->nguoi_dung_id,
-            'ho_ten' => $user->ho_ten,
-            'email' => $user->email,
-            'sdt' => $user->sdt,
-            'vai_tro_id' => $user->vai_tro_id,
-            'is_active' => $user->is_active,
-        ],
-        'token' => $token,
-    ]);
-}
+        // 2. Kiểm tra tài khoản đã kích hoạt chưa (di chuyển vào đây)
+        if (!$user->is_active) {
+            return response()->json([
+                'message' => 'Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email để kích hoạt hoặc yêu cầu gửi lại email kích hoạt.',
+                'require_activation' => true, // Cờ cho frontend
+            ], 403); // 403 Forbidden - Lỗi quyền truy cập
+        }
 
-    // ✅ Kiểm tra tài khoản đã kích hoạt chưa
-    if (!$user->is_active) {
+        // 3. Tạo token nếu tất cả đều hợp lệ
+        $token = $user->createToken('api_token')->plainTextToken;
+
         return response()->json([
-            'message' => 'Tài khoản chưa được kích hoạt.',
-            'require_activation' => true, // Flag để frontend biết
-        ], 403);
+            'message' => 'Đăng nhập thành công',
+            'user' => [
+                'nguoi_dung_id' => $user->nguoi_dung_id,
+                'ho_ten' => $user->ho_ten,
+                'email' => $user->email,
+                'sdt' => $user->sdt,
+                'vai_tro_id' => $user->vai_tro_id,
+                'is_active' => $user->is_active,
+            ],
+            'token' => $token,
+        ]);
     }
-
-    $token = $user->createToken('api_token')->plainTextToken;
-
-    return response()->json([
-        'message' => 'Đăng nhập thành công',
-        'user' => [
-            'nguoi_dung_id' => $user->nguoi_dung_id,
-            'ho_ten' => $user->ho_ten,
-            'email' => $user->email,
-            'sdt' => $user->sdt,
-            'vai_tro_id' => $user->vai_tro_id,
-            'is_active' => $user->is_active,
-        ],
-        'token' => $token,
-    ]);
-}
 
 
     // Kích hoạt tài khoản qua email
@@ -257,30 +243,29 @@ class AuthController extends Controller
         return response()->json(['message' => 'Mật khẩu đã được đặt lại thành công.'], 200);
     }
     // Gửi lại email kích hoạt nếu tài khoản chưa được kích hoạt
-public function resendActivationEmail(Request $request)
-{
-    $request->validate(['email' => 'required|email']);
+    public function resendActivationEmail(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
 
-    $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)->first();
 
-    if (!$user) {
-        return response()->json(['message' => 'Email không tồn tại.'], 404);
+        if (!$user) {
+            return response()->json(['message' => 'Email không tồn tại.'], 404);
+        }
+
+        if ($user->is_active) {
+            return response()->json(['message' => 'Tài khoản đã được kích hoạt.'], 400);
+        }
+
+        // Nếu chưa có token thì tạo mới
+        if (!$user->activation_token) {
+            $user->activation_token = Str::random(60);
+            $user->save();
+        }
+
+        $activationLink = config('app.frontend_url') . '/kich-hoat?token=' . $user->activation_token;
+        Mail::to($user->email)->send(new KichHoatTaiKhoan($user, $activationLink));
+
+        return response()->json(['message' => 'Email kích hoạt đã được gửi lại.'], 200);
     }
-
-    if ($user->is_active) {
-        return response()->json(['message' => 'Tài khoản đã được kích hoạt.'], 400);
-    }
-
-    // Nếu chưa có token thì tạo mới
-    if (!$user->activation_token) {
-        $user->activation_token = Str::random(60);
-        $user->save();
-    }
-
-    $activationLink = config('app.frontend_url') . '/kich-hoat?token=' . $user->activation_token;
-    Mail::to($user->email)->send(new KichHoatTaiKhoan($user, $activationLink));
-
-    return response()->json(['message' => 'Email kích hoạt đã được gửi lại.'], 200);
-}
-
 }

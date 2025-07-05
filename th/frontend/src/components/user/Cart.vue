@@ -7,7 +7,7 @@
     <div class="main-content">
       <div class="product-list" v-if="products.length > 0">
         <div v-for="product in products" :key="product.id" class="product-item">
-         <img :src="'http://localhost:8000/storage/' + product.image" :alt="product.name" class="product-image" />
+         <img :src="'https://localhost:8000/storage/' + product.image" :alt="product.name" class="product-image" />
           <div class="product-details">
             <h3 class="product-name">{{ product.name }}</h3>
             <p class="product-weight">{{ product.weight }}</p>
