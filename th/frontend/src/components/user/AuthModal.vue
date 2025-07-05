@@ -463,35 +463,34 @@ const handleResetPassword = async () => {
 // (Giữ nguyên các hàm này)
 // Google Login
 const handleGoogleLogin = () => {
-    // THAY THẾ BẰNG CLIENT ID THỰC TẾ CỦA BẠN
-    const googleClientId = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+  if (typeof window.google === 'undefined' || !window.google.accounts?.id) {
+    console.error('Google One Tap SDK chưa được tải.');
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'error',
+      title: 'Không thể kết nối Google. Vui lòng thử lại sau.',
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true
+    });
+    return;
+  }
 
-    if (window.google && window.google.accounts && window.google.accounts.id) {
-        window.google.accounts.id.initialize({
-            client_id: googleClientId,
-            callback: handleGoogleCredentialResponse,
-            ux_mode: 'popup'
-        });
+  window.google.accounts.id.initialize({
+    client_id: '710318641931-iqof2cq4qcg68fnccru81o31n7gbdqc0.apps.googleusercontent.com', // <-- Đã thay thế client_id của bạn vào đây
+    callback: handleGoogleCredentialResponse,
+    ux_mode: 'popup'
+  });
 
-        window.google.accounts.id.prompt();
-    } else {
-        console.error('Google One Tap SDK chưa được tải.');
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'error',
-            title: 'Không thể kết nối Google. Vui lòng thử lại sau.',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true
-        });
-    }
+  window.google.accounts.id.prompt();
 };
+
 
 const handleGoogleCredentialResponse = async (response) => {
     if (response.credential) {
         try {
-            const res = await axios.post('/api/auth/google', {
+            const res = await axios.post('/auth/google', {
                 id_token: response.credential
             });
 

@@ -11,7 +11,6 @@ import ChangePassword from '../components/user/ChangePassword.vue';
 import Cart from '../components/user/Cart.vue';
 import axios from 'axios';
 
-
 const routes = [
   { path: '/', component: Home },
   { path: '/cart', component: Cart, meta: { requiresAuth: true } },
