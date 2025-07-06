@@ -11,10 +11,37 @@
     </header>
 
     <div class="content-card">
-      <div class="filter-bar">
-        <div class="search-box">
-          <svg xmlns="http://www.w3.org/2000/svg" class="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          <input type="text" v-model="searchQuery" placeholder="Tìm kiếm tin tức..." class="search-input">
+      <div class="row mb-3 g-2 filter-bar">
+        <div class="col-md-6">
+          <div class="search-input-wrapper">
+            <input
+              type="text"
+              class="form-control search-input"
+              placeholder="Tìm kiếm theo tiêu đề hoặc slug..."
+              v-model="searchQuery"
+            />
+            <button
+              v-if="searchQuery"
+              class="clear-search-btn"
+              @click="clearSearch"
+              aria-label="Xóa tìm kiếm"
+            >
+              &times;
+            </button>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <select class="form-select" v-model="categoryFilter">
+          <option value="">Tất cả danh mục</option>
+          <option v-for="cat in categories" :key="cat.id" :value="cat.ten_danh_muc">{{ cat.ten_danh_muc }}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <select class="form-select" v-model="statusFilter">
+            <option value="">Tất cả trạng thái</option>
+            <option value="1">Hiển thị</option>
+            <option value="0">Ẩn</option>
+          </select>
         </div>
       </div>
 
@@ -37,9 +64,6 @@
           <tbody>
             <tr v-if="loading">
               <td colspan="10" class="text-center py-8">Đang tải dữ liệu...</td>
-            </tr>
-            <tr v-else-if="filteredNews.length === 0">
-              <td colspan="10" class="text-center py-8">Không tìm thấy tin tức nào.</td>
             </tr>
             <tr v-for="news in filteredNews" :key="news.id" class="table-row" :class="{'is-inactive-row': news.trang_thai != 1}">
               <td><input type="checkbox"></td>
@@ -119,12 +143,43 @@ const newsList = ref([]);
 const errorMessage = ref('');
 const loading = ref(false);
 const searchQuery = ref('');
+const categoryFilter = ref('');
+const statusFilter = ref('');
+const categories = ref([]);
+
+const clearSearch = () => {
+  searchQuery.value = '';
+};
 
 const filteredNews = computed(() => {
-  if (!searchQuery.value) return newsList.value;
-  return newsList.value.filter(n =>
-    n.tieude.toLowerCase().includes(searchQuery.value.toLowerCase())
-  );
+  let currentNews = newsList.value;
+
+  // Lọc theo tiêu đề hoặc slug
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    currentNews = currentNews.filter(news => {
+      const title = news.tieude ? String(news.tieude).toLowerCase() : '';
+      const slug = news.slug ? String(news.slug).toLowerCase() : '';
+      return title.includes(query) || slug.includes(query);
+    });
+  }
+
+  // Lọc theo tên danh mục
+  if (categoryFilter.value !== '') {
+    currentNews = currentNews.filter(news => {
+      // Lấy tên danh mục từ quan hệ hoặc cột trực tiếp
+      const ten1 = news.danh_muc && news.danh_muc.ten_danh_muc ? news.danh_muc.ten_danh_muc : '';
+      const ten2 = news.ten_danh_muc ? news.ten_danh_muc : '';
+      return ten1 === categoryFilter.value || ten2 === categoryFilter.value;
+    });
+  }
+
+  // Lọc theo trạng thái
+  if (statusFilter.value !== '') {
+    currentNews = currentNews.filter(news => String(news.trang_thai) === statusFilter.value);
+  }
+
+  return currentNews;
 });
 
 const getNews = async () => {
@@ -137,10 +192,21 @@ const getNews = async () => {
       },
     });
     newsList.value = res.data;
+    // Thêm dòng này để xem cấu trúc dữ liệu
+    console.log('Tin tức:', newsList.value);
   } catch (error) {
     errorMessage.value = 'Lỗi khi lấy tin tức: ' + (error.response?.data?.message || error.message);
   } finally {
     loading.value = false;
+  }
+};
+
+const getCategories = async () => {
+  try {
+    const res = await axios.get('http://localhost:8000/api/danh-muc-tin-tuc');
+    categories.value = res.data;
+  } catch (error) {
+    // Có thể xử lý lỗi nếu cần
   }
 };
 
@@ -208,6 +274,7 @@ const getImageUrl = (url) => {
 
 onMounted(() => {
   getNews();
+  getCategories();
 });
 </script>
 
@@ -282,17 +349,23 @@ onMounted(() => {
   justify-content: space-between;
   margin-bottom: 1.5rem;
 }
-.search-box {
+.search-input-wrapper {
   position: relative;
 }
-.search-icon {
+.clear-search-btn {
   position: absolute;
-  left: 0.75rem;
+  right: 10px;
   top: 50%;
   transform: translateY(-50%);
-  width: 1.25rem;
-  height: 1.25rem;
-  color: #9ca3af;
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  color: #888;
+  cursor: pointer;
+  padding: 0 6px;
+}
+.clear-search-btn:hover {
+  color: #dc2626;
 }
 .table-container {
   overflow-x: auto;
@@ -360,7 +433,7 @@ onMounted(() => {
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-size: 0.8rem;
-  font-weight: 500;
+  font-weight: 600;
   text-transform: capitalize;
 }
 .status-badge.is-active {
