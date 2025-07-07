@@ -22,19 +22,29 @@ class DanhMucTtController extends Controller
         return response()->json($danhMuc);
     }
 
-     // Xóa danh mục tin tức
-    public function destroy($id)
+    // toggle trạng thái danh mục tin tức
+    public function toggleStatus(Request $request, $id)
     {
         $danhMuc = DanhMucTinTuc::findOrFail($id);
-        $danhMuc->delete();
+
+        // Xác thực dữ liệu đầu vào: đảm bảo trang_thai là boolean và là trường bắt buộc
+        $request->validate([
+            'trang_thai' => 'required|boolean',
+        ]);
+
+        $danhMuc->trang_thai = $request->trang_thai;
+        $danhMuc->save();
+
+        $statusText = $request->trang_thai == 1 ? 'hiện' : 'ẩn';
 
         return response()->json([
-            'message' => 'Xóa danh mục thành công'
-        ]);
+            'message' => "Đã {$statusText} danh mục '{$danhMuc->ten_danh_muc}' thành công!",
+            'danh_muc' => $danhMuc // Trả về tài nguyên đã được cập nhật
+        ], 200); // Mã trạng thái 200 OK
     }
 
     // Sửa danh mục tin tức
-        public function update($id, Request $request)
+    public function update($id, Request $request)
     {
         $danhMuc = DanhMucTinTuc::findOrFail($id);
 
@@ -42,10 +52,15 @@ class DanhMucTtController extends Controller
             'ten_danh_muc' => 'required|string|max:255',
             'mo_ta' => 'nullable|string',
             'hinh_anh' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+            'trang_thai' => 'nullable|in:0,1',
         ]);
 
         $danhMuc->ten_danh_muc = $validated['ten_danh_muc'];
         $danhMuc->mo_ta = $validated['mo_ta'] ?? null;
+
+        if (isset($validated['trang_thai'])) {
+            $danhMuc->trang_thai = $validated['trang_thai'];
+        }
 
         // Xử lý upload file nếu có file mới
         if ($request->hasFile('hinh_anh')) {
@@ -63,14 +78,14 @@ class DanhMucTtController extends Controller
         ]);
     }
 
-
-     // Thêm danh mục tin tức
-        public function store(Request $request)
+    // Thêm danh mục tin tức
+    public function store(Request $request)
     {
         $data = $request->validate([
             'ten_danh_muc' => 'required|string|max:255',
             'mo_ta' => 'nullable|string',
             'hinh_anh' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+            'trang_thai' => 'nullable|in:0,1',
         ]);
 
         if ($request->hasFile('hinh_anh')) {
@@ -79,37 +94,37 @@ class DanhMucTtController extends Controller
             $data['hinh_anh'] = $path;
         }
 
-        // Thêm ngày tạo nếu bảng có trường ngay_tao
         $data['ngay_tao'] = now();
 
         $danhMuc = DanhMucTinTuc::create($data);
         return response()->json($danhMuc, 201);
     }
+
     // Xem chi tiết danh mục tin tức
     public function xemChiTietDanhMucAdmin($id)
     {
-    $danhMuc = DanhMucTinTuc::findOrFail($id);
+        $danhMuc = DanhMucTinTuc::findOrFail($id);
 
-    return response()->json([
-        'id_danh_muc_tin_tuc' => $danhMuc->id_danh_muc_tin_tuc,
-        'ten_danh_muc' => $danhMuc->ten_danh_muc,
-        'mo_ta' => $danhMuc->mo_ta,
-        'hinh_anh' => $danhMuc->hinh_anh,
-        'ngay_tao' => $danhMuc->ngay_tao,
-        'ngay_sua' => $danhMuc->ngay_sua,
-    ]);
+        return response()->json([
+            'id_danh_muc_tin_tuc' => $danhMuc->id_danh_muc_tin_tuc,
+            'ten_danh_muc' => $danhMuc->ten_danh_muc,
+            'mo_ta' => $danhMuc->mo_ta,
+            'hinh_anh' => $danhMuc->hinh_anh,
+            'trang_thai' => $danhMuc->trang_thai,
+            'ngay_tao' => $danhMuc->ngay_tao,
+            'ngay_sua' => $danhMuc->ngay_sua,
+        ]);
     }
+
     // danh muc tin tuc cong khai theo danh muc
     public function tintucCongKhaiTheoDanhMuc($id_danh_muc)
     {
-    // Lấy tin tức đã duyệt thuộc danh mục, mới nhất
-    $tintucs = Tintuc::with('danhMuc')
-        ->where('duyet_tin_tuc', 1)
-        ->where('id_danh_muc_tin_tuc', $id_danh_muc)
-        ->orderByDesc('ngay_dang')
-        ->get();
+        $tintucs = Tintuc::with('danhMuc')
+            ->where('duyet_tin_tuc', 1)
+            ->where('id_danh_muc_tin_tuc', $id_danh_muc)
+            ->orderByDesc('ngay_dang')
+            ->get();
 
-    return response()->json($tintucs);
+        return response()->json($tintucs);
     }
-
 }

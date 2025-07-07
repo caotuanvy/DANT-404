@@ -32,8 +32,8 @@
         </div>
         <div class="col-md-3">
           <select class="form-select" v-model="categoryFilter">
-          <option value="">Tất cả danh mục</option>
-          <option v-for="cat in categories" :key="cat.id" :value="cat.ten_danh_muc">{{ cat.ten_danh_muc }}</option>
+            <option value="">Tất cả danh mục</option>
+            <option v-for="cat in categories" :key="cat.id" :value="cat.ten_danh_muc">{{ cat.ten_danh_muc }}</option>
           </select>
         </div>
         <div class="col-md-3">
@@ -70,9 +70,9 @@
               <td>
                 <div class="news-title-cell">
                   <router-link :to="`/tintuc/${news.slug}`" class="news-title news-title-link">
-                    {{ news.tieude }}
+                    {{ truncateText(news.tieude, 6) }}
                   </router-link>
-                  <div class="news-slug">{{ news.slug }}</div>
+                  <div class="news-slug">{{ truncateText(news.slug, 6) }}</div>
                 </div>
               </td>
               <td class="text-center">
@@ -90,7 +90,7 @@
                 </span>
                 <span v-else class="text-secondary text-sm">N/A</span>
               </td>
-              <td class="text-center">{{ news.ngay_dang }}</td>
+              <td class="text-center">{{ news.ngay_dang ? new Date(news.ngay_dang).toLocaleDateString() : 'N/A' }}</td>
               <td class="text-center">
                 <button @click="toggleNoiBat(news)" class="toggle-switch" :class="{ 'is-active': news.noi_bat == 1 }">
                   <span class="toggle-circle"></span>
@@ -151,10 +151,17 @@ const clearSearch = () => {
   searchQuery.value = '';
 };
 
+const truncateText = (text, maxLength) => {
+  if (!text) return '';
+  if (text.length > maxLength) {
+    return text.substring(0, maxLength) + '...';
+  }
+  return text;
+};
+
 const filteredNews = computed(() => {
   let currentNews = newsList.value;
 
-  // Lọc theo tiêu đề hoặc slug
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
     currentNews = currentNews.filter(news => {
@@ -164,17 +171,14 @@ const filteredNews = computed(() => {
     });
   }
 
-  // Lọc theo tên danh mục
   if (categoryFilter.value !== '') {
     currentNews = currentNews.filter(news => {
-      // Lấy tên danh mục từ quan hệ hoặc cột trực tiếp
       const ten1 = news.danh_muc && news.danh_muc.ten_danh_muc ? news.danh_muc.ten_danh_muc : '';
       const ten2 = news.ten_danh_muc ? news.ten_danh_muc : '';
       return ten1 === categoryFilter.value || ten2 === categoryFilter.value;
     });
   }
 
-  // Lọc theo trạng thái
   if (statusFilter.value !== '') {
     currentNews = currentNews.filter(news => String(news.trang_thai) === statusFilter.value);
   }
@@ -192,7 +196,6 @@ const getNews = async () => {
       },
     });
     newsList.value = res.data;
-    // Thêm dòng này để xem cấu trúc dữ liệu
     console.log('Tin tức:', newsList.value);
   } catch (error) {
     errorMessage.value = 'Lỗi khi lấy tin tức: ' + (error.response?.data?.message || error.message);
@@ -206,7 +209,7 @@ const getCategories = async () => {
     const res = await axios.get('http://localhost:8000/api/danh-muc-tin-tuc');
     categories.value = res.data;
   } catch (error) {
-    // Có thể xử lý lỗi nếu cần
+    // Handle error if needed
   }
 };
 
@@ -303,13 +306,13 @@ onMounted(() => {
   padding: 1.5rem;
 }
 .error-message {
-    color: #dc2626;
-    margin-top: 1rem;
+  color: #dc2626;
+  margin-top: 1rem;
 }
 .no-data-message {
-    padding: 2rem;
-    text-align: center;
-    color: #6b7280;
+  padding: 2rem;
+  text-align: center;
+  color: #6b7280;
 }
 .btn-add {
   background-color: #4FC3F7;
@@ -403,6 +406,7 @@ onMounted(() => {
   font-weight: 500;
   color: #111827;
   text-decoration: none;
+  /* Các thuộc tính CSS cho ellipsis đã được di chuyển xuống news-title-cell để tránh xung đột */
 }
 .news-title-link:hover {
   text-decoration: underline;
@@ -411,6 +415,7 @@ onMounted(() => {
 .news-slug {
   font-size: 0.85rem;
   color: #6b7280;
+  /* Các thuộc tính CSS cho ellipsis đã được di chuyển xuống news-title-cell để tránh xung đột */
 }
 .news-thumbnail {
   width: 80px;
@@ -476,7 +481,8 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.25rem; /* Đã thay đổi khoảng cách ở đây */
+  flex-wrap: nowrap;
 }
 .action-icon {
   width: 32px;
