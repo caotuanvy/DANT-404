@@ -70,7 +70,7 @@ Route::get('/danh-muc-tin-tuc', [DanhMucTtController::class, 'index']);
 Route::get('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'show']);
 Route::post('/danh-muc-tin-tuc', [DanhMucTtController::class, 'store']);
 Route::put('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'update']);
-Route::delete('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'destroy']);
+Route::put('/danh-muc-tin-tuc/{id}/toggle-status', [DanhMucTtController::class, 'toggleStatus']);
 Route::apiResource('danh-muc-tin-tuc', DanhMucTtController::class);
 Route::get('/xemdanhmuc-admin/{id}', [DanhMucTtController::class, 'xemChiTietDanhMucAdmin']);
 Route::get('tintuc-cong-khai/danh-muc/{id}', [DanhMucTtController::class, 'tintucCongKhaiTheoDanhMuc']);

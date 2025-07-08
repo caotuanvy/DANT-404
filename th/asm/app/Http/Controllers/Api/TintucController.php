@@ -282,5 +282,6 @@ class TintucController extends Controller
             return response()->json(['error' => 'Đã xảy ra lỗi khi tạo nội dung AI: ' . $e->getMessage()], 500);
         }
     }
+    
 
 }
