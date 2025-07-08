@@ -33,6 +33,7 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 // Public Product Routes
 Route::get('user/{slug}', [ProductController::class, 'showBySlug'])
       ->where('slug', '[a-zA-Z0-9-]+');
+Route::get('user/product/details-by-slugs', [ProductController::class, 'getDetailsBySlugs']);
 Route::apiResource('products', ProductController::class);
 Route::put('/products/{id}/toggle-noi-bat', [ProductController::class, 'toggleNoiBat']);
 Route::get('/categories/{id}/products', [CategoryController::class, 'getProductsByCategory']);

@@ -32,6 +32,11 @@ const routes = [
     component: () => import('../components/user/DMSP.vue')
   },
   {
+    path: '/so-sanh',
+    name: 'ComparisonPage',
+    component: () => import('../components/user/CompareProduct.vue')
+  },
+  {
     path: '/kich-hoat',
     name: 'KichHoat',
     component: () => import('../components/user/KichHoatTaiKhoan.vue')

@@ -350,6 +350,7 @@ public function getTopSelling()
                 'sp.san_pham_id',
                 'sp.ten_san_pham',
                 'sp.khuyen_mai',
+                'sp.Mo_ta_seo',
                 'sp.slug',
                 DB::raw('MIN(img.duongdan) as hinh_anh'),
                 DB::raw('SUM(CASE WHEN dh.trang_thai = 1 THEN ctdh.so_luong ELSE 0 END) as so_luong_ban'),
@@ -361,12 +362,14 @@ public function getTopSelling()
                 'sp.slug',
                 'sp.san_pham_id',
                 'sp.ten_san_pham',
+                'sp.Mo_ta_seo',
                 'sp.khuyen_mai'
             )
             ->orderByDesc('so_luong_ban')
             ->limit(4)
             ->get();
         $result = $topSelling->map(function ($item) {
+            $maxLength = 50;
             return [
                 'san_pham_id'   => $item->san_pham_id,
                 'ten_san_pham'  => $item->ten_san_pham,
@@ -374,6 +377,7 @@ public function getTopSelling()
                 'hinh_anh'      => $item->hinh_anh,
                 'gia'           => $item->gia,
                 'khuyen_mai'    => $item->khuyen_mai,
+                'Mo_ta_seo'     => Str::limit($item->Mo_ta_seo, $maxLength, '...'),
                 'slug'          => $item->slug,
                 'so_luong_ton_kho'  => $item->tong_ton_kho,
                 'tong_so_luong' => $item->tong_ton_kho + $item->so_luong_ban,
@@ -617,17 +621,52 @@ public function toggleStatus($id)
     $request->validate([
         'file' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
     ]);
-
-    // Tạo tên file mới
     $imageName = time().'.'.$request->file('file')->getClientOriginalExtension();
-
-    // Di chuyển file vào thư mục public/uploads/editor_images
     $request->file('file')->move(public_path('uploads/editor_images'), $imageName);
-
-    // Tạo URL công khai
     $url = asset('uploads/editor_images/' . $imageName);
-
     return response()->json(['location' => $url]);
 }
+public function getDetailsBySlugs(Request $request)
+    {
+        $slugs = $request->query('slugs');
+        if (!$slugs) {
+            return response()->json(['message' => 'Không có sản phẩm nào được chọn'], 400);
+        }
+        $slugsArray = explode(',', $slugs);
+        $products = SanPham::whereIn('slug', $slugsArray)
+                           ->with(['bienThe', 'hinhAnhSanPham'])
+                           ->get();
+        $products->transform(function ($product) {
+            if ($product->gia > 0) {
+                $product->gia_goc_display = number_format($product->gia) . 'đ';
+            } elseif ($product->bienThe->isNotEmpty()) {
+                $minPrice = $product->bienThe->min('gia');
+                $maxPrice = $product->bienThe->max('gia');
+                $product->gia_goc_display = $minPrice == $maxPrice
+                    ? number_format($minPrice) . 'đ'
+                    : 'Từ ' . number_format($minPrice) . 'đ đến ' . number_format($maxPrice) . 'đ';
+            } else {
+                $product->gia_goc_display = 'Liên hệ';
+            }
+            if ($product->bienThe->isNotEmpty()) {
+                $product->so_luong_ton_kho = $product->bienThe->sum('so_luong_ton_kho');
+                $product->trong_luong_display = $product->bienThe->pluck('trong_luong')->filter()->unique()->implode(' / ');
+                $product->mau_sac_display = $product->bienThe->pluck('mau_sac')->filter()->unique()->implode(', ');
+                $dimensions = $product->bienThe->map(function ($variant) {
+                    if ($variant->chieu_dai && $variant->chieu_rong && $variant->chieu_cao) {
+                        return "{$variant->chieu_dai}x{$variant->chieu_rong}x{$variant->chieu_cao} cm";
+                    }
+                    return null;
+                })->filter()->unique()->implode(' / ');
+                $product->kich_thuoc_display = $dimensions;
+            } else {
+                $product->trong_luong_display = null;
+                $product->mau_sac_display = null;
+                $product->kich_thuoc_display = null;
+            }
 
+            return $product;
+        });
+        return response()->json($products);
+    }
 }
