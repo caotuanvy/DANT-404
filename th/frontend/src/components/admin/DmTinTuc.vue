@@ -56,7 +56,7 @@
             <tr v-if="loading">
               <td colspan="7" class="text-center py-8">Đang tải dữ liệu...</td>
             </tr>
-            <tr v-for="(item, index) in filteredDanhMuc" :key="item.id_danh_muc_tin_tuc" class="table-row" :class="{'is-inactive-row': item.trang_thai != 1}">
+            <tr v-for="(item,) in filteredDanhMuc" :key="item.id_danh_muc_tin_tuc" class="table-row" :class="{'is-inactive-row': item.trang_thai != 1}">
               <td><input type="checkbox"></td>
               <td>
                 <div class="danhmuc-title-cell">
