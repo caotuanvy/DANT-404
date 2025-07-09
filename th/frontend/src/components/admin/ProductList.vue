@@ -26,7 +26,7 @@
               <th>Tên sản phẩm</th>
               <th class="text-center">Hình ảnh</th>
               <th class="text-center">Ghim </th>
-              <th class="text-center">Giá TB</th>
+              <th class="text-center">Giá </th>
               <th class="text-center">Danh mục</th>
               <th class="text-center">Khuyến mãi</th>
               <th class="text-center">Trạng thái</th>
@@ -67,7 +67,13 @@
                   </button>
               </td>
               <td class="text-center font-medium">
-                {{ formatPrice(product.gia || product.gia_trung_binh) }}
+                <span v-if="product.min_price !== undefined && product.max_price !== undefined && parseFloat(product.min_price) !== parseFloat(product.max_price)">
+                  {{ formatPrice(product.min_price) }} - {{ formatPrice(product.max_price) }}
+                </span>
+                <span v-else-if="product.min_price !== undefined">
+                  {{ formatPrice(product.min_price) }}
+                </span>
+                <span v-else>N/A</span>
               </td>
               <td class="text-center">
                 <span v-if="product.danh_muc" class="badge">

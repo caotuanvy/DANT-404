@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SanPham;
 use App\Models\HinhAnhSanPham;
 use App\Models\SanPhamBienThe;
+use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
@@ -15,46 +16,72 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use PhpParser\Node\Scalar\Float_;
 
 class ProductController extends Controller
 {
 
-            public function index()
-        {
-            try {
-                $products = SanPham::with(['danhMuc', 'hinhAnhSanPham'])->withCount('bienThe')->withAvg('bienThe', 'gia')->get();
+             public function index()
+    {
+        try {
 
-                $result = $products->map(function ($item) {
-                    return [
-                        'product_id' => $item->san_pham_id,
-                        'product_name' => $item->ten_san_pham,
-                        'description' => $item->mo_ta,
-                        'noi_bat' => $item->noi_bat,
-                        'khuyen_mai' => $item->khuyen_mai,
-                        'trang_thai' => $item->trang_thai,
-                        'ngay_bat_dau_giam_gia' => $item->ngay_bat_dau_giam_gia,
-                        'ngay_ket_thuc_giam_gia' => $item->ngay_ket_thuc_giam_gia,
-                        'the' => $item->the,
-                        'Tieu_de_seo' => $item->Tieu_de_seo,
-                        'Tu_khoa' => $item->Tu_khoa,
-                        'Mo_ta_seo' => $item->Mo_ta_seo,
-                        'so_bien_the' => $item->bien_the_count,
-                        'gia' => $item->gia,
-                        'gia_trung_binh' => $item->bien_the_avg_gia,
-                        'slug' => $item->slug,
-                        'danh_muc' => [
-                            'category_id' => $item->danhMuc?->category_id,
-                            'ten_danh_muc' => $item->danhMuc?->ten_danh_muc,
-                        ],
-                        'images' => $item->hinhAnhSanPham->map(fn($image) => asset('storage/' . $image->duongdan)),
-                    ];
-                });
+            $products = SanPham::with(['danhMuc', 'hinhAnhSanPham', 'bienThe'])
+                                ->withCount('bienThe')
+                                ->get();
 
-                return response()->json($result);
-            } catch (\Exception $e) {
-                return response()->json(['error' => $e->getMessage()], 500);
-            }
+            $result = $products->map(function ($item) {
+                $minPrice = null;
+                $maxPrice = null;
+
+
+                if ($item->bienThe->isNotEmpty()) {
+                    $variantPrices = $item->bienThe->pluck('gia')->map(function($price){
+                        return (float)$price;
+                    });
+
+
+                    $minPrice = $variantPrices->min();
+                    $maxPrice = $variantPrices->max();
+                } else {
+
+                    $minPrice = (float)$item->gia;
+                    $maxPrice = (float)$item->gia;
+                }
+                $avgPrice = $item->bienThe->avg('gia');
+
+
+                return [
+                    'product_id' => $item->san_pham_id,
+                    'product_name' => $item->ten_san_pham,
+                    'description' => $item->mo_ta,
+                    'noi_bat' => $item->noi_bat,
+                    'khuyen_mai' => $item->khuyen_mai,
+                    'trang_thai' => $item->trang_thai,
+                    'ngay_bat_dau_giam_gia' => $item->ngay_bat_dau_giam_gia,
+                    'ngay_ket_thuc_giam_gia' => $item->ngay_ket_thuc_giam_gia,
+                    'the' => $item->the,
+                    'Tieu_de_seo' => $item->Tieu_de_seo,
+                    'Tu_khoa' => $item->Tu_khoa,
+                    'Mo_ta_seo' => $item->Mo_ta_seo,
+                    'so_bien_the' => $item->bien_the_count,
+                    'gia' => $item->gia,
+                    'gia_trung_binh' => $avgPrice,
+                    'min_price' => $minPrice,
+                    'max_price' => $maxPrice,
+                    'slug' => $item->slug,
+                    'danh_muc' => [
+                        'category_id' => $item->danhMuc?->category_id,
+                        'ten_danh_muc' => $item->danhMuc?->ten_danh_muc,
+                    ],
+                    'images' => $item->hinhAnhSanPham->map(fn($image) => asset('storage/' . $image->duongdan)),
+                ];
+            });
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
 
 
             public function show($id)
@@ -207,47 +234,93 @@ public function update(Request $request, $id)
     {
         $sanPham = SanPham::findOrFail($id);
         $request->merge(['variants' => json_decode($request->input('variants', '[]'), true)]);
-        $validatedData = $request->validate([
-            'ten_san_pham'        => 'sometimes|required|string|max:255',
-            'ten_danh_muc_id'     => 'nullable|integer|exists:danh_muc_san_pham,category_id',
-            'mo_ta'               => 'nullable|string',
-            'slug'                => ['sometimes', 'required', 'string', 'max:255', Rule::unique('san_pham', 'slug')->ignore($sanPham->san_pham_id, 'san_pham_id')],
-            'noi_bat'             => 'sometimes|boolean',
-            'trang_thai'          => 'sometimes|boolean',
-            'khuyen_mai'          => 'nullable|numeric|min:0|max:100',
-            'the'                 => 'nullable|string|max:255',
-            'Tieu_de_seo'         => 'nullable|string|max:255',
-            'Tu_khoa'             => 'nullable|string|max:255',
-            'Mo_ta_seo'           => 'nullable|string',
-            'images'              => 'nullable|array',
-            'images.*'            => 'image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
-            'variants'            => 'sometimes|required|array|min:1',
-            'variants.*.ten_bien_the'  => 'required|string|max:255',
-            'variants.*.gia'          => 'required|numeric|min:0',
+        $originalSlug = $sanPham->slug;
+        $incomingSlug = $request->input('slug');
+        $cleanedIncomingSlug = Str::slug($incomingSlug);
+        $rules = [
+            'ten_san_pham'          => 'sometimes|required|string|max:255',
+            'ten_danh_muc_id'       => 'nullable|integer|exists:danh_muc_san_pham,category_id',
+            'mo_ta'                 => 'nullable|string',
+            'noi_bat'               => 'sometimes|boolean',
+            'trang_thai'            => 'sometimes|boolean',
+            'khuyen_mai'            => 'nullable|numeric|min:0|max:100',
+            'the'                   => 'nullable|string|max:255',
+            'Tieu_de_seo'           => 'nullable|string|max:255',
+            'Tu_khoa'               => 'nullable|string|max:255',
+            'Mo_ta_seo'             => 'nullable|string',
+            'images'                => 'nullable|array',
+            'images.*'              => 'image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            'variants'              => 'sometimes|required|array|min:1',
+            'variants.*.bien_the_id' => 'nullable|integer|exists:san_pham_bien_the,bien_the_id',
+            'variants.*.ten_bien_the' => 'required|string|max:255',
+            'variants.*.gia'            => 'required|numeric|min:0',
             'variants.*.so_luong_ton_kho' => 'required|integer|min:0',
-            'variants.*.kich_thuoc'   => 'nullable|string|max:100',
-            'variants.*.mau_sac'      => 'nullable|string|max:100',
-            'variants.*.trong_luong'  => 'nullable|numeric|min:0',
-            'variants.*.chieu_dai'    => 'nullable|numeric|min:0',
-            'variants.*.chieu_rong'   => 'nullable|numeric|min:0',
-            'variants.*.chieu_cao'    => 'nullable|numeric|min:0',
-        ]);
+            'variants.*.kich_thuoc'     => 'nullable|string|max:100',
+            'variants.*.mau_sac'        => 'nullable|string|max:100',
+            'variants.*.trong_luong'    => 'nullable|numeric|min:0',
+            'variants.*.chieu_dai'      => 'nullable|numeric|min:0',
+            'variants.*.chieu_rong'     => 'nullable|numeric|min:0',
+            'variants.*.chieu_cao'      => 'nullable|numeric|min:0',
+        ];
+        if ($cleanedIncomingSlug === $originalSlug) {
+            $rules['slug'] = 'sometimes|required|string|max:255';
+        } else {
+            $rules['slug'] = ['sometimes', 'required', 'string', 'max:255', Rule::unique('san_pham', 'slug')->ignore($sanPham->san_pham_id, 'san_pham_id')];
+        }
+        $request->merge(['slug' => $cleanedIncomingSlug]);
 
+
+        $validatedData = $request->validate($rules);
         DB::beginTransaction();
         try {
-            $sanPham->update($validatedData);
+            $productData = $request->except(['variants', 'images', '_method']);
+            $productData['slug'] = $validatedData['slug'];
+
+            $sanPham->update($productData);
+
             if (isset($validatedData['variants'])) {
-                $sanPham->bienThe()->delete();
-                foreach ($validatedData['variants'] as $variantData) {
-                    $sanPham->bienThe()->create($variantData);
+                $submittedVariants = collect($validatedData['variants']);
+                $existingVariantIds = $sanPham->bienThe->pluck('bien_the_id')->toArray();
+                $submittedExistingVariantIds = $submittedVariants
+                                                ->filter(fn($v) => isset($v['bien_the_id']) && !is_null($v['bien_the_id']))
+                                                ->pluck('bien_the_id')
+                                                ->toArray();
+                $variantsToDeleteIds = array_diff($existingVariantIds, $submittedExistingVariantIds);
+
+                foreach ($variantsToDeleteIds as $variantIdToDelete) {
+                    $variant = SanPhamBienThe::find($variantIdToDelete);
+                    if ($variant) {
+                        if ($variant->donHangChiTiet()->exists()) {
+                            throw new \Exception("Biến thể '{$variant->ten_bien_the}' (ID: {$variantIdToDelete}) đang tồn tại trong đơn hàng. Không thể xóa biến thể đã được đặt hàng.");
+                        }
+                        else if ($variant->gioHangChiTiet()->exists()) {
+                            throw new \Exception("Biến thể '{$variant->ten_bien_the}' (ID: {$variantIdToDelete}) đang tồn tại trong giỏ hàng. Vui lòng xóa nó khỏi giỏ hàng trước.");
+                        }
+                        else {
+                            $variant->delete();
+                        }
+                    }
+                }
+
+                foreach ($submittedVariants as $variantData) {
+                    if (isset($variantData['bien_the_id']) && !is_null($variantData['bien_the_id'])) {
+                        $variant = SanPhamBienThe::find($variantData['bien_the_id']);
+                        if ($variant) {
+                            unset($variantData['bien_the_id']);
+                            $variant->update($variantData);
+                        }
+                    } else {
+                        $sanPham->bienThe()->create($variantData);
+                    }
                 }
             }
+
             if ($request->hasFile('images')) {
                 foreach ($request->file('images') as $file) {
                     $path = $file->store('products', 'public');
                     HinhAnhSanPham::create([
                         'san_pham_id' => $sanPham->san_pham_id,
-                        'duongdan' => $path,
+                        'duongdan' => Storage::url($path),
                     ]);
                 }
             }
@@ -261,7 +334,6 @@ public function update(Request $request, $id)
 
         } catch (\Exception $e) {
             DB::rollBack();
-
             return response()->json([
                 'message' => 'Đã xảy ra lỗi trong quá trình cập nhật sản phẩm.',
                 'error' => $e->getMessage()
@@ -467,8 +539,12 @@ public function toggleStatus($id)
  public function generateSeoContent(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'product_name' => 'required|string|max:255',
-
+            'product_name'      => 'required|string|max:255',
+            'keywords'          => 'nullable|string|max:1000', // Từ khóa liên quan từ modal
+            'detailed_content'  => 'nullable|string', // Nội dung chi tiết bổ sung từ modal
+            'generate_specs'    => 'nullable|boolean', // Tùy chọn: Bao gồm thông số kỹ thuật
+            'generate_manufacture' => 'nullable|boolean', // Tùy chọn: Bao gồm thông tin sản xuất
+            'generate_export'   => 'nullable|boolean', // Tùy chọn: Bao gồm thông tin xuất khẩu
         ]);
 
         $apiKey = config('services.gemini.api_key');
@@ -477,6 +553,11 @@ public function toggleStatus($id)
         }
 
         $productName = $validated['product_name'];
+        $keywords = $validated['keywords'] ?? ''; // Lấy từ khóa, mặc định rỗng nếu null
+        $detailedContent = $validated['detailed_content'] ?? ''; // Lấy nội dung chi tiết, mặc định rỗng nếu null
+        $generateSpecs = (bool)($validated['generate_specs'] ?? false);
+        $generateManufacture = (bool)($validated['generate_manufacture'] ?? false);
+        $generateExport = (bool)($validated['generate_export'] ?? false);
 
 
         $apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={$apiKey}";
@@ -485,6 +566,8 @@ public function toggleStatus($id)
             $ch = curl_init($apiUrl);
             $payload = ['contents' => [['parts' => [['text' => $prompt]]]]];
             if ($isJson) {
+                // Ensure generationConfig is an object if other fields exist,
+                // or just add it as a key
                 $payload['generationConfig'] = ['response_mime_type' => 'application/json'];
             }
 
@@ -515,11 +598,14 @@ public function toggleStatus($id)
                 throw new \Exception("Invalid JSON response from AI: " . $response);
             }
 
+            // Gemini API's text response is under candidates[0].content.parts[0].text
             $generatedText = $result['candidates'][0]['content']['parts'][0]['text'] ?? '';
+
             if (empty($generatedText)) {
-                $safetyRating = $result['promptFeedback']['safetyRatings'][0]['category'] ?? null;
-                if ($safetyRating) {
-                    throw new \Exception('Nội dung bị chặn bởi bộ lọc an toàn của AI: ' . $safetyRating);
+                $safetyRatings = $result['promptFeedback']['safetyRatings'] ?? [];
+                if (!empty($safetyRatings)) {
+                    $blockedReason = implode(', ', array_column($safetyRatings, 'category'));
+                    throw new \Exception('Nội dung bị chặn bởi bộ lọc an toàn của AI: ' . $blockedReason);
                 }
                 throw new \Exception('AI returned an empty response. Details: ' . json_encode($result));
             }
@@ -528,37 +614,76 @@ public function toggleStatus($id)
         };
 
         try {
+            // Xây dựng prompt cho phần SEO (Tiêu đề, Mô tả, Từ khóa)
             $promptShort = "Bạn là một chuyên gia SEO cho website thương mại điện tử tại Việt Nam kết hợp tìm kiếm trên nền tảng google. Dựa vào thông tin sản phẩm sau: "
-                         . "- Tên sản phẩm: \"{$productName}\" "
-                         . ". Hãy tạo ra các nội dung sau, tối ưu cho công cụ tìm kiếm (bằng tiếng Việt): "
+                         . "- Tên sản phẩm: \"{$productName}\" ";
+            if (!empty($keywords)) {
+                $promptShort .= " - Các từ khóa liên quan: \"{$keywords}\" ";
+            }
+            if (!empty($detailedContent)) {
+                $promptShort .= " - Thông tin chi tiết bổ sung: \"{$detailedContent}\" ";
+            }
+
+            $promptShort .= ". Hãy tạo ra các nội dung sau, tối ưu cho công cụ tìm kiếm (bằng tiếng Việt): "
                          . "1. Tiêu đề SEO: Hấp dẫn, dưới 60 ký tự."
                          . "2. Mô tả SEO (Meta Description): Một đoạn tóm tắt thu hút, dài từ 140-155 ký tự, có chứa từ khóa chính và kêu gọi hành động. "
                          . "3. Từ khóa SEO: Một danh sách 2-4 từ khóa liên quan, cách nhau bởi dấu phẩy. "
                          . "Chỉ trả về kết quả dưới dạng một đối tượng JSON hợp lệ với các key sau: \"seo_title\", \"seo_description\", \"seo_keywords\". Không thêm bất kỳ văn bản hay định dạng markdown nào khác.";
+
             $generatedTextShort = $callGeminiApi($promptShort, true);
+
             $jsonStringShort = $generatedTextShort;
             if (preg_match('/```json\s*(\{.*?\})\s*```/s', $generatedTextShort, $matches)) {
                 $jsonStringShort = $matches[1];
             }
+
             $seoData = json_decode($jsonStringShort, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 throw new \Exception('AI returned an invalid JSON format for short content. Raw: ' . $generatedTextShort);
             }
             $promptLong = "Bạn là một người viết bài viết seo chuyên nghiệp cho website thương mại điện tử tại Việt Nam. "
-                        . "Hãy viết một mô tả chi tiết, đầy đủ thông tin, hấp dẫn và có cấu trúc tốt cho sản phẩm: \"{$productName}\". "
-                        . "Nội dung được viết theo bố cục sau."
-                        ."<H1> tự suy nghỉ tiêu đề chính phù hợp cho sản phẩm \"{$productName}\". </H1>"
-                        . "<p>Nội dung /<p>."
-                        . "<H2> tự suy nghỉ tiêu đề phụ liên quan đến \"{$productName}\". </H2>"
-                        . "<p>Nội dung /<p>."
-                        . "<H3> tự suy nghủ  tiêu đề con liên quan đến \"{$productName}\". </H3>"
-                        . "<p>Nội dung /<p>."
-                        . "Độ dài bài viết khoảng 800 đến 1100 từ. "
-                        . "Nội dung nên bao gồm các phần như: Giới thiệu sản phẩm, Tính năng nổi bật, Thông số kỹ thuật (nếu có), Lợi ích sử dụng, Hướng dẫn sử dụng (nếu có), Lời kêu gọi hành động.";
-            $generatedTextLong = $callGeminiApi($promptLong, false, 60);
+                        . "Hãy viết một mô tả chi tiết, đầy đủ thông tin, hấp dẫn và có cấu trúc tốt cho sản phẩm: \"{$productName}\". ";
 
-            // --- CHUYỂN ĐỔI MARKDOWN SANG HTML THỦ CÔNG
-            $htmlContentLong = nl2br($generatedTextLong);
+            if (!empty($keywords)) {
+                $promptLong .= "Sử dụng các từ khóa sau: {$keywords}. ";
+            }
+            if (!empty($detailedContent)) {
+                $promptLong .= "Dựa trên thông tin chi tiết bổ sung: {$detailedContent}. ";
+            }
+
+            if ($generateSpecs) {
+                $promptLong .= "Bao gồm các thông số kỹ thuật hoặc đặc điểm nổi bật của sản phẩm. ";
+            }
+            if ($generateManufacture) {
+                $promptLong .= "Thêm thông tin về quy trình sản xuất, chất liệu, hoặc nguồn gốc sản phẩm. ";
+            }
+            if ($generateExport) {
+                $promptLong .= "Đề cập đến các tiêu chuẩn xuất khẩu, chứng nhận hoặc khả năng đáp ứng thị trường quốc tế (nếu phù hợp). ";
+            }
+
+            $promptLong .= "Nội dung được viết theo bố cục sau: "
+                        . "<H1> Tiêu đề chính hấp dẫn (tự suy nghĩ phù hợp với sản phẩm \"{$productName}\"). </H1>"
+                        . "<p> Nội dung giới thiệu sản phẩm, lợi ích tổng quan. </p>"
+                        . "<H2> Tiêu đề phụ 1 (tự suy nghĩ liên quan đến \"{$productName}\", ví dụ: 'Tính năng nổi bật' hoặc 'Tại sao nên chọn?'). </H2>"
+                        . "<p> Nội dung chi tiết về tính năng/lợi ích. </p>";
+
+            if ($generateSpecs) {
+                $promptLong .= "<H3> Thông số kỹ thuật/Đặc điểm chi tiết </H3>"
+                             . "<p> Liệt kê các thông số, kích thước, chất liệu, v.v. (nếu có thể suy luận hoặc từ detailed_content). </p>";
+            }
+            if ($generateManufacture) {
+                $promptLong .= "<H3> Quy trình sản xuất & Chất lượng </H3>"
+                             . "<p> Mô tả ngắn gọn về cách sản phẩm được tạo ra, tiêu chuẩn chất lượng. </p>";
+            }
+            if ($generateExport) {
+                $promptLong .= "<H3> Xuất khẩu & Tiêu chuẩn Quốc tế </H3>"
+                             . "<p> Thông tin về thị trường xuất khẩu, chứng nhận quốc tế (nếu áp dụng). </p>";
+            }
+            $promptLong .= "<H2> Tiêu đề phụ cuối (tự suy nghĩ, ví dụ: 'Hướng dẫn sử dụng & Bảo quản' hoặc 'Cam kết của chúng tôi'). </H2>"
+                        . "<p> Nội dung kết luận, hướng dẫn, hoặc lời kêu gọi hành động. </p>"
+                        . "Độ dài bài viết khoảng 800 đến 1100 từ. ";
+            $generatedTextLong = $callGeminiApi($promptLong, false, 60);
+            $htmlContentLong = $generatedTextLong;
             $htmlContentLong = preg_replace('/^#\s*(.*?)\n/m', '<h1>$1</h1>', $htmlContentLong);
             $htmlContentLong = preg_replace('/^##\s*(.*?)\n/m', '<h2>$1</h2>', $htmlContentLong);
             $htmlContentLong = preg_replace('/^###\s*(.*?)\n/m', '<h3>$1</h3>', $htmlContentLong);
@@ -568,7 +693,16 @@ public function toggleStatus($id)
                  $htmlContentLong = '<ul>' . $htmlContentLong . '</ul>';
                  $htmlContentLong = str_replace(['<li><br />', '<br /></li>'], ['<li>', '</li>'], $htmlContentLong);
             }
-            $htmlContentLong = str_replace('<br />', '', $htmlContentLong);
+            $paragraphs = array_filter(explode("\n\n", $htmlContentLong));
+            $finalHtmlContentLong = [];
+            foreach ($paragraphs as $para) {
+                if (preg_match('/<h[1-3]>|<ul|<li/', $para)) {
+                    $finalHtmlContentLong[] = $para;
+                } else {
+                    $finalHtmlContentLong[] = '<p>' . nl2br(trim($para)) . '</p>';
+                }
+            }
+            $htmlContentLong = implode('', $finalHtmlContentLong);
             return response()->json([
                 'seo_title' => Str::limit($seoData['seo_title'] ?? '', 60),
                 'seo_description' => Str::limit($seoData['seo_description'] ?? '', 160),
@@ -577,6 +711,7 @@ public function toggleStatus($id)
             ]);
 
         } catch (\Exception $e) {
+
             return response()->json(['error' => 'Đã xảy ra lỗi khi tạo nội dung AI: ' . $e->getMessage()], 500);
         }
     }
