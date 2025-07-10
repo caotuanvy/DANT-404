@@ -1,3 +1,8 @@
+import 'core-js/es/promise';
+if (typeof window !== 'undefined' && typeof window.Promise === 'undefined') {
+  window.Promise = Promise;
+}
+
 import { createApp } from 'vue';
 import App from './App.vue';
 import router from './router';

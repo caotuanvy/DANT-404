@@ -52,6 +52,7 @@ Route::delete('/products/{product_id}/images/{image_id}', [ProductImageControlle
 Route::apiResource('categories', CategoryController::class);
 
 // Tin tuc
+Route::post('/api/tinymce/upload-image', [TintucController::class, 'uploadTinyMCEImage']);
 Route::apiResource('tintuc', TintucController::class);
 Route::post('/tintuc/generate-seo', [TintucController::class, 'generateSeoContent']);
 Route::get('/tintuc', [TintucController::class, 'index']);
