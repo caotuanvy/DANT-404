@@ -22,6 +22,13 @@
           ></textarea>
         </div>
         <div>
+          <label for="image">Hình ảnh:</label>
+          <input type="file" id="image" @change="onFileChange" accept="image/*" />
+          <div v-if="previewImage">
+            <img :src="previewImage" alt="Preview" style="width: 100px; margin-top: 10px;" />
+          </div>
+        </div>
+        <div>
           <button type="submit">Thêm danh mục</button>
         </div>
       </form>
@@ -36,9 +43,18 @@
       return {
         category_name: "",
         description: "",
+        imageFile: null,
+        previewImage: null,
       };
     },
     methods: {
+      onFileChange(e) {
+        const file = e.target.files[0];
+        if (file) {
+          this.imageFile = file;
+          this.previewImage = URL.createObjectURL(file);
+        }
+      },
       async addCategory() {
         try {
           const token = localStorage.getItem("token");
@@ -47,18 +63,23 @@
             return;
           }
   
-         const response = await axios.post(
-  "http://localhost:8000/api/categories",
-  {
-    ten_danh_muc: this.category_name, // đổi tên trường cho đúng backend
-    mo_ta: this.description || "",    // đổi tên trường cho đúng backend
-  },
-  {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }
-);
+          const formData = new FormData();
+          formData.append("ten_danh_muc", this.category_name);
+          formData.append("mo_ta", this.description || "");
+          if (this.imageFile) {
+            formData.append("image", this.imageFile);
+          }
+  
+          const response = await axios.post(
+            "http://localhost:8000/api/categories",
+            formData,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "multipart/form-data",
+              },
+            }
+          );
   
           if (response.status === 201 || response.status === 200) {
             alert("Danh mục đã được thêm thành công!");
@@ -95,4 +116,3 @@
     cursor: pointer;
   }
   </style>
-  
