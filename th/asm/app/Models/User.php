@@ -28,13 +28,14 @@ class User extends Authenticatable
         'slug',
         'ngay_tao',
         'ngay_sua',
-        'activation_token', 
+        'activation_token',
         'is_active',
-
+        'fcm_token',
     ];
 
     protected $hidden = [
         'mat_khau',
+
     ];
 
     protected function casts(): array

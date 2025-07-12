@@ -3,6 +3,8 @@ import Swal from 'sweetalert2';
 import axios from 'axios';
 import { ref, reactive, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { messaging } from '../../firebase';
+import { getToken } from 'firebase/messaging';
 
 const router = useRouter();
 
@@ -80,9 +82,39 @@ const resetAllFormsAndState = () => {
     resetPasswordForm.new_password_confirmation = '';
     resetPasswordError.value = '';
 
-    currentView.value = 'login'; // Đảm bảo view trở về login khi đóng hoặc reset
+    currentView.value = 'login'; 
 };
+const requestAndSaveFcmToken = async () => {
+  try {
+    const permission = await Notification.requestPermission();
 
+    if (permission !== 'granted') {
+      console.warn(' Người dùng không cấp quyền thông báo:', permission);
+      return;
+    }
+
+    const token = await getToken(messaging, {
+      vapidKey: 'BJ6TkZceex3WDBLdYtyk4afBtijaK3etZ1zFkoLtCJI_1OkvdlXsDS7HUW7BHNuO9uytUkxXWKXCQtPUUF-jo7U'
+    });
+
+    if (token) {
+      const authToken = localStorage.getItem('token');
+      await axios.post('http://localhost:8000/api/save-fcm-token', {
+        fcm_token: token
+      }, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          Accept: 'application/json'
+        }
+      });
+      console.log(' FCM token đã được lưu.');
+    } else {
+      console.warn(' Không thể lấy FCM token.');
+    }
+  } catch (err) {
+    console.error(' Lỗi khi lấy/lưu FCM token:', err);
+  }
+};
 const changeView = (viewName) => {
     // Luôn reset các lỗi và form của view hiện tại trước khi chuyển,
     // nhưng không reset toàn bộ modal trừ khi chuyển về login/register từ ngoài
@@ -170,6 +202,7 @@ const handleLogin = async () => {
       timer: 3000,
       showConfirmButton: false
     });
+     await requestAndSaveFcmToken();
   } catch (err) {
     isSubmitting.value = false;
 
