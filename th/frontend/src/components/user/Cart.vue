@@ -520,7 +520,12 @@ export default {
         const provinceName = this.provinces.find(p => p.code === this.selectedProvinceCode)?.name_with_type || '';
         const districtName = this.districts.find(d => d.code === this.selectedDistrictCode)?.name_with_type || '';
         const wardName = this.wards.find(w => w.code === this.selectedWardCode)?.name_with_type || '';
-
+        const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
+        axios.post('/api/cart', { cart: localCart })
+          .then(res => {
+            // Hiển thị dữ liệu trả về từ API (chính là local cart)
+            console.log(res.data.cart);
+          });
         const fullAddress = [
             provinceName,
             districtName,
@@ -584,6 +589,7 @@ export default {
             this.isLoadingAddressData = false;
         }
     },
+    
     async placeOrder() {
       const user = JSON.parse(localStorage.getItem("user"));
       const userId = user?.nguoi_dung_id || user?.id;

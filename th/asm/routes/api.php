@@ -104,6 +104,9 @@ Route::prefix('admin')->group(function () {
     Route::get('/products-sell-top', [ProductController::class, 'getTopSelling']);
     Route::get('products-featured', [ProductController::class, 'getFeatured']);
 });
+//Order
+    Route::post('/cart', [CartController::class, 'showLocalCart']);
+    Route::get('/orders', [OrderController::class, 'index']);
 
 // Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -116,7 +119,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Orders
     Route::get('/user/orders', [OrderController::class, 'userOrders']);
     Route::get('/user/orders/{id}', [OrderController::class, 'getByUser']);
-    Route::apiResource('orders', OrderController::class)->only(['index', 'store']);
+    Route::apiResource('orders', OrderController::class)->only(['store']);
     Route::patch('/orders/{id}/approve', [OrderController::class, 'approve']);
     Route::patch('/orders/{id}/reject', [OrderController::class, 'reject']);
     Route::patch('/orders/{id}/hide', [OrderController::class, 'hideOrder']);
