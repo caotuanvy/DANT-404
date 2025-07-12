@@ -142,104 +142,125 @@ const getValidationErrorMessage = (errors) => {
 };
 
 const handleLogin = async () => {
-  loginError.value = '';
-  isSubmitting.value = true;
+    loginError.value = '';
+    isSubmitting.value = true;
 
-  try {
-    const res = await axios.post('/login', {
-      email: loginForm.email,
-      mat_khau: loginForm.password
-    });
-
-    const user = res.data.user;
-    const token = res.data.token;
-
-    // ✅ Nếu thành công, lưu token và chuyển tiếp
-    closeModal();
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(user));
-    localStorage.setItem('vai_tro_id', user.vai_tro_id);
-    localStorage.setItem('sdt', user.sdt);
-
-    await Swal.fire({
-      icon: 'success',
-      title: 'Chào mừng!',
-      text: `Xin chào ${user.ho_ten || user.email}, chúc bạn một ngày tuyệt vời!`,
-      toast: true,
-      position: 'top-end',
-      timer: 3000,
-      showConfirmButton: false
-    });
-  } catch (err) {
-    isSubmitting.value = false;
-
-    const res = err.response;
-
-    // ✅ Kiểm tra lỗi kích hoạt từ backend
-    if (res?.status === 403 && res.data?.require_activation) {
-      loginError.value = 'Tài khoản chưa được kích hoạt.';
-
-      const result = await Swal.fire({
-        icon: 'error',
-        title: 'Tài khoản chưa kích hoạt',
-        html: 'Vui lòng kiểm tra email để kích hoạt tài khoản.<br>Bạn muốn gửi lại email kích hoạt?',
-        showCancelButton: true,
-        confirmButtonText: 'Gửi lại',
-        cancelButtonText: 'Để sau',
-        timer: 5000,
-        timerProgressBar: true
-      });
-
-      if (result.isConfirmed) {
-        // Hiển thị popup đang gửi (không await để không chặn)
-        Swal.fire({
-          title: 'Đang gửi email kích hoạt...',
-          allowOutsideClick: false,
-          didOpen: () => {
-            Swal.showLoading();
-          }
+    try {
+        const res = await axios.post('/login', {
+            email: loginForm.email,
+            mat_khau: loginForm.password
         });
 
-        try {
-          await axios.post('/resend-activation', { email: loginForm.email });
+        const user = res.data.user;
+        const token = res.data.token;
 
-          // Đóng popup loading
-          Swal.close();
-
-          // Thông báo thành công
-          await Swal.fire({
-            icon: 'success',
-            title: 'Đã gửi lại email kích hoạt!',
-            toast: true,
-            position: 'top-end',
-            timer: 3000,
-            showConfirmButton: false
-          });
-        } catch (err) {
-          Swal.close();
-
-          await Swal.fire({
-            icon: 'error',
-            title: 'Gửi lại thất bại!',
-            text: err.response?.data?.message || 'Vui lòng thử lại sau.',
-            toast: true,
-            position: 'top-end',
-            timer: 3000,
-            showConfirmButton: false
-          });
+        // --- BẮT ĐẦU PHẦN THÊM MỚI/CẬP NHẬT ---
+        // ✅ KIỂM TRA TRẠNG THÁI TÀI KHOẢN SAU KHI ĐĂNG NHẬP THÀNH CÔNG
+        // Giả sử backend trả về trường `trang_thai` trong đối tượng user.
+        // Quy ước: 0 = hoạt động, 1 = vô hiệu hóa.
+        if (user.trang_thai === 1) { // Hoặc bất kỳ giá trị nào bạn quy định cho trạng thái vô hiệu hóa
+            loginError.value = 'Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ bộ phận hỗ trợ.';
+            isSubmitting.value = false; // Bật lại nút submit
+            
+            await Swal.fire({
+                icon: 'error',
+                title: 'Tài khoản bị vô hiệu hóa',
+                text: loginError.value,
+                confirmButtonText: 'Đã hiểu',
+                timer: 5000,
+                timerProgressBar: true
+            });
+            
+            // Tùy chọn: Chuyển hướng đến một trang riêng để giải thích về tài khoản vô hiệu hóa
+            // router.push('/tai-khoan-vo-hieu-hoa'); 
+            return; // Dừng hàm, không tiến hành lưu token và chuyển hướng
         }
-      }
+        // --- KẾT THÚC PHẦN THÊM MỚI/CẬP NHẬT ---
 
-      return; // ❌ Không tiếp tục xử lý nữa
-    }
 
-    // Các lỗi khác
-    if (res?.data?.errors) {
-      loginError.value = getValidationErrorMessage(res.data.errors);
-    } else {
-      loginError.value = res?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại.';
+        // ✅ Nếu thành công và tài khoản không bị vô hiệu hóa, lưu token và chuyển tiếp
+        closeModal();
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('vai_tro_id', user.vai_tro_id);
+        localStorage.setItem('sdt', user.sdt);
+
+        await Swal.fire({
+            icon: 'success',
+            title: 'Chào mừng!',
+            text: `Xin chào ${user.ho_ten || user.email}, chúc bạn một ngày tuyệt vời!`,
+            toast: true,
+            position: 'top-end',
+            timer: 3000,
+            showConfirmButton: false
+        });
+    } catch (err) {
+        isSubmitting.value = false;
+
+        const res = err.response;
+
+        // ✅ Kiểm tra lỗi kích hoạt từ backend (giữ nguyên logic cũ)
+        if (res?.status === 403 && res.data?.require_activation) {
+            loginError.value = 'Tài khoản chưa được kích hoạt.';
+
+            const result = await Swal.fire({
+                icon: 'error',
+                title: 'Tài khoản chưa kích hoạt',
+                html: 'Vui lòng kiểm tra email để kích hoạt tài khoản.<br>Bạn muốn gửi lại email kích hoạt?',
+                showCancelButton: true,
+                confirmButtonText: 'Gửi lại',
+                cancelButtonText: 'Để sau',
+                timer: 5000,
+                timerProgressBar: true
+            });
+
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Đang gửi email kích hoạt...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                try {
+                    await axios.post('/resend-activation', { email: loginForm.email });
+
+                    Swal.close();
+
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Đã gửi lại email kích hoạt!',
+                        toast: true,
+                        position: 'top-end',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                } catch (err) {
+                    Swal.close();
+
+                    await Swal.fire({
+                        icon: 'error',
+                        title: 'Gửi lại thất bại!',
+                        text: err.response?.data?.message || 'Vui lòng thử lại sau.',
+                        toast: true,
+                        position: 'top-end',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                }
+            }
+
+            return; // ❌ Không tiếp tục xử lý nữa
+        }
+
+        // Các lỗi khác (giữ nguyên logic cũ)
+        if (res?.data?.errors) {
+            loginError.value = getValidationErrorMessage(res.data.errors);
+        } else {
+            loginError.value = res?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại.';
+        }
     }
-  }
 };
 
 const handleRegister = async () => {
@@ -463,27 +484,27 @@ const handleResetPassword = async () => {
 // (Giữ nguyên các hàm này)
 // Google Login
 const handleGoogleLogin = () => {
-  if (typeof window.google === 'undefined' || !window.google.accounts?.id) {
-    console.error('Google One Tap SDK chưa được tải.');
-    Swal.fire({
-      toast: true,
-      position: 'top-end',
-      icon: 'error',
-      title: 'Không thể kết nối Google. Vui lòng thử lại sau.',
-      showConfirmButton: false,
-      timer: 3000,
-      timerProgressBar: true
+    if (typeof window.google === 'undefined' || !window.google.accounts?.id) {
+        console.error('Google One Tap SDK chưa được tải.');
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'error',
+            title: 'Không thể kết nối Google. Vui lòng thử lại sau.',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        });
+        return;
+    }
+
+    window.google.accounts.id.initialize({
+        client_id: '710318641931-iqof2cq4qcg68fnccru81o31n7gbdqc0.apps.googleusercontent.com', // <-- Đã thay thế client_id của bạn vào đây
+        callback: handleGoogleCredentialResponse,
+        ux_mode: 'popup'
     });
-    return;
-  }
 
-  window.google.accounts.id.initialize({
-    client_id: '710318641931-iqof2cq4qcg68fnccru81o31n7gbdqc0.apps.googleusercontent.com', // <-- Đã thay thế client_id của bạn vào đây
-    callback: handleGoogleCredentialResponse,
-    ux_mode: 'popup'
-  });
-
-  window.google.accounts.id.prompt();
+    window.google.accounts.id.prompt();
 };
 
 
@@ -496,6 +517,22 @@ const handleGoogleCredentialResponse = async (response) => {
 
             const user = res.data.user;
             const token = res.data.token;
+
+            // --- BẮT ĐẦU PHẦN THÊM MỚI/CẬP NHẬT CHO ĐĂNG NHẬP GOOGLE ---
+            // ✅ KIỂM TRA TRẠNG THÁI TÀI KHOẢN SAU KHI ĐĂNG NHẬP GOOGLE THÀNH CÔNG
+            if (user.trang_thai === 1) { 
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Tài khoản bị vô hiệu hóa',
+                    text: 'Tài khoản Google của bạn đã bị vô hiệu hóa bởi quản trị viên. Vui lòng liên hệ bộ phận hỗ trợ.',
+                    confirmButtonText: 'Đã hiểu',
+                    timer: 5000,
+                    timerProgressBar: true
+                });
+                router.push('/tai-khoan-vo-hieu-hoa'); 
+                return; // Dừng hàm, không tiến hành lưu token và chuyển hướng
+            }
+            // --- KẾT THÚC PHẦN THÊM MỚI/CẬP NHẬT ---
 
             closeModal();
             localStorage.setItem('token', token);
@@ -515,6 +552,8 @@ const handleGoogleCredentialResponse = async (response) => {
             });
         } catch (error) {
             console.error('Đăng nhập Google thất bại:', error);
+            // Có thể thêm kiểm tra error.response?.data?.status === 'disabled' ở đây
+            // nếu backend cũng trả về lỗi 403 cho Google login
             Swal.fire({
                 toast: true,
                 position: 'top-end',

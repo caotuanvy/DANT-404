@@ -37,11 +37,8 @@
           />
           <div class="product-details">
             <span class="product-name">
-  {{ item.bien_the?.san_pham?.ten_san_pham || 'Không rõ tên sản phẩm' }}
-  <span v-if="item.bien_the?.ten_bien_the">
-    - {{ item.bien_the.ten_bien_the }}
-  </span>
-</span>
+              {{ item.bien_the?.san_pham?.ten_san_pham || 'Không rõ tên sản phẩm' }}
+            </span>
             <span class="product-variant" v-if="item.bien_the?.mau_sac || item.bien_the?.kich_thuoc">
               Phân loại:
               {{ item.bien_the.mau_sac || 'Màu không xác định' }}
@@ -137,14 +134,14 @@ const fetchOrders = async () => {
   const token = localStorage.getItem("token");
 
   try {
-    const response = await axios.get("http://localhost:8000/api/user/orders", {
+    const response = await axios.get("/user/orders", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
 
     allOrders.value = response.data;
-    console.log("Fetched orders:", response.data);
+    // console.log("Fetched orders:", response.data);
   } catch (error) {
     console.error("Lỗi khi tải đơn hàng:", error.response?.data || error.message);
     allOrders.value = [];

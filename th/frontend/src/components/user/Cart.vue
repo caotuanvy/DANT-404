@@ -7,7 +7,7 @@
     <div class="main-content">
       <div class="product-list" v-if="products.length > 0">
         <div v-for="product in products" :key="product.id" class="product-item">
-         <img :src="'https://localhost:8000/storage/' + product.image" :alt="product.name" class="product-image" />
+          <img :src="'https://localhost:8000/storage/' + product.image" :alt="product.name" class="product-image" />
           <div class="product-details">
             <h3 class="product-name">{{ product.name }}</h3>
             <p class="product-weight">{{ product.weight }}</p>
@@ -39,24 +39,157 @@
         <div class="discount-code">
           <p class="discount-label">Mã giảm giá</p>
           <div class="discount-input-group">
-            <input type="text" placeholder="Nhập mã giảm giá" class="discount-input" />
+            <input type="text" placeholder="Nhập mã giảm giá" class="discount-input" v-model="discountCode" />
             <button class="apply-button">Áp dụng</button>
           </div>
         </div>
       </div>
 
-      <!-- ✅ Nếu giỏ hàng trống -->
-      <div v-if="products.length === 0" class="empty-cart-message">
-  <p>Giỏ hàng của bạn đang trống.</p>
-</div>
+      <div v-else class="empty-cart-message">
+        <p>Giỏ hàng của bạn đang trống.</p>
+        <router-link to="/" class="back-to-shop">Tiếp tục mua sắm</router-link>
+      </div>
 
-
-      <!-- ✅ Thanh toán chỉ hiển thị khi có sản phẩm -->
       <div class="order-summary-panel" v-if="products.length > 0">
-        <!-- Địa chỉ giao hàng -->
-        <!-- Phương thức giao hàng -->
-        <!-- Phương thức thanh toán -->
-        <!-- Tóm tắt đơn hàng -->
+        <div class="delivery-address">
+          <h2 class="panel-title">Địa chỉ giao hàng</h2>
+          <div v-if="!showAddressForm">
+            <p><strong>Người nhận:</strong> {{ displayedAddress.ho_ten }}</p>
+            <p><strong>SĐT:</strong> {{ displayedAddress.sdt }}</p>
+            <p><strong>Địa chỉ:</strong> {{ displayedAddress.dia_chi || 'Chưa có địa chỉ' }}</p>
+            <button class="change-address-btn" @click="changeAddress">
+              {{ displayedAddress.dia_chi ? 'Thay đổi địa chỉ' : 'Thêm địa chỉ' }}
+            </button>
+          </div>
+
+          <div v-else class="address-edit-form">
+            <p v-if="isLoadingAddressData">Đang tải dữ liệu địa chỉ...</p>
+            <div v-else>
+              <div class="form-group">
+                <label for="fullName">Họ tên người nhận</label>
+                <input type="text" id="fullName" v-model="displayedAddress.ho_ten" placeholder="Họ tên" />
+              </div>
+              <div class="form-group">
+                <label for="phone">Số điện thoại</label>
+                <input type="tel" id="phone" v-model="displayedAddress.sdt" placeholder="Số điện thoại" />
+              </div>
+              <div class="form-group">
+                <label for="province">Tỉnh/Thành phố</label>
+                <select id="province" v-model="selectedProvinceCode">
+                  <option value="">Chọn Tỉnh/Thành phố</option>
+                  <option v-for="province in provinces" :key="province.code" :value="province.code">
+                    {{ province.name_with_type }}
+                  </option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="district">Quận/Huyện</label>
+                <select id="district" v-model="selectedDistrictCode" :disabled="!selectedProvinceCode">
+                  <option value="">Chọn Quận/Huyện</option>
+                  <option v-for="district in districts" :key="district.code" :value="district.code">
+                    {{ district.name_with_type }}
+                  </option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="ward">Phường/Xã</label>
+                <select id="ward" v-model="selectedWardCode" :disabled="!selectedDistrictCode">
+                  <option value="">Chọn Phường/Xã</option>
+                  <option v-for="ward in wards" :key="ward.code" :value="ward.code">
+                    {{ ward.name_with_type }}
+                  </option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="streetAddress">Số nhà, Tên đường</label>
+                <input type="text" id="streetAddress" v-model="streetAddress" placeholder="VD: 123 Nguyễn Văn Linh" />
+              </div>
+
+              <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+
+              <div class="form-actions">
+                <button class="save-btn" @click="handleUpdateAddress">Lưu địa chỉ</button>
+                <button class="cancel-btn" @click="cancelAddressChange">Hủy</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="delivery-options">
+          <h2 class="panel-title">Phương thức giao hàng</h2>
+          <div
+            class="delivery-option"
+            :class="{ selected: deliveryMethod === 'standard' }"
+            @click="deliveryMethod = 'standard'"
+          >
+            <input type="radio" id="standard" value="standard" v-model="deliveryMethod" />
+            <div class="option-details">
+              <span class="option-name">Giao hàng tiêu chuẩn</span>
+              <span class="option-time">3-5 ngày làm việc</span>
+            </div>
+            <span class="option-price">{{ formatPrice(15000) }}</span>
+          </div>
+          <div
+            class="delivery-option"
+            :class="{ selected: deliveryMethod === 'express' }"
+            @click="deliveryMethod = 'express'"
+          >
+            <input type="radio" id="express" value="express" v-model="deliveryMethod" />
+            <div class="option-details">
+              <span class="option-name">Giao hàng nhanh</span>
+              <span class="option-time">1-2 ngày làm việc</span>
+            </div>
+            <span class="option-price">{{ formatPrice(25000) }}</span>
+          </div>
+        </div>
+
+        <div class="payment-methods">
+          <h2 class="panel-title">Phương thức thanh toán</h2>
+          <div
+            class="payment-method"
+            :class="{ selected: paymentMethod === 'cod' }"
+            @click="paymentMethod = 'cod'"
+          >
+            <input type="radio" id="cod" value="cod" v-model="paymentMethod" />
+            <div class="option-details">
+              <span class="option-name">Thanh toán khi nhận hàng (COD)</span>
+              <span class="option-description">Trả tiền mặt khi đơn hàng được giao đến bạn.</span>
+            </div>
+          </div>
+          <div
+            class="payment-method"
+            :class="{ selected: paymentMethod === 'bank_transfer' }"
+            @click="paymentMethod = 'bank_transfer'"
+          >
+            <input type="radio" id="bank_transfer" value="bank_transfer" v-model="paymentMethod" />
+            <div class="option-details">
+              <span class="option-name">Chuyển khoản ngân hàng</span>
+              <span class="option-description">Thanh toán qua chuyển khoản ngân hàng.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="order-summary">
+          <h2 class="panel-title">Tóm tắt đơn hàng</h2>
+          <div class="summary-item">
+            <span>Tổng tiền hàng</span>
+            <span>{{ formatPrice(subtotal) }}</span>
+          </div>
+          <div class="summary-item">
+            <span>Phí vận chuyển</span>
+            <span>{{ formatPrice(deliveryFee) }}</span>
+          </div>
+          <div class="summary-total">
+            <span>Tổng cộng</span>
+            <span>{{ formatPrice(totalAmount) }}</span>
+          </div>
+          <button class="place-order-button" @click="placeOrder">
+            ĐẶT HÀNG ({{ formatPrice(totalAmount) }})
+          </button>
+          <p class="terms-text">
+            Bằng cách đặt hàng, bạn đồng ý với Điều khoản và điều kiện của chúng tôi.
+          </p>
+        </div>
       </div>
     </div>
   </div>
@@ -161,25 +294,50 @@ export default {
         let ward = '';
         let street = '';
 
-        if (parts.length >= 4) {
-            province = parts[0];
-            district = parts[1];
-            ward = parts[2];
-            street = parts.slice(3).join(', ');
-        } else if (parts.length === 3) {
-            province = parts[0];
-            district = parts[1];
-            ward = parts[2];
-        } else if (parts.length === 2) {
-            province = parts[0];
-            district = parts[1];
-        } else if (parts.length === 1) {
-            province = parts[0];
+        // Improved parsing logic, more robust for varying address formats
+        // This assumes the format is generally "street, ward, district, province"
+        // and tries to match known prefixes for ward/district/province.
+        const wardPrefixes = ['Phường', 'Xã', 'Thị trấn'];
+        const districtPrefixes = ['Quận', 'Huyện', 'Thành phố', 'Thị xã'];
+        const provincePrefixes = ['Tỉnh', 'Thành phố'];
+
+        let remainingParts = [...parts];
+
+        // Try to identify province from the last part
+        for (let i = remainingParts.length - 1; i >= 0; i--) {
+            const part = remainingParts[i];
+            const foundProvincePrefix = provincePrefixes.find(prefix => part.startsWith(prefix));
+            if (foundProvincePrefix || this.provinces.some(p => p.name_with_type === part || p.name === part)) {
+                province = part;
+                remainingParts.splice(i, 1);
+                break;
+            }
         }
 
-        ward = ward.replace(/^(Phường|Xã)\s/i, '');
-        district = district.replace(/^(Quận|Huyện|Thành phố)\s/i, '');
-        province = province.replace(/^(Tỉnh|Thành phố)\s/i, '');
+        // Try to identify district from remaining parts, usually before province
+        for (let i = remainingParts.length - 1; i >= 0; i--) {
+            const part = remainingParts[i];
+            const foundDistrictPrefix = districtPrefixes.find(prefix => part.startsWith(prefix));
+            if (foundDistrictPrefix || this.districts.some(d => d.name_with_type === part || d.name === part)) {
+                district = part;
+                remainingParts.splice(i, 1);
+                break;
+            }
+        }
+
+        // Try to identify ward from remaining parts, usually before district
+        for (let i = remainingParts.length - 1; i >= 0; i--) {
+            const part = remainingParts[i];
+            const foundWardPrefix = wardPrefixes.find(prefix => part.startsWith(prefix));
+            if (foundWardPrefix || this.wards.some(w => w.name_with_type === part || w.name === part)) {
+                ward = part;
+                remainingParts.splice(i, 1);
+                break;
+            }
+        }
+
+        // The rest is street address
+        street = remainingParts.join(', ');
 
         return { street, ward, district, province };
     },
@@ -314,6 +472,15 @@ export default {
     async handleUpdateAddress() {
         this.errorMessage = '';
 
+        if (!this.displayedAddress.ho_ten.trim()) {
+            this.errorMessage = 'Vui lòng nhập họ tên người nhận.';
+            return;
+        }
+        if (!this.displayedAddress.sdt.trim()) {
+            this.errorMessage = 'Vui lòng nhập số điện thoại người nhận.';
+            return;
+        }
+
         if (!this.selectedProvinceCode || !this.selectedDistrictCode || !this.selectedWardCode || !this.streetAddress.trim()) {
             this.errorMessage = 'Vui lòng điền đầy đủ thông tin địa chỉ (Tỉnh/Thành phố, Quận/Huyện, Phường/Xã, Số Nhà/Tên Đường).';
             return;
@@ -336,10 +503,10 @@ export default {
         const wardName = this.wards.find(w => w.code === this.selectedWardCode)?.name_with_type || '';
 
         const fullAddress = [
-            provinceName,
-            districtName,
+            this.streetAddress.trim(),
             wardName,
-            this.streetAddress.trim()
+            districtName,
+            provinceName,
         ].filter(part => part).join(', ');
 
         const user = JSON.parse(localStorage.getItem("user"));
@@ -355,7 +522,8 @@ export default {
             let addressPayload = {
                 nguoi_dung_id: userId,
                 dia_chi: fullAddress,
-                // 'mac_dinh' đã bị loại bỏ khỏi payload
+                ho_ten: this.displayedAddress.ho_ten.trim(),
+                sdt: this.displayedAddress.sdt.trim(),
             };
 
             let response;
@@ -385,8 +553,8 @@ export default {
             }
 
             this.displayedAddress = {
-                ho_ten: this.displayedAddress.ho_ten,
-                sdt: this.displayedAddress.sdt,
+                ho_ten: addressPayload.ho_ten,
+                sdt: addressPayload.sdt,
                 dia_chi: fullAddress,
             };
             this.showAddressForm = false;
@@ -419,6 +587,7 @@ export default {
           Swal.fire("Lỗi", "Không tìm thấy thông tin người dùng. Vui lòng đăng nhập.", "error");
           return;
         }
+        // Assuming product.id in `products` array is `bien_the_id` or similar unique identifier from backend cart
         const itemIdentifier = this.products.find(p => p.id === productId)?.bien_the_id || productId;
         await axios.delete(`http://localhost:8000/api/gio-hang/${userId}/${itemIdentifier}`);
         this.products = this.products.filter(p => p.id !== productId);
@@ -437,7 +606,7 @@ export default {
       console.error("Lỗi khi xóa sản phẩm:", error.response?.data || error.message);
       Swal.fire("Lỗi", "Không thể xóa sản phẩm. Vui lòng thử lại.", "error");
     }
-  },
+    },
 
     async placeOrder() {
       const user = JSON.parse(localStorage.getItem("user"));
@@ -462,8 +631,9 @@ export default {
       let orderData = {
         nguoi_dung_id: userId,
         tong_tien: total,
-        phuong_thuc_thanh_toan_id: 1,
+        phuong_thuc_thanh_toan_id: this.paymentMethod === 'cod' ? 1 : 2, // Map 'cod' to 1, 'bank_transfer' to 2 (giả định)
         hinh_thuc_giao_hang: this.deliveryMethod,
+        phi_van_chuyen: this.deliveryFee, // Thêm phí vận chuyển vào payload
         san_pham: this.products.map((item) => ({
           bien_the_id: item.bien_the_id || item.id,
           so_luong: item.quantity,
@@ -478,7 +648,6 @@ export default {
               ho_ten: this.displayedAddress.ho_ten,
               sdt: this.displayedAddress.sdt,
               dia_chi: this.displayedAddress.dia_chi,
-              // 'mac_dinh' đã bị loại bỏ khỏi dia_chi_moi
           };
       }
 
@@ -491,20 +660,24 @@ export default {
         });
 
         Swal.fire({
-  toast: true, // Biến nó thành một "toast" (thông báo nhỏ)
-  position: 'top-end', // Đặt vị trí ở góc phải trên cùng (top-end)
-  icon: 'success', // Vẫn giữ icon thành công
-  title: 'Đặt hàng thành công!', // Tiêu đề của thông báo
-  showConfirmButton: false, // Ẩn nút xác nhận
-  timer: 3000, // Tự động đóng sau 3 giây (3000ms)
-  timerProgressBar: true // Hiển thị thanh tiến trình đếm ngược thời gian đóng
-});
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Đặt hàng thành công!',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        });
 
         this.products = [];
       } catch (error) {
         console.error("Lỗi khi đặt hàng:", error);
         console.log(error.response?.data);
-        Swal.fire("Lỗi", "Không thể đặt hàng. Vui lòng thử lại sau.", "error");
+        let errorMsg = "Không thể đặt hàng. Vui lòng thử lại sau.";
+        if (error.response && error.response.data && error.response.data.message) {
+            errorMsg = error.response.data.message;
+        }
+        Swal.fire("Lỗi", errorMsg, "error");
       }
     },
   },
@@ -527,17 +700,15 @@ export default {
         let defaultAddress = null;
 
         if (addresses && Array.isArray(addresses) && addresses.length > 0) {
-            // Nếu không dùng mac_dinh, bạn có thể lấy địa chỉ đầu tiên
-            // hoặc địa chỉ gần nhất (nếu bạn sắp xếp theo id_dia_chi DESC ở backend)
-            defaultAddress = addresses[0];
-            // Nếu bạn muốn lấy địa chỉ cuối cùng được thêm vào, hãy đảm bảo query API của bạn
-            // (trong DiaChiController@index) cũng order by id_dia_chi DESC.
+            // Lấy địa chỉ mới nhất (nếu backend sắp xếp theo id_dia_chi DESC)
+            // Hoặc bạn có thể thêm logic để chọn địa chỉ mặc định nếu có trường `mac_dinh`
+            defaultAddress = addresses[0]; 
         }
 
         if (defaultAddress) {
             this.displayedAddress = {
-                ho_ten: user.ho_ten || "",
-                sdt: user.sdt || "",
+                ho_ten: defaultAddress.ho_ten || user.ho_ten || "",
+                sdt: defaultAddress.sdt || user.sdt || "",
                 dia_chi: defaultAddress.dia_chi || "",
             };
             this.currentAddressId = defaultAddress.id_dia_chi || defaultAddress.id;
@@ -546,15 +717,17 @@ export default {
         } else {
             console.log('Người dùng chưa có địa chỉ nào.');
             this.currentAddressId = null;
-            this.showAddressForm = true;
+            this.showAddressForm = true; // Hiển thị form để người dùng nhập địa chỉ mới
             this.selectedProvinceCode = '';
             this.selectedDistrictCode = '';
             this.selectedWardCode = '';
             this.streetAddress = '';
+            // Gán thông tin họ tên, sdt từ user nếu có, để form có dữ liệu ban đầu
             this.displayedAddress = { ho_ten: user.ho_ten || "", sdt: user.sdt || "", dia_chi: "" };
         }
     } catch (err) {
         console.error("Lỗi khi lấy địa chỉ người dùng:", err.response?.data || err.message);
+        // Nếu có lỗi, vẫn hiển thị form để người dùng nhập địa chỉ
         this.displayedAddress = { ho_ten: user.ho_ten || "", sdt: user.sdt || "", dia_chi: "" };
         this.currentAddressId = null;
         this.showAddressForm = true;
@@ -849,6 +1022,22 @@ export default {
   color: #333;
 }
 
+.change-address-btn {
+    background-color: #33ccff;
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 10px;
+    transition: background-color 0.2s ease;
+}
+
+.change-address-btn:hover {
+    background-color: #269bc2;
+}
+
 .address-edit-form .form-group {
   margin-bottom: 15px;
 }
@@ -886,6 +1075,7 @@ export default {
   font-size: 15px;
   font-weight: bold;
   transition: background-color 0.2s;
+  margin: 0px;
 }
 
 .address-edit-form .save-btn {
@@ -900,7 +1090,7 @@ export default {
 .address-edit-form .cancel-btn {
   background-color: #fb2e2e;
   color: #ffffff;
-  margin-top: 16px;
+  margin-top: 0px; /* Adjusted to align with save button */
 }
 
 .address-edit-form .cancel-btn:hover {
@@ -940,7 +1130,7 @@ export default {
 .delivery-option.selected,
 .payment-method.selected {
   border-color: #33ccff;
-  background-color: #e2f8ff; /* Light green background */
+  background-color: #e2f8ff; /* Light blue background for selected */
 }
 
 .delivery-option input[type="radio"],
@@ -1007,7 +1197,7 @@ export default {
 .place-order-button {
   width: 100%;
   padding: 15px;
-  background-color: #33ccff; /* Orange */
+  background-color: #33ccff; /* Blue */
   color: white;
   border: none;
   border-radius: 8px;
@@ -1066,5 +1256,4 @@ export default {
 .back-to-shop:hover {
   background-color: #2980b9;
 }
-
 </style>
