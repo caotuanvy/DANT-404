@@ -5,16 +5,43 @@
         <h1 class="page-title">Danh sách tin tức</h1>
       </div>
       <router-link to="/admin/tintuc/add" class="btn-add">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
         <span>Thêm tin tức</span>
       </router-link>
     </header>
 
     <div class="content-card">
-      <div class="filter-bar">
-        <div class="search-box">
-          <svg xmlns="http://www.w3.org/2000/svg" class="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          <input type="text" v-model="searchQuery" placeholder="Tìm kiếm tin tức..." class="search-input">
+      <div class="row mb-3 g-2 filter-bar">
+        <div class="col-md-6">
+          <div class="search-input-wrapper">
+            <input
+              type="text"
+              class="form-control search-input"
+              placeholder="Tìm kiếm theo tiêu đề hoặc slug..."
+              v-model="searchQuery"
+            />
+            <button
+              v-if="searchQuery"
+              class="clear-search-btn"
+              @click="clearSearch"
+              aria-label="Xóa tìm kiếm"
+            >
+              &times;
+            </button>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <select class="form-select" v-model="categoryFilter">
+            <option value="">Tất cả danh mục</option>
+            <option v-for="cat in categories" :key="cat.id" :value="cat.ten_danh_muc">{{ cat.ten_danh_muc }}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <select class="form-select" v-model="statusFilter">
+            <option value="">Tất cả trạng thái</option>
+            <option value="1">Hiển thị</option>
+            <option value="0">Ẩn</option>
+          </select>
         </div>
       </div>
 
@@ -38,15 +65,14 @@
             <tr v-if="loading">
               <td colspan="10" class="text-center py-8">Đang tải dữ liệu...</td>
             </tr>
-            <tr v-else-if="filteredNews.length === 0">
-              <td colspan="10" class="text-center py-8">Không tìm thấy tin tức nào.</td>
-            </tr>
-            <tr v-for="news in filteredNews" :key="news.id" class="table-row">
+            <tr v-for="news in filteredNews" :key="news.id" class="table-row" :class="{'is-inactive-row': news.trang_thai != 1}">
               <td><input type="checkbox"></td>
               <td>
                 <div class="news-title-cell">
-                  <span class="news-title">{{ news.tieude }}</span>
-                  <div class="news-slug">{{ news.slug }}</div>
+                  <router-link :to="`/tintuc/${news.slug}`" class="news-title news-title-link">
+                    {{ truncateText(news.tieude, 6) }}
+                  </router-link>
+                  <div class="news-slug">{{ truncateText(news.slug, 6) }}</div>
                 </div>
               </td>
               <td class="text-center">
@@ -64,7 +90,7 @@
                 </span>
                 <span v-else class="text-secondary text-sm">N/A</span>
               </td>
-              <td class="text-center">{{ news.ngay_dang }}</td>
+              <td class="text-center">{{ news.ngay_dang ? new Date(news.ngay_dang).toLocaleDateString() : 'N/A' }}</td>
               <td class="text-center">
                 <button @click="toggleNoiBat(news)" class="toggle-switch" :class="{ 'is-active': news.noi_bat == 1 }">
                   <span class="toggle-circle"></span>
@@ -77,16 +103,9 @@
               </td>
               <td class="text-center">{{ news.luot_xem || 0 }}</td>
               <td class="text-center">
-                <button
-                  @click="toggleTrangThai(news)"
-                  class="toggle-switch"
-                  :class="{ 'is-active': news.trang_thai == 1 }"
-                  style="margin-right: 8px;"
-                  :title="news.trang_thai == 1 ? 'Bấm để ẩn' : 'Bấm để hiện lại'"
-                >
-                  <span class="toggle-circle"></span>
-                </button>
-                <!-- ĐÃ XÓA DÒNG HIỂN THỊ TRẠNG THÁI -->
+                <span class="status-badge" :class="news.trang_thai == 1 ? 'is-active' : 'is-inactive'">
+                  {{ news.trang_thai == 1 ? 'Hiển thị' : 'Ẩn' }}
+                </span>
               </td>
               <td class="text-center">
                 <div class="action-buttons">
@@ -96,6 +115,14 @@
                   <router-link :to="`/admin/tintuc/${news.id}/edit`" class="action-icon" title="Sửa">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
                   </router-link>
+                  <button @click="toggleTrangThai(news)" class="action-icon" :class="news.trang_thai == 1 ? 'text-danger' : 'text-success'" :title="news.trang_thai == 1 ? 'Ẩn tin' : 'Hiện lại tin'">
+                    <svg v-if="news.trang_thai == 1" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.367zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd" />
+                    </svg>
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
                 </div>
               </td>
             </tr>
@@ -116,12 +143,47 @@ const newsList = ref([]);
 const errorMessage = ref('');
 const loading = ref(false);
 const searchQuery = ref('');
+const categoryFilter = ref('');
+const statusFilter = ref('');
+const categories = ref([]);
+
+const clearSearch = () => {
+  searchQuery.value = '';
+};
+
+const truncateText = (text, maxLength) => {
+  if (!text) return '';
+  if (text.length > maxLength) {
+    return text.substring(0, maxLength) + '...';
+  }
+  return text;
+};
 
 const filteredNews = computed(() => {
-  if (!searchQuery.value) return newsList.value;
-  return newsList.value.filter(n =>
-    n.tieude.toLowerCase().includes(searchQuery.value.toLowerCase())
-  );
+  let currentNews = newsList.value;
+
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    currentNews = currentNews.filter(news => {
+      const title = news.tieude ? String(news.tieude).toLowerCase() : '';
+      const slug = news.slug ? String(news.slug).toLowerCase() : '';
+      return title.includes(query) || slug.includes(query);
+    });
+  }
+
+  if (categoryFilter.value !== '') {
+    currentNews = currentNews.filter(news => {
+      const ten1 = news.danh_muc && news.danh_muc.ten_danh_muc ? news.danh_muc.ten_danh_muc : '';
+      const ten2 = news.ten_danh_muc ? news.ten_danh_muc : '';
+      return ten1 === categoryFilter.value || ten2 === categoryFilter.value;
+    });
+  }
+
+  if (statusFilter.value !== '') {
+    currentNews = currentNews.filter(news => String(news.trang_thai) === statusFilter.value);
+  }
+
+  return currentNews;
 });
 
 const getNews = async () => {
@@ -134,10 +196,20 @@ const getNews = async () => {
       },
     });
     newsList.value = res.data;
+    console.log('Tin tức:', newsList.value);
   } catch (error) {
     errorMessage.value = 'Lỗi khi lấy tin tức: ' + (error.response?.data?.message || error.message);
   } finally {
     loading.value = false;
+  }
+};
+
+const getCategories = async () => {
+  try {
+    const res = await axios.get('http://localhost:8000/api/danh-muc-tin-tuc');
+    categories.value = res.data;
+  } catch (error) {
+    // Handle error if needed
   }
 };
 
@@ -177,10 +249,11 @@ const toggleDuyet = async (news) => {
   }
 };
 
-// Toggle trạng thái hiện/ẩn (KHÔNG hiện alert)
 const toggleTrangThai = async (news) => {
   const oldStatus = news.trang_thai;
   const newStatus = oldStatus === 1 ? 0 : 1;
+  const action = newStatus === 1 ? 'hiển thị' : 'vô hiệu hóa';
+  if (!confirm(`Bạn có chắc muốn ${action} tin tức này?`)) return;
   news.trang_thai = newStatus;
   try {
     await axios.put(`http://localhost:8000/api/tintuc/${news.id}`, {
@@ -190,9 +263,10 @@ const toggleTrangThai = async (news) => {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
     });
+    alert(`Đã ${action} tin tức thành công!`);
   } catch (error) {
     news.trang_thai = oldStatus;
-    // alert('Cập nhật trạng thái hiển thị thất bại!');
+    alert('Thao tác thất bại!');
   }
 };
 
@@ -203,6 +277,7 @@ const getImageUrl = (url) => {
 
 onMounted(() => {
   getNews();
+  getCategories();
 });
 </script>
 
@@ -231,13 +306,13 @@ onMounted(() => {
   padding: 1.5rem;
 }
 .error-message {
-    color: #dc2626;
-    margin-top: 1rem;
+  color: #dc2626;
+  margin-top: 1rem;
 }
 .no-data-message {
-    padding: 2rem;
-    text-align: center;
-    color: #6b7280;
+  padding: 2rem;
+  text-align: center;
+  color: #6b7280;
 }
 .btn-add {
   background-color: #4FC3F7;
@@ -277,17 +352,23 @@ onMounted(() => {
   justify-content: space-between;
   margin-bottom: 1.5rem;
 }
-.search-box {
+.search-input-wrapper {
   position: relative;
 }
-.search-icon {
+.clear-search-btn {
   position: absolute;
-  left: 0.75rem;
+  right: 10px;
   top: 50%;
   transform: translateY(-50%);
-  width: 1.25rem;
-  height: 1.25rem;
-  color: #9ca3af;
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  color: #888;
+  cursor: pointer;
+  padding: 0 6px;
+}
+.clear-search-btn:hover {
+  color: #dc2626;
 }
 .table-container {
   overflow-x: auto;
@@ -324,10 +405,17 @@ onMounted(() => {
 .news-title {
   font-weight: 500;
   color: #111827;
+  text-decoration: none;
+  /* Các thuộc tính CSS cho ellipsis đã được di chuyển xuống news-title-cell để tránh xung đột */
+}
+.news-title-link:hover {
+  text-decoration: underline;
+  color: #2563eb;
 }
 .news-slug {
   font-size: 0.85rem;
   color: #6b7280;
+  /* Các thuộc tính CSS cho ellipsis đã được di chuyển xuống news-title-cell để tránh xung đột */
 }
 .news-thumbnail {
   width: 80px;
@@ -350,7 +438,7 @@ onMounted(() => {
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-size: 0.8rem;
-  font-weight: 500;
+  font-weight: 600;
   text-transform: capitalize;
 }
 .status-badge.is-active {
@@ -393,7 +481,8 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.25rem; /* Đã thay đổi khoảng cách ở đây */
+  flex-wrap: nowrap;
 }
 .action-icon {
   width: 32px;
@@ -421,5 +510,16 @@ onMounted(() => {
 .action-icon.text-danger:hover svg {
   color: #dc2626;
   background: none;
+}
+.action-icon.text-success:hover svg {
+  color: #16a34a;
+  background: none;
+}
+.is-inactive-row {
+  background-color: #f3f4f6;
+  opacity: 0.6;
+} 
+.is-inactive-row .news-title {
+  color: #9ca3af;
 }
 </style>

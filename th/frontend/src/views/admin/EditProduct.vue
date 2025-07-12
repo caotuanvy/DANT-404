@@ -136,7 +136,7 @@
               <h3 class="card-title"><i class="fas fa-image icon-margin"></i> Hình ảnh sản phẩm</h3>
               <div v-if="existingImages.length > 0" class="image-preview-container">
                   <div v-for="(image, index) in existingImages" :key="image.id" class="image-preview-item">
-                      <img :src="image.url" class="preview-image" />
+                      <img :src="getImageUrl(image.url)" class="preview-image" />
                       <button type="button" @click="removeExistingImage(image.id, index)" class="remove-image-button">&times;</button>
                   </div>
               </div>
@@ -301,7 +301,15 @@ const isLoading = ref(true);
 const isSubmitting = ref(false);
 const isGeneratingSeo = ref(false);
 const userEditedSlug = ref(false);
-
+const getImageUrl = (url) => {
+  if (!url) return 'https://placehold.co/60x60?text=No+Image';
+  const currentHostname = window.location.hostname;
+  if (currentHostname === 'localhost' || currentHostname === '127.0.0.1') {
+    return url.replace(/^https:\/\//, 'http://');
+  } else {
+    return url.replace(/^http:\/\//, 'https://');
+  }
+};
 const product = reactive({
     ten_san_pham: '',
     slug: '',
@@ -590,7 +598,11 @@ const editorConfig = {
  quickbars_insert_toolbar: 'quicktable quickimage quicklink',
  setup: (editor) => {
   editor.on('init', () => {});
- }
+ },
+  convert_urls: false, 
+  relative_urls: false, 
+  remove_script_host: false, 
+  document_base_url: 'http://localhost:8000/' 
 };
 
 // --- COMPUTED PROPERTIES FOR SEO ANALYSIS ---

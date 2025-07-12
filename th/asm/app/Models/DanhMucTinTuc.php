@@ -22,6 +22,7 @@ class DanhMucTinTuc extends Model
         'ten_danh_muc',
         'mo_ta',
         'hinh_anh',
+        'trang_thai',
         'ngay_tao',
         'ngay_sua',
     ];

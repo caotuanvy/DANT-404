@@ -36,29 +36,12 @@
               <div class="form-group">
                 <label class="form-label">Nội dung *</label>
                 <editor
-                  :api-key="'Ytybxi5binushm14hreotxk86vfsdjfaw6qk7vmsj9gv9iw5u'"
+                  :api-key="'41eu6h6iewknwxlxtm1mh0dge0z3tg5ubvt2clbc0dq85wgo'"
                   v-model="newsDescriptionLong"
-                  :init="{
-                    height: 500,
-                    menubar: false,
-                    plugins: [
-                      'advlist autolink lists link image charmap print preview anchor',
-                      'searchreplace visualblocks code fullscreen',
-                      'insertdatetime media table paste code help wordcount'
-                    ],
-                    toolbar:
-                      'undo redo | formatselect | bold italic backcolor | \
-                      alignleft aligncenter alignright alignjustify | \
-                      bullist numlist outdent indent | removeformat | help',
-                    // Tùy chọn để cấu hình nơi tải các icon và skin
-                    // Bạn có thể cần điều chỉnh basePath hoặc skin_url tùy theo cách dự án của bạn được cấu hình
-                    // Ví dụ: skin_url: '/node_modules/tinymce/skins/ui/oxide'
-                    // Đối với Vite, thường sẽ tự động xử lý. Nếu có lỗi, hãy xem lại Vite config
-                  }"
-                  @input="checkSeoCriteria"
+                  :init="editorConfig" @input="checkSeoCriteria"
                 />
               </div>
-              </div>
+            </div>
           </div>
           <div class="card custom-card">
             <div class="card-content">
@@ -141,6 +124,99 @@ import axios from "axios";
 // Import TinyMCE Editor component
 import Editor from '@tinymce/tinymce-vue';
 
+// ĐỊNH NGHĨA editorConfig Ở ĐÂY (NGOÀI export default)
+const editorConfig = {
+  height: 500,
+  menubar: false,
+  branding: false,
+  plugins: [
+    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview', 'anchor',
+    'searchreplace', 'visualblocks', 'code', 'fullscreen',
+    'insertdatetime', 'media', 'table', 'help', 'wordcount',
+    'emoticons', 'codesample', 'directionality', 'quickbars', 'charmap', // "charmap" bị lặp trong cấu hình gốc, chỉ giữ lại một
+    'imagetools' // RẤT QUAN TRỌNG: Thêm 'imagetools' để có chức năng upload ảnh và các công cụ chỉnh sửa ảnh
+  ],
+  toolbar:
+    'code | newdocument | cut copy | undo redo | searchreplace | ' +
+    'bold italic underline strikethrough | superscript subscript | removeformat | ' +
+    'alignleft aligncenter alignright alignjustify | ' +
+    'bullist numlist outdent indent | ' +
+    'blockquote | link unlink anchor | ' + 
+    'image media table | emoticons codesample | fullscreen preview | help', 
+  images_upload_url: '/tinymce/upload-image', // Endpoint API để upload hình ảnh
+  images_upload_handler: (blobInfo, progress) => new Promise((resolve, reject) => {
+    const formData = new FormData();
+    formData.append('file', blobInfo.blob(), blobInfo.filename());
+
+    // Lấy token từ localStorage (nếu API của bạn yêu cầu xác thực)
+    const token = localStorage.getItem('token'); 
+
+    axios.post('/tinymce/upload-image', formData, { 
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Authorization': token ? `Bearer ${token}` : '', // Thêm header Authorization nếu có token
+      },
+      onUploadProgress: (event) => {
+        progress(event.loaded / event.total * 100);
+      }
+    })
+    .then(response => {
+      // Đảm bảo response.data có thuộc tính 'location' chứa URL ảnh
+      resolve(response.data.location); 
+    })
+    .catch(error => {
+      console.error('TinyMCE Image Upload Error:', error);
+      reject('Upload ảnh thất bại: ' + (error.response?.data?.message || error.message));
+    });
+  }),
+  content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+  style_formats: [
+    { title: 'Headings', items: [
+      { title: 'Heading 1', format: 'h1' },
+      { title: 'Heading 2', format: 'h2' },
+      { title: 'Heading 3', format: 'h3' },
+      { title: 'Heading 4', format: 'h4' },
+      { title: 'Heading 5', format: 'h5' },
+      { title: 'Heading 6', format: 'h6' }
+    ]},
+    { title: 'Inline', items: [
+      { title: 'Bold', icon: 'bold', format: 'bold' },
+      { title: 'Italic', icon: 'italic', format: 'italic' },
+      { title: 'Underline', icon: 'underline', format: 'underline' },
+      { title: 'Strikethrough', icon: 'strikethrough', format: 'strikethrough' },
+      { title: 'Superscript', icon: 'superscript', format: 'superscript' },
+      { title: 'Subscript', icon: 'subscript', format: 'subscript' },
+      { title: 'Code', icon: 'code', format: 'code' }
+    ]},
+    { title: 'Blocks', items: [
+      { title: 'Paragraph', format: 'p' },
+      { title: 'Blockquote', format: 'blockquote' },
+      { title: 'Div', format: 'div' },
+      { title: 'Pre', format: 'pre' }
+    ]},
+    { title: 'Alignment', items: [
+      { title: 'Left', icon: 'alignleft', format: 'alignleft' },
+      { title: 'Center', icon: 'aligncenter', format: 'aligncenter' },
+      { title: 'Right', icon: 'alignright', format: 'alignright' },
+      { title: 'Justify', icon: 'alignjustify', format: 'alignjustify' }
+    ]}
+  ],
+  language: 'vi', // Đặt ngôn ngữ là tiếng Việt
+  skin: 'oxide', 
+  content_css: 'default', 
+  image_description: false, 
+  image_title: true, 
+  browser_spellcheck: true,
+  contextmenu: 'link image table',
+  quickbars_selection_toolbar: 'bold italic | quicklink h2 h3 blockquote',
+  quickbars_image_toolbar: 'alignleft aligncenter alignright | imageoptions',
+  quickbars_insert_toolbar: 'quicktable quickimage quicklink',
+  setup: (editor) => {
+    editor.on('init', () => {});
+  }
+};
+
+
 export default {
   // Đăng ký TinyMCE Editor component
   components: {
@@ -182,6 +258,7 @@ export default {
         { label: "Slug không quá dài", passed: false },
         { label: "Có mô tả ảnh (alt)", passed: false },
       ],
+      editorConfig: editorConfig, // DÒNG ĐÃ SỬA: GÁN editorConfig VÀO DATA
     };
   },
   watch: {

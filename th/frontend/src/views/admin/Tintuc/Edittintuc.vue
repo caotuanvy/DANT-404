@@ -99,7 +99,7 @@
           </div>
 
           <div class="form-actions">
-            <button type="submit" class="btn btn-primary btn-large">
+            <button type="submit" class="btn btn-primary btn-large" :disabled="isSubmitting">
               <span v-if="isSubmitting"><i class="fas fa fa-spinner fa-spin"></i> Đang lưu...</span>
               <span v-else><i class="fas fa-save"></i> Cập nhật tin tức</span>
             </button>
@@ -125,12 +125,11 @@
 
 <script>
 import axios from "axios";
-// Import Editor từ TinyMCE cho Vue 3
 import Editor from '@tinymce/tinymce-vue';
 
 export default {
   components: {
-    Editor, // Đăng ký component Editor
+    Editor,
   },
   data() {
     return {
@@ -143,29 +142,109 @@ export default {
       file: null,
       previewImage: "",
       hinh_anh: "",
-      originalHinhAnh: "", // Để lưu trạng thái hình ảnh gốc khi tải tin tức
+      originalHinhAnh: "",
       isSubmitting: false,
-      // SEO/AI
       isGeneratingSeo: false,
       globalError: "",
       seoTitle: "",
       seoDescription: "",
       seoKeywords: "",
-      newsDescriptionLong: "", // Sẽ chứa HTML đầy đủ
-      // Cấu hình cho TinyMCE (thay thế customToolbar của VueEditor)
+      newsDescriptionLong: "",
       tinymceApiKey: '41eu6h6iewknwxlxtm1mh0dge0z3tg5ubvt2clbc0dq85wgo', // <<< THAY THẾ BẰNG API KEY CỦA BẠN TẠI TINYMCE.COM
       tinymceConfig: {
         height: 500,
         menubar: false,
+        branding: false,
         plugins: [
-          'advlist autolink lists link image charmap print preview anchor',
-          'searchreplace visualblocks code fullscreen',
-          'insertdatetime media table paste code help wordcount'
+          'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview', 'anchor',
+          'searchreplace', 'visualblocks', 'code', 'fullscreen',
+          'insertdatetime', 'media', 'table', 'help', 'wordcount',
+          'emoticons', 'codesample', 'directionality', 'quickbars', 'charmap'
         ],
         toolbar:
-          'undo redo | formatselect | bold italic backcolor | \
-          alignleft aligncenter alignright alignjustify | \
-          bullist numlist outdent indent | removeformat | help'
+          'code | newdocument | cut copy | undo redo | searchreplace | ' +
+          'bold italic underline strikethrough | superscript subscript | removeformat | ' +
+          'alignleft aligncenter alignright alignjustify | ' +
+          'bullist numlist outdent indent | ' +
+          'blockquote | link unlink anchor | ' +
+          'image media table | emoticons codesample | fullscreen preview | help',
+        images_upload_url: '/api/tinymce/upload-image', // URL này thường chỉ là đường dẫn tương đối
+        images_upload_handler: (blobInfo, progress) => new Promise((resolve, reject) => {
+          const formData = new FormData();
+          formData.append('file', blobInfo.blob(), blobInfo.filename());
+
+          const token = localStorage.getItem("token");
+          const headers = {
+            'Content-Type': 'multipart/form-data',
+          };
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+
+          // Đảm bảo URL đầy đủ khi gọi Axios
+          axios.post('http://localhost:8000/api/tinymce/upload-image', formData, { // Thêm /api vào đây
+          headers: headers,
+          onUploadProgress: (event) => {
+              progress(event.loaded / event.total * 100);
+          }
+          })
+          .then(response => {
+            resolve(response.data.location);
+          })
+          .catch(error => {
+            console.error('TinyMCE Image Upload Error:', error);
+            reject('Upload ảnh thất bại: ' + (error.response?.data?.message || error.message));
+          });
+        }),
+        content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+        style_formats: [
+          { title: 'Headings', items: [
+            { title: 'Heading 1', format: 'h1' },
+            { title: 'Heading 2', format: 'h2' },
+            { title: 'Heading 3', format: 'h3' },
+            { title: 'Heading 4', format: 'h4' },
+            { title: 'Heading 5', format: 'h5' },
+            { title: 'Heading 6', format: 'h6' }
+          ]},
+          { title: 'Inline', items: [
+            { title: 'Bold', icon: 'bold', format: 'bold' },
+            { title: 'Italic', icon: 'italic', format: 'italic' },
+            { title: 'Underline', icon: 'underline', format: 'underline' },
+            { title: 'Strikethrough', icon: 'strikethrough', format: 'strikethrough' },
+            { title: 'Superscript', icon: 'superscript', format: 'superscript' },
+            { title: 'Subscript', icon: 'subscript', format: 'subscript' },
+            { title: 'Code', icon: 'code', format: 'code' }
+          ]},
+          { title: 'Blocks', items: [
+            { title: 'Paragraph', format: 'p' },
+            { title: 'Blockquote', format: 'blockquote' },
+            { title: 'Div', format: 'div' },
+            { title: 'Pre', format: 'pre' }
+          ]},
+          { title: 'Alignment', items: [
+            { title: 'Left', icon: 'alignleft', format: 'alignleft' },
+            { title: 'Center', icon: 'aligncenter', format: 'aligncenter' },
+            { title: 'Right', icon: 'alignright', format: 'alignright' },
+            { title: 'Justify', icon: 'alignjustify', format: 'alignjustify' }
+          ]}
+        ],
+        language: 'vi',
+        skin: 'oxide',
+        content_css: 'default',
+        image_description: false,
+        image_title: true,
+        browser_spellcheck: true,
+        contextmenu: 'link image table',
+        quickbars_selection_toolbar: 'bold italic | quicklink h2 h3 blockquote',
+        quickbars_image_toolbar: 'alignleft aligncenter alignright | imageoptions',
+        quickbars_insert_toolbar: 'quicktable quickimage quicklink',
+        setup: (editor) => {
+          editor.on('init', () => {});
+        },
+        convert_urls: false,
+        relative_urls: false,
+        remove_script_host: false,
+        document_base_url: 'http://localhost:8000/'
       },
       seoCriteria: [
         { label: "Tiêu đề chứa từ khóa chính", passed: false },
@@ -192,14 +271,12 @@ export default {
     this.getTintuc();
   },
   watch: {
-    // Tự động tạo slug từ tiêu đề nếu người dùng chưa tự chỉnh sửa
     tieude(newVal) {
       if (!this.userEditedSlug) {
         this.slug = this.generateSlug(newVal);
       }
       this.checkSeoCriteria();
     },
-    // Các trường SEO cũng cần được theo dõi để cập nhật tiêu chí
     seoTitle() {
       this.checkSeoCriteria();
     },
@@ -209,7 +286,7 @@ export default {
     seoKeywords() {
       this.checkSeoCriteria();
     },
-    newsDescriptionLong() { // Quan trọng: theo dõi sự thay đổi của newsDescriptionLong
+    newsDescriptionLong() {
       this.checkSeoCriteria();
     },
     slug() {
@@ -248,9 +325,7 @@ export default {
         this.seoDescription = data.mo_ta_seo || "";
         this.seoKeywords = data.tu_khoa_seo || "";
 
-        // Giữ nguyên HTML khi lấy nội dung về
         let content = data.noidung || "";
-        // Loại bỏ các thẻ html/head/body nếu API trả về cả những thẻ đó
         content = content
           .replace(/<\s*html[^>]*>/gi, '')
           .replace(/<\s*\/\s*html\s*>/gi, '')
@@ -272,14 +347,14 @@ export default {
       if (file) {
         this.file = file;
         this.previewImage = URL.createObjectURL(file);
-        this.hinh_anh = ""; // Nếu có file mới, không còn dùng hình ảnh cũ
+        this.hinh_anh = "";
         this.checkSeoCriteria();
       }
     },
     removeImage() {
       this.file = null;
       this.previewImage = "";
-      this.hinh_anh = ""; // Xóa đường dẫn hình ảnh hiện có (để báo hiệu server xóa ảnh cũ)
+      this.hinh_anh = "";
       const input = document.getElementById('hinh_anh');
       if (input) input.value = "";
       this.checkSeoCriteria();
@@ -289,11 +364,14 @@ export default {
       try {
         if (!this.tieude || !this.id_danh_muc_tin_tuc) {
           alert("Vui lòng nhập đầy đủ thông tin bắt buộc (Tiêu đề, Danh mục)!");
+          this.isSubmitting = false;
           return;
         }
         const token = localStorage.getItem("token");
         if (!token) {
           alert("Bạn cần đăng nhập!");
+          this.$router.push("/login");
+          this.isSubmitting = false;
           return;
         }
 
@@ -305,7 +383,7 @@ export default {
         formData.append("tieu_de_seo", this.seoTitle || "");
         formData.append("mo_ta_seo", this.seoDescription || "");
         formData.append("tu_khoa_seo", this.seoKeywords || "");
-        formData.append("noidung", this.newsDescriptionLong || ""); // newsDescriptionLong chứa HTML đầy đủ
+        formData.append("noidung", this.newsDescriptionLong || "");
 
         if (this.file) {
           formData.append("hinh_anh", this.file);
@@ -346,7 +424,7 @@ export default {
         const token = localStorage.getItem("token");
         const response = await axios.post("http://localhost:8000/api/tintuc/generate-seo", {
           tieude: this.tieude,
-          noidung: this.tieude, // Gửi tiêu đề để AI có căn cứ tạo nội dung
+          noidung: this.newsDescriptionLong || this.tieude,
         }, {
           headers: {
             Authorization: `Bearer ${token}`
@@ -364,14 +442,13 @@ export default {
         }
         if (response.data.news_description_long) {
           let content = response.data.news_description_long;
-          // Loại bỏ html/head/body nếu có
           content = content
             .replace(/<\s*html[^>]*>/gi, '')
             .replace(/<\s*\/\s*html\s*>/gi, '')
             .replace(/<\s*head[^>]*>[\s\S]*?<\s*\/\s*head\s*>/gi, '')
             .replace(/<\s*body[^>]*>/gi, '')
             .replace(/<\s*\/\s*body\s*>/gi, '');
-          this.newsDescriptionLong = content.trim(); // Cập nhật v-model của VueEditor
+          this.newsDescriptionLong = content.trim();
         }
 
         this.checkSeoCriteria();
@@ -397,69 +474,45 @@ export default {
     },
     checkSeoCriteria() {
       const keyword = this.seoKeywords?.split(',')[0]?.trim() || '';
-      // Lấy văn bản thuần túy từ HTML để đếm từ và mật độ từ khóa
-      const newsContentWithoutHtml = this.newsDescriptionLong.replace(/<[^>]+>/g, ' ');
 
-      // 1. Tiêu đề chứa từ khóa chính
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = this.newsDescriptionLong;
+      const newsContentWithoutHtml = tempDiv.textContent || tempDiv.innerText || '';
+
+
       this.seoCriteria[0].passed = keyword && this.tieude.toLowerCase().includes(keyword.toLowerCase());
-
-      // 2. Tiêu đề dưới 60 ký tự
       this.seoCriteria[1].passed = this.tieude.length > 0 && this.tieude.length <= 60;
-
-      // 3. Mô tả meta chứa từ khóa
       this.seoCriteria[2].passed = keyword && this.seoDescription.toLowerCase().includes(keyword.toLowerCase());
-
-      // 4. Mô tả meta 140-155 ký tự
       this.seoCriteria[3].passed = this.seoDescription.length >= 140 && this.seoDescription.length <= 155;
-
-      // 5. Có từ khóa SEO
       this.seoCriteria[4].passed = !!this.seoKeywords && this.seoKeywords.length > 0;
 
-      // 6. Từ khóa không trùng lặp
       if (this.seoKeywords) {
-        const arr = this.seoKeywords.split(',').map(s => s.trim().toLowerCase());
+        const arr = this.seoKeywords.split(',').map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
         this.seoCriteria[5].passed = arr.length === new Set(arr).size;
       } else {
         this.seoCriteria[5].passed = false;
       }
 
-      // 7. Nội dung trên 300 từ
-      this.seoCriteria[6].passed = newsContentWithoutHtml.trim().split(/\s+/).length >= 300;
-
-      // 8. Nội dung có tiêu đề phụ (H2, H3) - Kiểm tra sự tồn tại của thẻ trong newsDescriptionLong
+      this.seoCriteria[6].passed = newsContentWithoutHtml.trim().split(/\s+/).filter(word => word.length > 0).length >= 300;
       this.seoCriteria[7].passed = /<h2[\s>]/i.test(this.newsDescriptionLong) || /<h3[\s>]/i.test(this.newsDescriptionLong);
-
-      // 9. Có hình ảnh minh họa (Kiểm tra file mới, preview, hoặc thẻ <img> trong nội dung)
       this.seoCriteria[8].passed = !!this.file || (this.previewImage && this.previewImage.length > 0) || (this.hinh_anh && this.hinh_anh.length > 0) || /<img[\s>]/i.test(this.newsDescriptionLong);
 
-
-      // 10. Có liên kết nội bộ (ví dụ: chứa localhost:8000)
       const currentDomain = window.location.hostname;
-      this.seoCriteria[9].passed = new RegExp(`<a[^>]+href=["'](?:https?:\/\/)?(?:www\\.)?${currentDomain}[^"']*["']`, 'i').test(this.newsDescriptionLong);
+      this.seoCriteria[9].passed = new RegExp(`<a[^>]+href=["'](?:https?:\/\/)?(?:www\\.)?${currentDomain}[^"']*["']`, 'i').test(this.newsDescriptionLong) || /<a[^>]+href=["']\/(?!\/)[^"']*["']/i.test(this.newsDescriptionLong);
+      this.seoCriteria[10].passed = /<a[^>]+href=["']https?:\/\/(?!www\.)(?!${currentDomain})[^"']+["']/i.test(this.newsDescriptionLong);
 
-      // 11. Có liên kết ngoài (không chứa localhost:8000)
-      this.seoCriteria[10].passed = /<a[^>]+href=["']https?:\/\/(?!www\.)(?!localhost:8000)[^"']+["']/i.test(this.newsDescriptionLong);
-
-      // 12. Không lạm dụng từ khóa (mật độ từ khóa < 5%)
       if (newsContentWithoutHtml && keyword) {
-        const totalWords = newsContentWithoutHtml.trim().split(/\s+/).length;
-        const keywordCount = (newsContentWithoutHtml.match(new RegExp(keyword, 'gi')) || []).length;
+        const totalWords = newsContentWithoutHtml.trim().split(/\s+/).filter(word => word.length > 0).length;
+        const keywordCount = (newsContentWithoutHtml.match(new RegExp(`\\b${keyword}\\b`, 'gi')) || []).length;
         this.seoCriteria[11].passed = totalWords > 0 ? (keywordCount / totalWords) < 0.05 : true;
       } else {
-        this.seoCriteria[11].passed = true; // Không có nội dung hoặc từ khóa thì coi như không lạm dụng
+        this.seoCriteria[11].passed = true;
       }
 
-      // 13. Không có lỗi chính tả (Là một placeholder - cần API hoặc thư viện bên thứ ba)
       this.seoCriteria[12].passed = true;
-
-      // 14. URL thân thiện SEO (chỉ chứa chữ thường, số, dấu gạch ngang)
       this.seoCriteria[13].passed = /^[a-z0-9-]+$/.test(this.slug);
-
-      // 15. Slug không quá dài (ví dụ: <= 80 ký tự)
       this.seoCriteria[14].passed = this.slug.length > 0 && this.slug.length <= 80;
-
-      // 16. Có mô tả ảnh (alt)
-      this.seoCriteria[15].passed = !!this.file || (this.previewImage && this.previewImage.length > 0) || /<img[^>]+alt=["'][^"']+["']/i.test(this.newsDescriptionLong);
+      this.seoCriteria[15].passed = (!!this.file || (this.previewImage && this.previewImage.length > 0) || (this.hinh_anh && this.hinh_anh.length > 0)) && /<img[^>]+alt=["'][^"']+["']/i.test(this.newsDescriptionLong);
     },
   },
 };
@@ -749,19 +802,6 @@ textarea.form-control {
   margin-top: 10px;
   border: 1px solid #e0e0e0;
 }
-/* Xóa bỏ các dòng này trong style, vì VueEditor sẽ tự quản lý hiển thị HTML */
-/* .ai-description {
-  background: #fff;
-  border-radius: 6px;
-  padding: 10px 12px;
-  border: 1px solid #e0e0e0;
-  min-height: 60px;
-  font-size: 1rem;
-  color: #333;
-  margin-top: 4px;
-  max-height: 300px;
-  overflow-y: auto;
-} */
 @media (max-width: 992px) {
   .form-grid {
     grid-template-columns: 1fr;

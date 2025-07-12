@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Tintuc;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class TintucController extends Controller
 {
@@ -282,5 +283,43 @@ class TintucController extends Controller
             return response()->json(['error' => 'Đã xảy ra lỗi khi tạo nội dung AI: ' . $e->getMessage()], 500);
         }
     }
+    /**
+     * Xử lý upload ảnh từ TinyMCE
+     */
+    public function uploadTinyMCEImage(Request $request): JsonResponse
+    {
+        // Kiểm tra xem có file nào được gửi lên không với tên 'file'
+        // TinyMCE gửi file với trường 'file' theo mặc định
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+
+            // Kiểm tra loại file có phải là ảnh không
+            if ($file->isValid() && Str::startsWith($file->getMimeType(), 'image')) {
+                try {
+                    // Tạo tên file duy nhất để tránh trùng lặp
+                    $filename = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+                    // Lưu file vào thư mục 'public/uploads/tinymce'
+                    // Đảm bảo thư mục public/uploads/tinymce có quyền ghi
+                    $path = $file->storeAs('public/uploads/tinymce', $filename, 'public'); // Thêm 'public' disk ở đây
+
+                    // Lấy URL công khai của ảnh
+                    $location = Storage::url($path);
+
+                    // Trả về JSON theo định dạng TinyMCE mong đợi
+                    return response()->json(['location' => $location]);
+
+                } catch (\Exception $e) {
+                    // Ghi log lỗi để dễ debug
+                    \Log::error('TinyMCE upload error: ' . $e->getMessage());
+                    return response()->json(['error' => 'Lỗi server khi lưu ảnh: ' . $e->getMessage()], 500);
+                }
+            } else {
+                return response()->json(['error' => 'File không hợp lệ hoặc không phải là ảnh.'], 400);
+            }
+        } else {
+            return response()->json(['error' => 'Không có file nào được tải lên.'], 400);
+        }
+    }
+
 
 }
