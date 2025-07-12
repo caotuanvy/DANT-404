@@ -30,14 +30,7 @@ class SanPhamBienThe extends Model
     ];
 
     public function sanPham()
-<<<<<<< HEAD
-{
-    return $this->belongsTo(SanPham::class, 'san_pham_id', 'san_pham_id')
-                ->withDefault();
-}
 
-    
-=======
     {
         return $this->belongsTo(SanPham::class, 'san_pham_id', 'san_pham_id');
     }
@@ -49,5 +42,4 @@ public function donHangChiTiet()
     {
         return $this->hasMany(OrderItem::class, 'san_pham_bien_the_id', 'bien_the_id');
     }
->>>>>>> e58a3daaf66b8e704172773499843bab5a76066e
 }
