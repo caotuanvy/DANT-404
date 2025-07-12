@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Http\Request;
@@ -17,8 +18,10 @@ use App\Http\Controllers\Api\DiaChiController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\GioHangController;
 use App\Http\Controllers\Api\IntroduceController;
-
+use App\Http\Controllers\Api\GoogleAuthController;
+use App\Http\Controllers\Api\NotificationController;
 // Public Auth Routes
+Route::post('/auth/google', [GoogleAuthController::class, 'handleGoogleLogin']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/kich-hoat/{token}', [AuthController::class, 'activate']);
@@ -29,10 +32,15 @@ Route::post('/verify-reset-code', [AuthController::class, 'verifyResetCode']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 // Public Product Routes
+Route::get('user/product/details-by-slugs', [ProductController::class, 'getDetailsBySlugs']);
 Route::apiResource('products', ProductController::class);
 Route::put('/products/{id}/toggle-noi-bat', [ProductController::class, 'toggleNoiBat']);
 Route::get('/categories/{id}/products', [CategoryController::class, 'getProductsByCategory']);
 
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/carts/add', [GioHangController::class, 'themVaoGioHang']);
+    // Route::get('/carts', [GioHangController::class, 'xemGioHang']);
+});
 
 
 // Product Image Upload (public add, delete protected)
@@ -43,7 +51,9 @@ Route::delete('/products/{product_id}/images/{image_id}', [ProductImageControlle
 Route::apiResource('categories', CategoryController::class);
 
 // Tin tuc
+Route::post('/api/tinymce/upload-image', [TintucController::class, 'uploadTinyMCEImage']);
 Route::apiResource('tintuc', TintucController::class);
+Route::post('/tintuc/generate-seo', [TintucController::class, 'generateSeoContent']);
 Route::get('/tintuc', [TintucController::class, 'index']);
 Route::post('/tintuc', [TintucController::class, 'store']);
 Route::get('/tintuc/{id}', [TintucController::class, 'show']);
@@ -60,7 +70,7 @@ Route::get('/danh-muc-tin-tuc', [DanhMucTtController::class, 'index']);
 Route::get('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'show']);
 Route::post('/danh-muc-tin-tuc', [DanhMucTtController::class, 'store']);
 Route::put('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'update']);
-Route::delete('/danh-muc-tin-tuc/{id}', [DanhMucTtController::class, 'destroy']);
+Route::put('/danh-muc-tin-tuc/{id}/toggle-status', [DanhMucTtController::class, 'toggleStatus']);
 Route::apiResource('danh-muc-tin-tuc', DanhMucTtController::class);
 Route::get('/xemdanhmuc-admin/{id}', [DanhMucTtController::class, 'xemChiTietDanhMucAdmin']);
 Route::get('tintuc-cong-khai/danh-muc/{id}', [DanhMucTtController::class, 'tintucCongKhaiTheoDanhMuc']);
@@ -115,6 +125,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+    Route::post('/save-fcm-token', [NotificationController::class, 'saveFcmToken']);
+    Route::get('/admin/users-for-notification', [NotificationController::class, 'getUsersForNotification']);
+    Route::post('/admin/notifications/send', [NotificationController::class, 'sendNotification']);
 
     Route::put('/users/{id}/change-password', [UserController::class, 'changePassword']);
 
@@ -126,7 +139,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/orders/{id}/reject', [OrderController::class, 'reject']);
     Route::patch('/orders/{id}/hide', [OrderController::class, 'hideOrder']);
     Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
-
+    // Thống Kê
+    Route::get('/analytics/revenue', [ProductController::class, 'getRevenueStatistics']);
+    Route::get('/analytics/overall', [ProductController::class, 'getOverallStatistics']);
     // Users
     Route::get('/users', [UserController::class, 'index']);
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
@@ -142,3 +157,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/products/generate-seo', [ProductController::class, 'generateSeoContent']);
 
 });
+Route::get('user/{slug}', [ProductController::class, 'showBySlug'])
+      ->where('slug', '[a-zA-Z0-9-]+');

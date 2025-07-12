@@ -11,7 +11,6 @@ import ChangePassword from '../components/user/ChangePassword.vue';
 import Cart from '../components/user/Cart.vue';
 import axios from 'axios';
 
-
 const routes = [
   { path: '/', component: Home },
   { path: '/cart', component: Cart, meta: { requiresAuth: true } },
@@ -27,10 +26,16 @@ const routes = [
     name: 'gioi-thieu',
     component: () => import('../components/user/ISV.vue')
   },
+  
   {
     path: '/Danh-muc-san-pham',
     name: 'DAnhMucSanPham',
     component: () => import('../components/user/DMSP.vue')
+  },
+  {
+    path: '/so-sanh',
+    name: 'ComparisonPage',
+    component: () => import('../components/user/CompareProduct.vue')
   },
   {
     path: '/kich-hoat',
@@ -52,6 +57,7 @@ const routes = [
   name: 'ChiTietTinTucCongKhai',
   component: () => import('../components/user/NewsDetails.vue')
   },
+  { path: '/san-pham/:slug', name: 'ProductDetailUser', component: () => import('../components/user/ProductDetail.vue'),},
   {
     path: '/user',
     component: UserAccountLayout,
@@ -101,9 +107,16 @@ const routes = [
       { path: 'products', component: () => import('../components/admin/ProductList.vue') },
       { path: 'category', component: () => import('../components/admin/CategoryList.vue') },
        { path: 'testt', component: () => import('../components/admin/Test.vue') },
+       
        {
         path: 'orders',
         component: () => import('../components/admin/OrderList.vue'),
+        meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
+        path: 'send-push', 
+        name: 'SendPushNotification',
+        component: () => import('../components/user/SendPushNotification.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       },
       {
@@ -239,10 +252,7 @@ const routes = [
   name: 'ProductDetail',
   component: () => import('@/components/user/ProductDetail.vue')
 },
-{
-  path: '/:pathMatch(.*)*',
-  redirect: '/'
-}
+
 ];
 
 const router = createRouter({

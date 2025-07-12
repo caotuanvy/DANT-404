@@ -97,12 +97,12 @@
           <div class="card custom-card">
             <div class="card-content">
               <h3 class="card-title"><i class="fas fa-bullhorn icon-margin"></i> Khuyến mãi & SEO</h3>
-              <button 
-                  type="button" 
-                  @click="generateSeoContent" 
-                  :disabled="isGeneratingSeo || !product.ten_san_pham"
+              <button
+                  type="button"
+                  @click="openAiModal"
+                  :disabled="isGeneratingSeo"
                   class="btn-ai"
-                  title="Tạo nội dung SEO bằng AI (cần có tên sản phẩm)">
+                  title="Mở công cụ AI để tạo nội dung">
                   <span v-if="isGeneratingSeo"><i class="fas fa-spinner fa-spin"></i> Đang tạo...</span>
                   <span v-else><i class="fas fa-magic"></i> Tự Tạo Bài Viết</span>
               </button>
@@ -321,14 +321,75 @@
       </div>
         <p v-if="globalError" class="alert danger-alert">{{ globalError }}</p>
     </form>
+    <div v-if="showAiModal" class="modal-overlay" @click.self="closeAiModal">
+    <div class="modal-content-ai">
+        <div class="modal-header">
+            <h3>Tạo nội dung bằng AI</h3>
+            <button type="button" class="close-button" @click="closeAiModal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="aiProductName" class="form-label">Tên sản phẩm chính:</label>
+                <input type="text" id="aiProductName" v-model="aiInput.product_name" class="form-control" />
+                <small class="form-text">Đây là tên chính AI sẽ dùng để tạo nội dung.</small>
+            </div>
+            <div class="form-group">
+                <label for="aiKeywords" class="form-label">Các từ khóa liên quan (phân cách bởi dấu phẩy):</label>
+                <input type="text" id="aiKeywords" v-model="aiInput.keywords" class="form-control" placeholder="VD: bánh ngọt, bánh kem, sinh nhật" />
+                <small class="form-text">Các từ khóa giúp AI hiểu rõ hơn ngữ cảnh.</small>
+            </div>
+            <div class="form-group">
+                <label for="aiDetailedContent" class="form-label">Nội dung chi tiết bổ sung (tùy chọn):</label>
+                <textarea id="aiDetailedContent" v-model="aiInput.detailed_content" class="form-control" rows="5" placeholder="VD: Sản phẩm có hương vị vani, được làm thủ công, không chứa chất bảo quản."></textarea>
+                <small class="form-text">Cung cấp thêm thông tin cụ thể về sản phẩm.</small>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Tùy chọn nội dung chi tiết AI tạo:</label>
+                <div class="form-check">
+                    <input type="checkbox" id="aiSpecs" v-model="aiInput.is_product_specifications" class="form-check-input">
+                    <label class="form-check-label" for="aiSpecs">Bao gồm thông số kỹ thuật/đặc điểm sản phẩm</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" id="aiManufacture" v-model="aiInput.is_manufacture_info" class="form-check-input">
+                    <label class="form-check-label" for="aiManufacture">Bao gồm thông tin sản xuất</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" id="aiExport" v-model="aiInput.is_export_info" class="form-check-input">
+                    <label class="form-check-label" for="aiExport">Bao gồm thông tin xuất khẩu</label>
+                </div>
+            </div>
+
+            <p v-if="aiGenerationError" class="form-error mt-2">{{ aiGenerationError }}</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="closeAiModal">Hủy</button>
+            <button type="button" class="btn btn-primary" @click="generateSeoContent" :disabled="isGeneratingAiContent || !aiInput.product_name">
+                <span v-if="isGeneratingAiContent"><i class="fas fa-spinner fa-spin"></i> Đang tạo...</span>
+                <span v-else><i class="fas fa-magic"></i> Tạo Nội Dung</span>
+            </button>
+        </div>
+    </div>
+</div>
   </div>
+  
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, watch, computed } from 'vue';
 import axios from 'axios';
 import Editor from '@tinymce/tinymce-vue';
-
+const showAiModal = ref(false);
+ 
+const aiInput = reactive({    
+    product_name: '',
+    keywords: '',
+    detailed_content: '', 
+    is_product_specifications: false, 
+    is_manufacture_info: false,      
+    is_export_info: false,           
+});
+const aiGenerationError = ref('');
 const product = reactive({
  ten_san_pham: '',
  slug: '',
@@ -347,6 +408,7 @@ const product = reactive({
  variants: [],
 });
 const isGeneratingSeo = ref(false);
+const isGeneratingAiContent = ref(false);
 const newVariant = reactive({
   ten_bien_the: '',
   kich_thuoc: '',
@@ -474,49 +536,56 @@ const handleSubmit = async () => {
 };
 
 const generateSeoContent = async () => {
-  if (!product.ten_san_pham) {
-    alert('Vui lòng nhập Tên sản phẩm trước khi tạo nội dung SEO.');
-    return;
-  }
+    if (!aiInput.product_name) {
+        aiGenerationError.value = 'Tên sản phẩm là bắt buộc để tạo nội dung AI.';
+        return;
+    }
 
-  isGeneratingSeo.value = true;
-  globalError.value = '';
+    isGeneratingAiContent.value = true; 
+    aiGenerationError.value = '';
 
-  try {
-    const response = await axios.post('products/generate-seo', {
-      product_name: product.ten_san_pham,
-      // description: product.mo_ta,
-    }, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      }
-    });
-    if (response.data.seo_title) {
-      product.Tieu_de_seo = response.data.seo_title;
-    }
-    if (response.data.seo_description) {
-      product.Mo_ta_seo = response.data.seo_description;
-    }
-    if (response.data.seo_keywords) {
-      product.Tu_khoa = response.data.seo_keywords;
-    }
-    if (response.data.product_description_long) {
-      product.mo_ta = response.data.product_description_long; 
-    }
-    
-    alert('Tạo nội dung AI thành công!');
-    
+    try {
+        const payload = {
+            product_name: aiInput.product_name,
+            keywords: aiInput.keywords,
+            detailed_content: aiInput.detailed_content,
+            generate_specs: aiInput.is_product_specifications, 
+            generate_manufacture: aiInput.is_manufacture_info, 
+            generate_export: aiInput.is_export_info,           
+           
+        };
 
-  } catch (error) {
-    console.error("Lỗi khi tạo nội dung SEO:", error);
-    if (error.response && error.response.status === 401) {
-      globalError.value = "Tạo SEO thất bại: Phiên đăng nhập đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.";
-    } else {
-      globalError.value = "Tạo SEO thất bại: " + (error.response?.data?.error || "Lỗi không xác định.");
+        const response = await axios.post('products/generate-seo', payload, {
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        if (response.data.seo_title) {
+            product.Tieu_de_seo = response.data.seo_title;
+        }
+        if (response.data.seo_description) {
+            product.Mo_ta_seo = response.data.seo_description;
+        }
+        if (response.data.seo_keywords) {
+            product.Tu_khoa = response.data.seo_keywords;
+        }
+        if (response.data.product_description_long) {
+            product.mo_ta = response.data.product_description_long;
+        }
+
+        alert('Tạo nội dung AI thành công!');
+        closeAiModal(); 
+
+    } catch (error) {
+        console.error("Lỗi khi tạo nội dung AI:", error);
+        if (error.response && error.response.status === 401) {
+            aiGenerationError.value = "Tạo nội dung AI thất bại: Phiên đăng nhập đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.";
+        } else {
+            aiGenerationError.value = "Tạo nội dung AI thất bại: " + (error.response?.data?.error || "Lỗi không xác định.");
+        }
+    } finally {
+        isGeneratingAiContent.value = false; 
     }
-  } finally {
-    isGeneratingSeo.value = false;
-  }
 };
 
 // --- TINYMCE EDITOR
@@ -618,7 +687,21 @@ const parseHtmlContent = (htmlString) => {
     return parser.parseFromString(htmlString, 'text/html');
 };
 const createSeoResult = (isGood, suggestion) => ({ isGood, class: isGood ? 'status-good' : 'status-bad', suggestion });
+const openAiModal = () => {
+    aiInput.product_name = product.ten_san_pham; 
+    aiInput.keywords = product.Tu_khoa;
+    aiInput.detailed_content = ''; 
+    aiInput.is_product_specifications = false;
+    aiInput.is_manufacture_info = false;
+    aiInput.is_export_info = false;
+    aiGenerationError.value = '';
+    showAiModal.value = true;
+};
 
+const closeAiModal = () => {
+    showAiModal.value = false;
+    aiGenerationError.value = ''; 
+};
 // Biến dùng chung
 const mainKeyword = computed(() => normalizeText(product.ten_san_pham));
 const descriptionHtml = computed(() => product.mo_ta || '');
@@ -760,14 +843,6 @@ const evaluateUniqueness = computed(() => {
     if (wordCount.value > 50) return createSeoResult(true, 'Nội dung có độ dài hợp lý. Cần kiểm tra trùng lặp thủ công.');
     return createSeoResult(false, 'Đảm bảo nội dung độc quyền, không trùng lặp (cần kiểm tra thủ công).');
 });
-
-
-
-
-
-
-
-
 </script>
 
 <style scoped>
@@ -779,14 +854,17 @@ const evaluateUniqueness = computed(() => {
 .seo-criteria-list {
     display: flex;
     flex-direction: column;
-    font-size: 14px;
-   
+    
 }
 .seo-criteria-item {
     display: flex;
     align-items: flex-start;
     gap: 5px;
     height: 55px;
+    
+}
+form div {
+  margin-bottom: 0px !important;
 }
 .criteria-details {
     display: flex;
@@ -794,10 +872,13 @@ const evaluateUniqueness = computed(() => {
 }
 .criteria-name {
     font-weight: 500;
+    font-size: 0.85em;
+    
 }
 .criteria-suggestion {
-    font-size: 0.85em;
+    font-size: 0.65em;
     color: #6c757d;
+    
 }
 .status-good { color: #007bff; }
 .status-bad { color: #6c757d; }
@@ -989,24 +1070,20 @@ textarea.form-control {
 .variant-table .icon-button:hover {
     color: #c82333;
 }
-
-
-/* Inline Form for Variants */
 .fieldset-style {
-    border: 1px solid #007bff; /* Primary color border */
+    border: 1px solid #007bff; 
     padding: 20px;
     margin-top: 20px;
     border-radius: 8px;
-    background-color: #e7f3ff; /* Light background for fieldset */
+    background-color: #e7f3ff; 
 }
 
 .fieldset-legend {
     font-size: 1.1em;
     font-weight: bold;
-    color: #007bff; /* Primary color for legend */
+    color: #007bff;
     padding: 0 10px;
     margin-left: 10px;
-    background-color: #fff; /* White background for text */
     border-radius: 5px;
 }
 
@@ -1247,7 +1324,74 @@ textarea.form-control {
   color: #ffc107; /* Orange/Yellow for neutral/warning */
   font-weight: bold;
 }
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Đảm bảo modal hiển thị trên cùng */
+}
 
+.modal-content-ai {
+    background-color: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 600px; /* Chiều rộng tối đa của modal */
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh; /* Giới hạn chiều cao để có thể scroll */
+    overflow-y: auto; /* Thêm scroll nếu nội dung dài */
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #333;
+}
+
+.modal-body {
+    flex-grow: 1; /* Cho phép body mở rộng */
+    padding-bottom: 20px;
+}
+
+.modal-footer {
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px; /* Khoảng cách giữa các nút */
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: #888;
+    transition: color 0.2s;
+}
+
+.close-button:hover {
+    color: #333;
+}
 @media (max-width: 992px) {
   .form-grid {
     grid-template-columns: 1fr;

@@ -34,10 +34,15 @@ class SanPham extends Model
 {
     return $this->belongsTo(Category::class, 'ten_danh_muc_id', 'category_id');
 }
+public function getRouteKeyName()
+    {
+        return 'slug';
+    }
  public function hinhAnhSanPham()
     {
         return $this->hasMany(HinhAnhSanPham::class, 'san_pham_id', 'san_pham_id');
     }
+
     public function bienThe()
 {
     return $this->hasMany(SanPhamBienThe::class, 'san_pham_id', 'san_pham_id');

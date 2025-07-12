@@ -12,7 +12,7 @@
         <div class="product-info">
           <span class="product-category">{{ sp.ten_danh_muc || 'Danh mục' }}</span>
           <h3 class="product-name">{{ sp.ten_san_pham }}</h3>
-          <p class="product-description">{{ sp.mo_ta_ngan || '...' }}</p>
+          <p class="product-description">{{ sp.Mo_ta_seo || '...' }}</p>
 
           <div class="product-rating">
             ⭐ {{ sp.diem_danh_gia || '4.8' }} 

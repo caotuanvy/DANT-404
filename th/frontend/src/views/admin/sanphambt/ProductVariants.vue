@@ -16,18 +16,29 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="variant in variants" :key="variant.bien_the_id">
-          <td>{{ variant.ten_bien_the }}</td>
-          <td>{{ variant.kich_thuoc }}</td>
-          <td>{{ variant.mau_sac }}</td>
-          <td>{{ variant.so_luong_ton_kho }}</td>
-          <td>{{ formatPrice(variant.gia) }}</td>
-          <td>
-            <button class="edit-btn" @click="startEditVariant(variant)">Sửa</button>
-            <button class="delete-btn" @click="deleteVariant(variant.bien_the_id)">Xóa</button>
-          </td>
-        </tr>
-      </tbody>
+    <tr v-for="variant in variants" :key="variant.bien_the_id">
+     <td>{{ variant.ten_bien_the }}</td>
+     <td>{{ variant.kich_thuoc }}</td>
+     <td>{{ variant.mau_sac }}</td>
+     <td>{{ variant.so_luong_ton_kho }}</td>
+     <td>{{ formatPrice(variant.gia) }}</td>
+     <td>
+            <span class="edit-btn icon-button" @click="startEditVariant(variant)" title="Sửa biến thể">
+       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+        <path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" />
+       </svg>
+      </span>
+
+            <span class="delete-btn icon-button" @click="deleteVariant(variant.bien_the_id)" title="Xóa biến thể">
+       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 000-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zm1 5a1 1 0 100 2h4a1 1 0 100-2H8z" clip-rule="evenodd" />
+       </svg>
+      </span>
+     </td>
+    </tr>
+   </tbody>
+
     </table>
     <p v-if="!loading && variants.length === 0">Chưa có biến thể nào.</p>
 
@@ -178,7 +189,7 @@ onMounted(() => {
 .variant-section {
   margin-top: 30px;
   padding: 20px;
-  background: #f9f9f9;
+ 
   border-radius: 8px;
 }
 
@@ -277,5 +288,40 @@ legend {
 .error {
   color: red;
   margin-top: 15px;
+}
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: background-color 0.2s, transform 0.2s;
+  border: 1px solid transparent;
+  margin: 0 0.25rem;
+}
+
+.icon-button svg {
+  width: 20px;
+  height: 20px;
+  color: rgb(0, 0, 0);
+}
+
+.edit-btn {
+  background-color: var(--color-primary);
+}
+
+.edit-btn:hover {
+  background-color: var(--color-primary-hover);
+  transform: scale(1.1);
+}
+
+.delete-btn {
+  background-color: var(--color-red);
+}
+
+.delete-btn:hover {
+  background-color: #ef4444;
+  transform: scale(1.1);
 }
 </style>
