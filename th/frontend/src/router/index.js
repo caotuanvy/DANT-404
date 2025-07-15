@@ -140,6 +140,11 @@ const routes = [
       meta: { requiresAuth: true, role: 'admin' }
       },
       {
+      path: 'binhluan',
+      component: () => import('../components/admin/Binhluan.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
         path: 'slide',
         name: 'AdminSlide',
         component: () => import('../components/admin/SlideList.vue'),

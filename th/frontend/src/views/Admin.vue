@@ -231,6 +231,7 @@ const menu = [
       { to: '/admin/album', label: 'Album', icon: 'bi bi-image' },
       { to: '/admin/danhmuctintuc', label: 'Danh Mục Tin tức', icon: 'bi bi-newspaper' },
       { to: '/admin/tintuc', label: 'Tin tức', icon: 'bi bi-newspaper' },
+      { to: '/admin/binhluan', label: 'Bình Luận', icon: 'bi bi-file-earmark-text' },
       { to: '/admin/video', label: 'Video', icon: 'bi bi-camera-video' },
       { to: '/admin/payment', label: 'Hình thức thanh toán', icon: 'bi bi-cash' },
       { to: '/admin/send-push', label: 'Thông báo đẩy', icon: 'bi bi-bell' },
