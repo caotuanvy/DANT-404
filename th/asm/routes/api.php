@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\GioHangController;
 use App\Http\Controllers\Api\IntroduceController;
 use App\Http\Controllers\Api\GoogleAuthController;
+use App\Http\Controllers\Api\NotificationController;
 // Public Auth Routes
 Route::post('/auth/google', [GoogleAuthController::class, 'handleGoogleLogin']);
 Route::post('/register', [AuthController::class, 'register']);
@@ -31,8 +32,6 @@ Route::post('/verify-reset-code', [AuthController::class, 'verifyResetCode']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 // Public Product Routes
-Route::get('user/{slug}', [ProductController::class, 'showBySlug'])
-      ->where('slug', '[a-zA-Z0-9-]+');
 Route::get('user/product/details-by-slugs', [ProductController::class, 'getDetailsBySlugs']);
 Route::apiResource('products', ProductController::class);
 Route::put('/products/{id}/toggle-noi-bat', [ProductController::class, 'toggleNoiBat']);
@@ -126,6 +125,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+    Route::post('/save-fcm-token', [NotificationController::class, 'saveFcmToken']);
+    Route::get('/admin/users-for-notification', [NotificationController::class, 'getUsersForNotification']);
+    Route::post('/admin/notifications/send', [NotificationController::class, 'sendNotification']);
 
     Route::put('/users/{id}/change-password', [UserController::class, 'changePassword']);
 
@@ -137,7 +139,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/orders/{id}/reject', [OrderController::class, 'reject']);
     Route::patch('/orders/{id}/hide', [OrderController::class, 'hideOrder']);
     Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
-
+    // Thống Kê
+    Route::get('/analytics/revenue', [ProductController::class, 'getRevenueStatistics']);
+    Route::get('/analytics/overall', [ProductController::class, 'getOverallStatistics']);
     // Users
     Route::get('/users', [UserController::class, 'index']);
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
@@ -153,3 +157,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/products/generate-seo', [ProductController::class, 'generateSeoContent']);
 
 });
+Route::get('user/{slug}', [ProductController::class, 'showBySlug'])
+      ->where('slug', '[a-zA-Z0-9-]+');

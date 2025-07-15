@@ -26,6 +26,7 @@ const routes = [
     name: 'gioi-thieu',
     component: () => import('../components/user/ISV.vue')
   },
+  
   {
     path: '/Danh-muc-san-pham',
     name: 'DAnhMucSanPham',
@@ -110,6 +111,12 @@ const routes = [
        {
         path: 'orders',
         component: () => import('../components/admin/OrderList.vue'),
+        meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
+        path: 'send-push', 
+        name: 'SendPushNotification',
+        component: () => import('../components/user/SendPushNotification.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       },
       {

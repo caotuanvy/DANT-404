@@ -42,10 +42,10 @@ class AuthController extends Controller
             'sdt' => $request->sdt, // Đảm bảo trường 'sdt' tồn tại trong form nếu bạn muốn lưu
             'mat_khau' => Hash::make($request->mat_khau),
             'vai_tro_id' => 0, // Giá trị mặc định
-            'trang_thai' => 0, // Giá trị mặc định
+            'trang_thai' => 0, // Giá trị mặc định: 0 = hoạt động, 1 = vô hiệu hóa bởi admin
             'ngay_tao' => now(),
             'activation_token' => $activation_token,
-            'is_active' => 0,
+            'is_active' => 0, // Giá trị mặc định: 0 = chưa kích hoạt, 1 = đã kích hoạt bởi người dùng
         ]);
 
         // Gửi email kích hoạt
@@ -75,7 +75,7 @@ class AuthController extends Controller
             return response()->json(['message' => 'Sai email hoặc mật khẩu'], 401);
         }
 
-        // 2. Kiểm tra tài khoản đã kích hoạt chưa (di chuyển vào đây)
+        // 2. Kiểm tra tài khoản đã kích hoạt chưa
         if (!$user->is_active) {
             return response()->json([
                 'message' => 'Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email để kích hoạt hoặc yêu cầu gửi lại email kích hoạt.',
@@ -83,7 +83,18 @@ class AuthController extends Controller
             ], 403); // 403 Forbidden - Lỗi quyền truy cập
         }
 
-        // 3. Tạo token nếu tất cả đều hợp lệ
+        // --- BẮT ĐẦU PHẦN THÊM MỚI/CẬP NHẬT ---
+        // 3. Kiểm tra tài khoản có bị admin vô hiệu hóa không
+        // Theo quy ước của bạn: trang_thai = 1 nghĩa là đã bị vô hiệu hóa bởi admin
+        if ($user->trang_thai === 1) { // Sử dụng === 1 để đảm bảo kiểu dữ liệu
+            return response()->json([
+                'message' => 'Tài khoản của bạn đã bị vô hiệu hóa bởi quản trị viên. Vui lòng liên hệ bộ phận hỗ trợ.',
+                'status' => 'disabled', // Cờ cho frontend để dễ dàng nhận biết
+            ], 403); // 403 Forbidden - Lỗi quyền truy cập
+        }
+        // --- KẾT THÚC PHẦN THÊM MỚI/CẬP NHẬT ---
+
+        // 4. Tạo token nếu tất cả đều hợp lệ
         $token = $user->createToken('api_token')->plainTextToken;
 
         return response()->json([
@@ -95,6 +106,7 @@ class AuthController extends Controller
                 'sdt' => $user->sdt,
                 'vai_tro_id' => $user->vai_tro_id,
                 'is_active' => $user->is_active,
+                'trang_thai' => $user->trang_thai, // Đảm bảo trả về trường này
             ],
             'token' => $token,
         ]);

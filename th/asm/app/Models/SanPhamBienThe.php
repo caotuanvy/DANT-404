@@ -24,14 +24,13 @@ class SanPhamBienThe extends Model
         'trong_luong',
         'ngay_tao',
         'ngay_sua',
-        'trong_luong',
         'chieu_dai',
         'chieu_rong',
         'chieu_cao',
-
     ];
 
     public function sanPham()
+
     {
         return $this->belongsTo(SanPham::class, 'san_pham_id', 'san_pham_id');
     }

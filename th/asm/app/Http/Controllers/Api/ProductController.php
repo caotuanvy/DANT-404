@@ -17,6 +17,8 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use PhpParser\Node\Scalar\Float_;
+use App\Models\Order;
+use App\Models\User;
 
 class ProductController extends Controller
 {
@@ -803,5 +805,185 @@ public function getDetailsBySlugs(Request $request)
             return $product;
         });
         return response()->json($products);
+    }
+   public function getRevenueStatistics(Request $request)
+    {
+        $type = $request->query('type', 'month');
+        $year = $request->query('year', date('Y'));
+        $month = $request->query('month', date('m'));
+        $week = $request->query('week', date('W'));
+
+        $query = Order::query()
+            ->select(DB::raw('SUM(
+                (SELECT SUM(ctdh.so_luong * ctdh.don_gia) FROM chi_tiet_don_hang ctdh WHERE ctdh.don_hang_id = don_hang.id)
+                + don_hang.phi_van_chuyen
+            ) as total_revenue, COUNT(don_hang.id) as total_orders')); // THÊM COUNT(don_hang.id) AS total_orders
+
+        // Điều kiện trạng thái: 1 là đã thanh toán
+        $query->where('don_hang.trang_thai', 1); // Đảm bảo khớp với giá trị trong DB của bạn
+
+        switch ($type) {
+            case 'week':
+                $query->addSelect(DB::raw('DATE(don_hang.ngay_tao) as date_label'))
+                      ->whereYear('don_hang.ngay_tao', $year)
+                      ->whereRaw('WEEK(don_hang.ngay_tao, 1) = ?', [$week])
+                      ->groupBy('date_label') // THÊM GROUP BY
+                      ->orderBy('date_label', 'ASC');
+                break;
+
+            case 'month':
+                $query->addSelect(DB::raw('DATE(don_hang.ngay_tao) as date_label'))
+                      ->whereYear('don_hang.ngay_tao', $year)
+                      ->whereMonth('don_hang.ngay_tao', $month)
+                      ->groupBy('date_label') // THÊM GROUP BY
+                      ->orderBy('date_label', 'ASC');
+                break;
+
+            case 'year':
+                $query->addSelect(DB::raw('MONTH(don_hang.ngay_tao) as month_label'))
+                      ->whereYear('don_hang.ngay_tao', $year)
+                      ->groupBy('month_label') // THÊM GROUP BY
+                      ->orderBy('month_label', 'ASC');
+                break;
+
+            default: // Default case (month)
+                $query->addSelect(DB::raw('DATE(don_hang.ngay_tao) as date_label'))
+                      ->whereYear('don_hang.ngay_tao', $year)
+                      ->whereMonth('don_hang.ngay_tao', $month)
+                      ->groupBy('date_label') // THÊM GROUP BY
+                      ->orderBy('date_label', 'ASC');
+                break;
+        }
+
+        $results = $query->get();
+        $formattedData = $this->formatRevenueData($results, $type, $year, $month, $week);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $formattedData,
+            'filter_type' => $type,
+            'year' => $year,
+            'month' => $month,
+            'week' => $week
+        ]);
+    }
+
+    protected function formatRevenueData($results, $type, $year, $month, $week)
+    {
+        $labels = [];
+        $revenueData = [];
+        $orderData = [];
+        $periodMap = []; // Map để lưu cả doanh thu và đơn hàng theo thời gian
+
+        foreach ($results as $result) {
+            $key = ($type === 'year') ? $result->month_label : $result->date_label;
+            $periodMap[$key] = [
+                'revenue' => $result->total_revenue,
+                'orders' => $result->total_orders, // Lấy số lượng đơn hàng
+            ];
+        }
+
+        if ($type === 'week') {
+            $startOfWeek = (new \DateTime())->setISODate($year, $week, 1);
+            for ($i = 0; $i < 7; $i++) {
+                $date = $startOfWeek->format('Y-m-d');
+                $labels[] = $startOfWeek->format('D, d/m');
+                $revenueData[] = $periodMap[$date]['revenue'] ?? 0;
+                $orderData[] = $periodMap[$date]['orders'] ?? 0;
+                $startOfWeek->modify('+1 day');
+            }
+        } elseif ($type === 'month') {
+            $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+            for ($day = 1; $day <= $daysInMonth; $day++) {
+                $date = sprintf('%d-%02d-%02d', $year, $month, $day);
+                $labels[] = sprintf('%02d/%02d', $day, $month);
+                $revenueData[] = $periodMap[$date]['revenue'] ?? 0;
+                $orderData[] = $periodMap[$date]['orders'] ?? 0;
+            }
+        } elseif ($type === 'year') {
+            for ($m = 1; $m <= 12; $m++) {
+                $labels[] = 'Tháng ' . $m;
+                $revenueData[] = $periodMap[$m]['revenue'] ?? 0;
+                $orderData[] = $periodMap[$m]['orders'] ?? 0;
+            }
+        }
+
+        return [
+            'labels' => $labels,
+            'datasets' => [
+                [
+                    'label' => 'Doanh thu',
+                    'data' => $revenueData,
+                    'backgroundColor' => 'rgba(75, 192, 192, 0.6)',
+                    'borderColor' => 'rgba(75, 192, 192, 1)',
+                    'borderWidth' => 1
+                ],
+                [ // Thêm dataset cho số đơn hàng
+                    'label' => 'Số đơn hàng',
+                    'data' => $orderData,
+                    'backgroundColor' => 'rgba(153, 102, 255, 0.6)', // Màu khác cho số đơn hàng
+                    'borderColor' => 'rgba(153, 102, 255, 1)',
+                    'borderWidth' => 1
+                ]
+            ]
+        ];
+    }
+    public function getOverallStatistics(Request $request)
+    {
+        $successfulStatus = 1;
+        $totalOverallRevenue = Order::query()
+            ->where('trang_thai', $successfulStatus)
+            ->sum(DB::raw('(SELECT SUM(ctdh.so_luong * ctdh.don_gia) FROM chi_tiet_don_hang ctdh WHERE ctdh.don_hang_id = don_hang.id) + don_hang.phi_van_chuyen'));
+        $totalOrders = Order::query()
+            ->where('trang_thai', $successfulStatus)
+            ->count();
+        $currentDate = new \DateTime();
+        $previousMonthDate = (new \DateTime())->modify('-1 month');
+        $currentYear = $currentDate->format('Y');
+        $currentMonth = $currentDate->format('m');
+        $previousYear = $previousMonthDate->format('Y');
+        $previousMonth = $previousMonthDate->format('m');
+        $currentMonthRevenue = Order::query()
+            ->where('trang_thai', $successfulStatus)
+            ->whereYear('ngay_tao', $currentYear)
+            ->whereMonth('ngay_tao', $currentMonth)
+            ->sum(DB::raw('(SELECT SUM(ctdh.so_luong * ctdh.don_gia) FROM chi_tiet_don_hang ctdh WHERE ctdh.don_hang_id = don_hang.id) + don_hang.phi_van_chuyen'));
+        $previousMonthRevenue = Order::query()
+            ->where('trang_thai', $successfulStatus)
+            ->whereYear('ngay_tao', $previousYear)
+            ->whereMonth('ngay_tao', $previousMonth)
+            ->sum(DB::raw('(SELECT SUM(ctdh.so_luong * ctdh.don_gia) FROM chi_tiet_don_hang ctdh WHERE ctdh.don_hang_id = don_hang.id) + don_hang.phi_van_chuyen'));
+        $currentMonthOrderCount = Order::query()
+            ->where('trang_thai', $successfulStatus)
+            ->whereYear('ngay_tao', $currentYear)
+            ->whereMonth('ngay_tao', $currentMonth)
+            ->count();
+        $previousMonthOrderCount = Order::query()
+            ->where('trang_thai', $successfulStatus)
+            ->whereYear('ngay_tao', $previousYear)
+            ->whereMonth('ngay_tao', $previousMonth)
+            ->count();
+        $avgOrderValue = $totalOrders > 0 ? $totalOverallRevenue / $totalOrders : 0;
+        $previousMonthAvgOrderValue = $previousMonthOrderCount > 0 ? $previousMonthRevenue / $previousMonthOrderCount : 0;
+        $totalCustomers = User::count();
+        $calculateGrowth = function ($current, $previous) {
+            if ($previous === 0) {
+                return $current > 0 ? 100 : 0;
+            }
+            return round((($current - $previous) / $previous) * 100, 1);
+        };
+
+        return response()->json([
+            'totalOverallRevenue' => $totalOverallRevenue,
+            'totalOrders' => $totalOrders,
+            'totalCustomers' => $totalCustomers,
+            'avgOrderValue' => $avgOrderValue,
+            'currentMonthRevenue' => $currentMonthRevenue,
+
+            'overallRevenueGrowth' => $calculateGrowth($totalOverallRevenue, $previousMonthRevenue), // So sánh tổng với tháng trước
+            'orderCountGrowth' => $calculateGrowth($totalOrders, $previousMonthOrderCount), // So sánh tổng với tháng trước
+            'avgOrderValueGrowth' => $calculateGrowth($avgOrderValue, $previousMonthAvgOrderValue),
+            'currentMonthRevenueGrowth' => $calculateGrowth($currentMonthRevenue, $previousMonthRevenue),
+        ]);
     }
 }
