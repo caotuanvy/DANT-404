@@ -20,9 +20,8 @@ use App\Http\Controllers\Api\GioHangController;
 use App\Http\Controllers\Api\IntroduceController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\BinhLuanController;
 use App\Http\Controllers\Api\PaymentMethodController;
-
-
 // Public Auth Routes
 Route::post('/auth/google', [GoogleAuthController::class, 'handleGoogleLogin']);
 Route::post('/register', [AuthController::class, 'register']);
@@ -77,6 +76,14 @@ Route::put('/danh-muc-tin-tuc/{id}/toggle-status', [DanhMucTtController::class, 
 Route::apiResource('danh-muc-tin-tuc', DanhMucTtController::class);
 Route::get('/xemdanhmuc-admin/{id}', [DanhMucTtController::class, 'xemChiTietDanhMucAdmin']);
 Route::get('tintuc-cong-khai/danh-muc/{id}', [DanhMucTtController::class, 'tintucCongKhaiTheoDanhMuc']);
+
+// Binh luan
+Route::prefix('admin/binhluan')->group(function () {
+    Route::get('/', [BinhLuanController::class, 'index']); // Lấy danh sách
+    Route::put('/{id}/toggle', [BinhLuanController::class, 'toggleTrangThai']); // Ẩn / hiện
+    Route::put('/{id}/reset-bao-cao', [BinhLuanController::class, 'resetBaoCao']); // Reset báo cáo (nếu bạn vẫn dùng)
+    Route::put('/{id}/set-bao-cao', [BinhLuanController::class, 'setBaoCao']);
+});
 
 // Dia chi
 Route::apiResource('addresses', DiaChiController::class);

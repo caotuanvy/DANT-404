@@ -17,9 +17,7 @@
           <td>{{ category.category_id }}</td>
           <td>
             <img
-              :src="category.slug 
-                ? `/uploads/categories/${category.slug}.jpg` 
-                : '/uploads/categories/placeholder.jpg'"
+              :src="category.image_url"
               alt="category image"
               style="width: 60px; height: 60px; object-fit: cover;"
             />
@@ -29,7 +27,7 @@
           <td>
             <button class="btn-detail" @click="viewCategories(category.category_id)">👁 Xem Sản Phẩm</button>
             <button class="btn-edit" @click="editCategories(category.category_id)">✏️ Sửa</button>
-            <button class="btn-delete" @click="deleteCategories(category.category_id)">🗑 Xoá</button>
+            <button class="btn-delete" @click="deleteCategories(category.category_id)">🚫 Ẩn</button>
           </td>
         </tr>
       </tbody>
@@ -67,7 +65,7 @@ const editCategories = (categoryId) => {
 };
 
 const deleteCategories = async (categoryId) => {
-  const confirmed = confirm('Bạn có chắc muốn xóa danh mục này?');
+  const confirmed = confirm('Bạn có chắc muốn ẩn danh mục này?');
   if (confirmed) {
     try {
       const response = await axios.delete(`http://localhost:8000/api/categories/${categoryId}`, {
@@ -77,12 +75,12 @@ const deleteCategories = async (categoryId) => {
       });
 
       if (response.status === 200) {
-        alert('Danh mục đã được xóa thành công!');
+        alert('Danh mục đã được ẩn thành công!');
         getCategories();
       }
     } catch (error) {
       console.error(error);
-      alert('Có lỗi xảy ra khi xóa danh mục.');
+      alert('Có lỗi xảy ra khi ẩn danh mục.');
     }
   }
 };

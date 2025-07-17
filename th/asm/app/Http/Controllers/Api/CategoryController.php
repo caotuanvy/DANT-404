@@ -5,13 +5,21 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
     public function index()
     {
+        $categories = Category::select('category_id', 'ten_danh_muc', 'mo_ta', 'slug')->get();
 
-        $categories = Category::select('category_id', 'ten_danh_muc', 'mo_ta')->get();
+        // Thêm đường dẫn ảnh vào từng danh mục
+        $categories->transform(function ($category) {
+            $category->image_url = $category->slug
+                ? url("/uploads/categories/{$category->slug}")
+                : url("/uploads/categories/placeholder.jpg");
+            return $category;
+        });
 
         return response()->json($categories);
     }
@@ -26,6 +34,15 @@ class CategoryController extends Controller
     ]);
 
     $category = Category::create($data);
+
+    // Xử lý upload ảnh
+    if ($request->hasFile('image')) {
+        $file = $request->file('image');
+        $filename = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
+        $file->move(public_path('uploads/categories'), $filename);
+        $category->slug = $filename; // Lưu tên file đầy đủ
+        $category->save();
+    }
 
     return response()->json([
         'message' => 'Thêm danh mục thành công',
