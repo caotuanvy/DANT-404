@@ -135,16 +135,19 @@ class OrderController extends Controller
         return response()->json($orders);
     }
     public function confirmPayment(Request $request, Order $order)
-    {
-        // Chỉ cho phép xác nhận khi trạng thái là hoàn thành
-        if ($order->trang_thai != 5) {
-            return response()->json(['message' => 'Chỉ xác nhận thanh toán khi đơn hàng đã hoàn thành'], 400);
-        }
-        $order->is_paid = 1;
-        $order->save();
+        {
+            // Nếu đã thanh toán rồi thì không xác nhận lại
+            if ($order->is_paid == 1) {
+                return response()->json(['message' => 'Đơn hàng này đã được xác nhận thanh toán trước đó.'], 400);
+            }
+            $order->is_paid = 1;
+            $order->save();
 
-        return response()->json(['message' => 'Xác nhận thanh toán thành công', 'order' => $order]);
-    }
+            return response()->json([
+                'message' => 'Xác nhận thanh toán thành công',
+                'order' => $order
+            ]);
+        }
     /**
      * Tạo một đơn hàng mới.
      *

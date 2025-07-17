@@ -86,8 +86,8 @@
             <th>NGÀY ĐẶT</th>
             <th>HÌNH THỨC</th>
             <th>TỔNG GIÁ</th>
-            <th>TÌNH TRẠNG</th>
             <th>TRẠNG THÁI</th>
+            <th>TÌNH TRẠNG</th>
             <th>THAO TÁC</th>
           </tr>
         </thead>
@@ -226,20 +226,20 @@
         </div>
         <div class="modal-actions">
           <button
-            v-if="orderToUpdate && pendingStatusId === 5 && Number(orderToUpdate.is_paid) === 0"
-            class="btn btn-primary"
-            @click="confirmPayment(orderToUpdate)"
-          >
-            Xác nhận thanh toán
-          </button>
+  v-if="orderToUpdate && Number(orderToUpdate.is_paid) === 0"
+  class="btn btn-primary"
+  @click="confirmPayment(orderToUpdate)"
+>
+  Xác nhận thanh toán
+</button>
           <button class="btn btn-secondary" @click="closeStatusModal">Đóng</button>
-          <button
-            v-if="pendingStatusId"
-            class="btn btn-success"
-            @click="commitStatusUpdate"
-          >
-            Lưu thay đổi
-          </button>
+  <button
+    v-if="pendingStatusId"
+    class="btn btn-success"
+    @click="commitStatusUpdate"
+  >
+    Lưu thay đổi
+  </button> 
         </div>
       </div>
     </div>
@@ -309,7 +309,7 @@ export default {
                     const customerName = order.user?.ho_ten?.toLowerCase() || '';
                     const paymentMethodName = order.payment_method?.ten_pttt?.toLowerCase() || '';
                     const orderStatusText = this.getTrangThai(order.trang_thai).toLowerCase();
-                    const paymentStatusText = this.getPaymentStatus(order.is_paid).toLowerCase();
+                    const paymentStatusText = this.getPaymentStatus(order.is_paid, order).toLowerCase();
                     const hasMatchingProduct = order.order_items.some(item =>
                         item.bien_the?.san_pham?.ten_san_pham?.toLowerCase().includes(query)
                     );
@@ -421,18 +421,17 @@ export default {
         },
         getTrangThai(status) { const statuses = { 1: 'Mới đặt', 2: 'Chờ xác nhận', 3: 'Đã xác nhận', 4: 'Đang giao', 5: 'Hoàn thành', 6: 'Đã hủy' }; return statuses[status] || 'Không rõ'; },
         getStatusClass(status) { const classes = { 1: 'status-new', 2: 'status-pending', 3: 'status-confirmed', 4: 'status-shipping', 5: 'status-completed', 6: 'status-cancelled' }; return classes[status] || 'status-default'; },
-        getPaymentStatus(isPaid, order) {
-            // Nếu trạng thái là "Mới đặt", "Chờ xác nhận", "Đã xác nhận", "Chờ lấy hàng", "Đang giao" thì luôn là "Chưa thanh toán"
-            if ([1,2,3,4].includes(order.trang_thai)) return 'Chưa xong';
-            // Nếu trạng thái là "Hoàn thành" thì kiểm tra isPaid
-            if (order.trang_thai === 5) {
-                if (isPaid === 1 || isPaid === true) return 'Hoàn thành';
-                if (isPaid === 0 || isPaid === false) return 'Chưa xong';
-                return 'Chưa xong';
-            }
-            // Nếu trạng thái là "Đã hủy" hoặc khác thì trả về "Chưa rõ"
-            return 'Đã hủy';
-        },      
+
+
+      getPaymentStatus(isPaid, order) {
+          // Nếu đã thanh toán thì luôn trả về "Đã thanh toán"
+          if (Number(isPaid) === 1) return 'Đã thanh toán';
+          // Nếu chưa thanh toán, kiểm tra trạng thái
+          if ([1,2,3,4].includes(order.trang_thai)) return 'Chưa thanh toán';
+          if (order.trang_thai === 5) return 'Chưa thanh toán';
+          if (order.trang_thai === 6) return 'Đã hủy';
+          return 'Chưa rõ';
+      },
         getPaymentStatusClass(isPaid) { if (isPaid === 1 || isPaid === true) return 'status-paid'; if (isPaid === 0 || isPaid === false) return 'status-unpaid'; return 'status-default'; },
         openStatusModal(order) {
             this.orderToUpdate = order;
@@ -465,19 +464,23 @@ export default {
             this.updateOrderStatus(this.orderToUpdate, this.pendingStatusId);
         },
         async updateOrderStatus(order, newStatus) {
-            try {
-                await axios.patch(`http://localhost:8000/api/orders/${order.id}/status`,
-                    { trang_thai: newStatus },
-                    { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
-                );
-                this.closeStatusModal();
-                // Tải lại toàn bộ danh sách đơn hàng sau khi cập nhật
-                this.fetchOrders();
-            } catch (err) {
-                console.error('Lỗi khi cập nhật trạng thái:', err);
-                alert('Cập nhật trạng thái thất bại!');
-            }
-        },
+          try {
+              await axios.patch(`http://localhost:8000/api/orders/${order.id}/status`,
+                  { trang_thai: newStatus },
+                  { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+              );
+              // Nếu chuyển sang trạng thái 5 và chưa thanh toán, gọi luôn xác nhận thanh toán
+              if (newStatus === 5 && Number(order.is_paid) === 0) {
+                  await this.confirmPayment(order);
+              } else {
+                  this.closeStatusModal();
+                  this.fetchOrders();
+              }
+          } catch (err) {
+              console.error('Lỗi khi cập nhật trạng thái:', err);
+              alert('Cập nhật trạng thái thất bại!');
+          }
+      },
          handleRefresh() {
             // Reset tất cả bộ lọc và trạng thái về mặc định
             this.localFilters = { searchQuery: '', date: '', paymentMethod: '', category: '', priceRange: '' };
