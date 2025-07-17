@@ -20,6 +20,9 @@ use App\Http\Controllers\Api\GioHangController;
 use App\Http\Controllers\Api\IntroduceController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\PaymentMethodController;
+
+
 // Public Auth Routes
 Route::post('/auth/google', [GoogleAuthController::class, 'handleGoogleLogin']);
 Route::post('/register', [AuthController::class, 'register']);
@@ -89,7 +92,13 @@ Route::get('/cart', [CartController::class, 'index']);
 // Gio hang
 Route::get('/gio-hang/nguoi-dung/{id}', [GioHangController::class, 'layGioHangTheoNguoiDung']);
 
-// Slide Show (admin)
+// Don hang
+Route::get('/orders', [OrderController::class, 'index']);
+Route::patch('/orders/{order}/payment', [OrderController::class, 'confirmPayment']);
+
+//payment methods
+Route::get('/payment-methods', [PaymentMethodController::class, 'index']);// Slide Show (admin)
+
 Route::prefix('admin')->group(function () {
    Route::get('slide', [SlideShowController::class, 'index']);
     Route::get('slide/{id}', [SlideShowController::class, 'show']);
@@ -134,7 +143,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Orders
     Route::get('/user/orders', [OrderController::class, 'userOrders']);
     Route::get('/user/orders/{id}', [OrderController::class, 'getByUser']);
-    Route::apiResource('orders', OrderController::class)->only(['index', 'store']);
+    Route::apiResource('orders', OrderController::class)->only(['store']);
     Route::patch('/orders/{id}/approve', [OrderController::class, 'approve']);
     Route::patch('/orders/{id}/reject', [OrderController::class, 'reject']);
     Route::patch('/orders/{id}/hide', [OrderController::class, 'hideOrder']);
