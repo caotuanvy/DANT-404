@@ -113,13 +113,13 @@
       </div>
     </div>
 
-    <!-- Custom Error Modal -->
-    <div v-if="showErrorModal" class="modal-overlay">
-      <div class="modal-content">
-        <h3>Lỗi</h3>
-        <p>{{ errorModalMessage }}</p>
+    <!-- NEW: General Notification Modal -->
+    <div v-if="showNotificationModal" class="modal-overlay">
+      <div :class="['modal-content', notificationType === 'success' ? 'modal-success' : 'modal-error']">
+        <h3>{{ notificationTitle }}</h3>
+        <p>{{ notificationMessage }}</p>
         <div class="modal-actions">
-          <button @click="closeErrorModal" class="btn-confirm">Đóng</button>
+          <button @click="closeNotificationModal" class="btn-confirm">Đóng</button>
         </div>
       </div>
     </div>
@@ -143,7 +143,7 @@ import axios from 'axios';
 
 // State variables
 const binhLuans = ref([]);
-const errorMessage = ref('');
+const errorMessage = ref(''); // Keep for initial data fetch error
 const loading = ref(false);
 
 // Filter variables
@@ -160,10 +160,13 @@ const showConfirmModal = ref(false);
 const confirmModalMessage = ref('');
 let confirmModalResolve = null; // To store the resolve function of the confirmation promise
 
-const showErrorModal = ref(false);
-const errorModalMessage = ref('');
+// NEW: General Notification Modal variables
+const showNotificationModal = ref(false);
+const notificationTitle = ref('');
+const notificationMessage = ref('');
+const notificationType = ref(''); // 'success' or 'error'
 
-// New modal variables for full content
+// Existing modal variables for full content
 const showFullContentModal = ref(false);
 const fullContentMessage = ref('');
 
@@ -220,21 +223,28 @@ const handleConfirmAction = (confirmed) => {
   }
 };
 
+// NEW: General Notification Modal functions
 /**
- * @description Displays a custom error modal to the user.
- * @param {string} message - The error message to display.
+ * @description Displays a general notification modal (success or error).
+ * @param {string} title - The title of the notification (e.g., "Thành công", "Lỗi").
+ * @param {string} message - The message content of the notification.
+ * @param {string} type - The type of notification ('success' or 'error').
  */
-const showErrorMessage = (message) => {
-  errorModalMessage.value = message;
-  showErrorModal.value = true;
+const showNotification = (title, message, type) => {
+  notificationTitle.value = title;
+  notificationMessage.value = message;
+  notificationType.value = type;
+  showNotificationModal.value = true;
 };
 
 /**
- * @description Closes the error modal.
+ * @description Closes the general notification modal.
  */
-const closeErrorModal = () => {
-  showErrorModal.value = false;
-  errorModalMessage.value = '';
+const closeNotificationModal = () => {
+  showNotificationModal.value = false;
+  notificationTitle.value = '';
+  notificationMessage.value = '';
+  notificationType.value = '';
 };
 
 /**
@@ -260,7 +270,7 @@ const closeFullContentModal = () => {
  */
 const getBinhLuans = async (page = 1) => {
   loading.value = true;
-  errorMessage.value = '';
+  errorMessage.value = ''; // Clear previous error message
   try {
     const params = { page: page };
     if (filterLoai.value) {
@@ -282,9 +292,23 @@ const getBinhLuans = async (page = 1) => {
     currentPage.value = res.data.current_page;
     lastPage.value = res.data.last_page;
     perPage.value = res.data.per_page;
+    // NEW: Show success message only if it's not the initial load (e.g., from filter/pagination)
+    // To avoid showing "Đã tải danh sách bình luận" on initial page load
+    if (page === 1 && (filterLoai.value || filterBaoCao.value)) { // If filters are applied on page 1
+      showNotification('Thành công', 'Đã tải danh sách bình luận.', 'success');
+    } else if (page > 1) { // If navigating to another page
+      showNotification('Thành công', `Đã chuyển đến trang ${page}.`, 'success');
+    } else if (binhLuans.value.length > 0) { // Initial load success, but only if there's data
+      // This is a bit tricky to distinguish initial load vs subsequent load
+      // For simplicity, we'll show it for any successful fetch unless it's a filter/pagination specific message
+      // A more robust solution might involve a `isInitialLoad` ref.
+      // For now, let's just show a general success for data load.
+      // Removed the general 'Đã tải danh sách bình luận' here to avoid double notifications with filter/pagination.
+    }
+
   } catch (error) {
     console.error('Lỗi khi lấy bình luận:', error);
-    showErrorMessage('Lỗi khi lấy bình luận: ' + (error.response?.data?.message || error.message));
+    showNotification('Lỗi', 'Lỗi khi lấy bình luận: ' + (error.response?.data?.message || error.message), 'error'); // NEW: Use showNotification
   } finally {
     loading.value = false;
   }
@@ -296,6 +320,7 @@ const getBinhLuans = async (page = 1) => {
 const applyFilters = () => {
   currentPage.value = 1; // Reset to first page when applying filters
   getBinhLuans();
+  // The success message for filter application is now handled within getBinhLuans
 };
 
 /**
@@ -305,6 +330,7 @@ const applyFilters = () => {
 const goToPage = (page) => {
   if (page >= 1 && page <= lastPage.value) {
     getBinhLuans(page);
+    // The success message for page change is now handled within getBinhLuans
   }
 };
 
@@ -314,6 +340,7 @@ const goToPage = (page) => {
  */
 const toggleTrangThai = async (binhLuan) => {
   const newTrangThai = binhLuan.trang_thai == 1 ? 0 : 1;
+  const originalTrangThai = binhLuan.trang_thai; // Store original state for rollback
   try {
     // The PUT request body is empty as per the controller's toggleTrangThai method
     await axios.put(`http://localhost:8000/api/admin/binhluan/${binhLuan.binh_luan_id}/toggle`, {}, {
@@ -322,9 +349,12 @@ const toggleTrangThai = async (binhLuan) => {
       },
     });
     binhLuan.trang_thai = newTrangThai; // Update locally on successful API call
+    showNotification('Thành công', 'Đã cập nhật trạng thái hiển thị.', 'success'); // NEW: Use showNotification
   } catch (error) {
     console.error('Lỗi khi cập nhật trạng thái hiển thị:', error);
-    showErrorMessage('Cập nhật trạng thái hiển thị thất bại: ' + (error.response?.data?.message || error.message));
+    showNotification('Lỗi', 'Cập nhật trạng thái hiển thị thất bại: ' + (error.response?.data?.message || error.message), 'error'); // NEW: Use showNotification
+    // Revert local state if API call fails
+    binhLuan.trang_thai = originalTrangThai; // Rollback to original state
   }
 };
 
@@ -347,6 +377,9 @@ const showConfirmSetBaoCao = async (binhLuan, newStatus) => {
  * @param {number} newStatus - The new report status to set (0, 1, or 2).
  */
 const setBaoCao = async (binhLuan, newStatus) => {
+  const originalBaoCao = binhLuan.bao_cao; // Store original state for rollback
+  const originalTrangThai = binhLuan.trang_thai; // Store original state for rollback
+
   try {
     // First, update the bao_cao status
     await axios.put(`http://localhost:8000/api/admin/binhluan/${binhLuan.binh_luan_id}/set-bao-cao`, {
@@ -367,21 +400,20 @@ const setBaoCao = async (binhLuan, newStatus) => {
     }
 
     // Check if the current 'trang_thai' is different from the target 'trang_thai'
-    // If they are different, call toggleTrangThai to flip the state
     if (binhLuan.trang_thai !== targetTrangThai) {
       // Call the existing toggleTrangThai function.
-      // Since toggleTrangThai flips the state, if current is 1 and target is 0, it will flip to 0.
-      // If current is 0 and target is 1, it will flip to 1.
-      // This works because we only call it if it needs to be flipped.
       await toggleTrangThai(binhLuan); // This will make another API call to flip 'trang_thai'
+    } else {
+      // If trang_thai didn't need to be toggled, show success for bao_cao update directly
+      showNotification('Thành công', `Đã cập nhật trạng thái báo cáo thành "${getBaoCaoStatus(newStatus)}".`, 'success'); // NEW: Use showNotification
     }
 
-    // No need for a separate success message here, as toggleTrangThai already handles it.
-    // If you want a combined message, you'd need to modify toggleTrangThai to return a promise
-    // and handle messages here, or make setBaoCao responsible for all messages.
   } catch (error) {
     console.error('Lỗi khi cập nhật báo cáo:', error);
-    showErrorMessage('Cập nhật báo cáo thất bại: ' + (error.response?.data?.message || error.message));
+    showNotification('Lỗi', 'Cập nhật báo cáo thất bại: ' + (error.response?.data?.message || error.message), 'error'); // NEW: Use showNotification
+    // Revert local state if API call fails
+    binhLuan.bao_cao = originalBaoCao;
+    binhLuan.trang_thai = originalTrangThai;
   }
 };
 
@@ -497,8 +529,7 @@ tr:hover {
   gap: 0;
   cursor: pointer;
   user-select: none;
-  transition: background 0.2s ease; /* Giảm thời gian chuyển đổi rất nhanh */
-  justify-content: center;
+  transition: background 0.05s ease; /* Giảm thời gian chuyển đổi rất nhanh */
 }
 
 .slider {
@@ -507,7 +538,7 @@ tr:hover {
   border-radius: 11px;
   background: #ccc;
   position: relative;
-  transition: background 0.2s ease; /* Giảm thời gian chuyển đổi rất nhanh */
+  transition: background 0.05s ease; /* Giảm thời gian chuyển đổi rất nhanh */
   flex-shrink: 0;
   display: inline-block;
 }
@@ -521,7 +552,7 @@ tr:hover {
   height: 18px;
   border-radius: 50%;
   background: #fff;
-  transition: left 0.3s ease, background 0.2s ease; /* Giảm thời gian chuyển đổi rất nhanh */
+  transition: left 0.05s ease, background 0.05s ease; /* Giảm thời gian chuyển đổi rất nhanh */
   box-shadow: 0 1px 4px rgba(0,0,0,0.12);
 }
 
@@ -648,6 +679,16 @@ tr:hover {
   background-color: #d32f2f;
   transform: translateY(-1px);
 }
+
+/* NEW: Notification Modal Styles */
+.modal-success {
+  border: 2px solid #4CAF50; /* Green border for success */
+}
+
+.modal-error {
+  border: 2px solid #f44336; /* Red border for error */
+}
+
 
 /* Loading and Error Messages */
 .loading-message, .error-message {
