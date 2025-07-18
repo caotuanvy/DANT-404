@@ -96,7 +96,7 @@
             <tr>
               <td>#{{ order.id }}</td>
               <td>{{ order.user?.ho_ten || 'Ẩn danh' }}</td>
-              <td>{{ formatDate(order.ngay_tao) }}</td>
+              <td>{{ formatDate(order.ngay_dat) }}</td>
               <td>{{ order.payment_method?.ten_pttt || 'Không rõ' }}</td>
               <td class="price">
                 {{ formatCurrency(
@@ -106,8 +106,8 @@
                 ) }}
               </td>
               <td>
-                <span :class="['status-pill', getStatusClass(order.trang_thai)]">
-                  {{ getTrangThai(order.trang_thai) }}
+                <span :class="['status-pill', getStatusClass(order.trang_thai_don_hang)]">
+                  {{ getTrangThai(order.trang_thai_don_hang) }}
                 </span>
               </td>
               <td>
@@ -292,23 +292,23 @@ export default {
     computed: {
         // ... các computed properties của bạn không thay đổi
         countAll() { return this.allOrders.length; },
-        countNew() { return this.allOrders.filter(o => o.trang_thai === 1).length; },
-        countPending() { return this.allOrders.filter(o => o.trang_thai === 2).length; },
-        countConfirmed() { return this.allOrders.filter(o => o.trang_thai === 3).length; },
-        countShipping() { return this.allOrders.filter(o => o.trang_thai === 4).length; },
-        countCompleted() { return this.allOrders.filter(o => o.trang_thai === 5).length; },
-        countCancelled() { return this.allOrders.filter(o => o.trang_thai === 6).length; },
+        countNew() { return this.allOrders.filter(o => o.trang_thai_don_hang === 1).length; },
+        countPending() { return this.allOrders.filter(o => o.trang_thai_don_hang === 2).length; },
+        countConfirmed() { return this.allOrders.filter(o => o.trang_thai_don_hang === 3).length; },
+        countShipping() { return this.allOrders.filter(o => o.trang_thai_don_hang === 4).length; },
+        countCompleted() { return this.allOrders.filter(o => o.trang_thai_don_hang === 5).length; },
+        countCancelled() { return this.allOrders.filter(o => o.trang_thai_don_hang === 6).length; },
         filteredOrders() {
             let filtered = [...this.allOrders];
             if (this.selectedStatusTab !== null) {
-                filtered = filtered.filter(order => order.trang_thai === this.selectedStatusTab);
+                filtered = filtered.filter(order => order.trang_thai_don_hang === this.selectedStatusTab);
             }
             const query = this.appliedFilters.searchQuery.toLowerCase().trim();
             if (query) {
                 filtered = filtered.filter(order => {
                     const customerName = order.user?.ho_ten?.toLowerCase() || '';
                     const paymentMethodName = order.payment_method?.ten_pttt?.toLowerCase() || '';
-                    const orderStatusText = this.getTrangThai(order.trang_thai).toLowerCase();
+                    const orderStatusText = this.getTrangThai(order.trang_thai_don_hang).toLowerCase();
                     const paymentStatusText = this.getPaymentStatus(order.is_paid, order).toLowerCase();
                     const hasMatchingProduct = order.order_items.some(item =>
                         item.bien_the?.san_pham?.ten_san_pham?.toLowerCase().includes(query)
@@ -324,7 +324,7 @@ export default {
                 });
             }
             if (this.appliedFilters.date) {
-                filtered = filtered.filter(order => order.ngay_tao.startsWith(this.appliedFilters.date));
+                filtered = filtered.filter(order => order.ngay_dat.startsWith(this.appliedFilters.date));
             }
             if (this.appliedFilters.paymentMethod) {
                 filtered = filtered.filter(order => order.phuong_thuc_thanh_toan_id == this.appliedFilters.paymentMethod);
@@ -427,9 +427,9 @@ export default {
           // Nếu đã thanh toán thì luôn trả về "Đã thanh toán"
           if (Number(isPaid) === 1) return 'Đã thanh toán';
           // Nếu chưa thanh toán, kiểm tra trạng thái
-          if ([1,2,3,4].includes(order.trang_thai)) return 'Chưa thanh toán';
-          if (order.trang_thai === 5) return 'Chưa thanh toán';
-          if (order.trang_thai === 6) return 'Đã hủy';
+          if ([1,2,3,4].includes(order.trang_thai_don_hang)) return 'Chưa thanh toán';
+          if (order.trang_thai_don_hang === 5) return 'Chưa thanh toán';
+          if (order.trang_thai_don_hang === 6) return 'Đã hủy';
           return 'Chưa rõ';
       },
         getPaymentStatusClass(isPaid) { if (isPaid === 1 || isPaid === true) return 'status-paid'; if (isPaid === 0 || isPaid === false) return 'status-unpaid'; return 'status-default'; },
@@ -445,7 +445,7 @@ export default {
         },
         getStepClass(step) {
             if (!this.orderToUpdate) return 'pending';
-            const currentStatus = this.orderToUpdate.trang_thai;
+            const currentStatus = this.orderToUpdate.trang_thai_don_hang;
             if (step.id === this.pendingStatusId) return 'pending-selection';
             if (step.id < currentStatus) return 'completed';
             if (step.id === currentStatus) return 'active';
@@ -454,7 +454,7 @@ export default {
         },
         selectNextStatus(step) {
             if (!this.orderToUpdate) return;
-            const currentStatus = this.orderToUpdate.trang_thai;
+            const currentStatus = this.orderToUpdate.trang_thai_don_hang;
             if (step.id === currentStatus + 1) {
                 this.pendingStatusId = step.id;
             }
@@ -466,7 +466,7 @@ export default {
         async updateOrderStatus(order, newStatus) {
           try {
               await axios.patch(`http://localhost:8000/api/orders/${order.id}/status`,
-                  { trang_thai: newStatus },
+                  { trang_thai_don_hang: String(newStatus) },
                   { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
               );
               // Nếu chuyển sang trạng thái 5 và chưa thanh toán, gọi luôn xác nhận thanh toán

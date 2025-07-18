@@ -15,7 +15,6 @@ class PaymentMethodController extends Controller
         try {
             // Lấy các cột cần thiết từ CSDL
             $methods = PaymentMethod::select('phuong_thuc_thanh_toan_id as id', 'ten_pttt')
-                ->where('trang_thai', 1)
                 ->get();
             return response()->json($methods);
         } catch (\Exception $e) {

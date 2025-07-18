@@ -16,7 +16,6 @@ use App\Http\Controllers\Api\SlideShowController;
 use App\Http\Controllers\Api\TintucController;
 use App\Http\Controllers\Api\DiaChiController;
 use App\Http\Controllers\Api\CartController;
-use App\Http\Controllers\Api\GioHangController;
 use App\Http\Controllers\Api\IntroduceController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\NotificationController;
@@ -39,10 +38,10 @@ Route::apiResource('products', ProductController::class);
 Route::put('/products/{id}/toggle-noi-bat', [ProductController::class, 'toggleNoiBat']);
 Route::get('/categories/{id}/products', [CategoryController::class, 'getProductsByCategory']);
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/carts/add', [GioHangController::class, 'themVaoGioHang']);
+// Route::middleware('auth:sanctum')->group(function () {
+//     Route::post('/carts/add', [GioHangController::class, 'themVaoGioHang']);
     // Route::get('/carts', [GioHangController::class, 'xemGioHang']);
-});
+// });
 
 
 // Product Image Upload (public add, delete protected)
@@ -93,11 +92,20 @@ Route::put('/dia_chi/{id}', [DiaChiController::class, 'update']);
 Route::get('/dia-chi/mac-dinh/{nguoi_dung_id}', [DiaChiController::class, 'diaChiMacDinh']);
 
 // Cart
-Route::middleware('auth:sanctum')->post('/cart/add', [CartController::class, 'add']);
+Route::middleware('auth:sanctum')->group(function () {
+    // Lấy giỏ hàng của người dùng hiện tại (hoặc theo ID)
+    Route::get('/cart/{nguoiDungId?}', [CartController::class, 'getCart']);
+    // Thêm sản phẩm vào giỏ hàng
+    Route::post('/cart/add', [CartController::class, 'addItem']);
+    // Nếu muốn giữ chức năng xem tất cả giỏ hàng cho admin/debug
+    Route::delete('/cart/{userId}/{sanPhamBienTheId}', [CartController::class, 'deleteItem']);
+
+    Route::get('/carts/all', [CartController::class, 'getAllCartsAndItems']);
+});
 Route::get('/cart', [CartController::class, 'index']);
 
 // Gio hang
-Route::get('/gio-hang/nguoi-dung/{id}', [GioHangController::class, 'layGioHangTheoNguoiDung']);
+// Route::get('/gio-hang/nguoi-dung/{id}', [GioHangController::class, 'layGioHangTheoNguoiDung']);
 
 // Don hang
 Route::get('/orders', [OrderController::class, 'index']);
