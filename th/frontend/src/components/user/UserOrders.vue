@@ -21,8 +21,8 @@
     <div v-else>
       <div v-for="order in filteredOrders" :key="order.id" class="order-item">
         <div class="order-header">
-          <span class="order-current-status">{{ getStatusLabel(order.trang_thai) }}</span>
-          <span class="order-date">Ngày đặt: {{ formatDate(order.ngay_tao) }}</span>
+          <span class="order-current-status">{{ getStatusLabel(order.trang_thai_don_hang) }}</span>
+          <span class="order-date">Ngày đặt: {{ formatDate(order.ngay_dat) }}</span>
         </div>
 
         <div class="order-address">
@@ -114,7 +114,7 @@ const formatDate = (dateString) => {
 
 const filteredOrders = computed(() => {
   if (currentStatus.value === "all") return allOrders.value;
-  return allOrders.value.filter((order) => order.trang_thai === currentStatus.value);
+  return allOrders.value.filter((order) => order.trang_thai_don_hang === currentStatus.value);
 });
 
 const filterOrdersByStatus = (status) => {

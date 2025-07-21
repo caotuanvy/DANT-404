@@ -206,7 +206,7 @@ export default {
   name: "CartPage",
   data() {
     return {
-      products: [], // Mảng chứa các sản phẩm trong giỏ hàng
+      products: [], 
       deliveryMethod: "standard", // Phương thức giao hàng mặc định
       paymentMethod: "cod", // Phương thức thanh toán mặc định
       discountCode: "", // Mã giảm giá
