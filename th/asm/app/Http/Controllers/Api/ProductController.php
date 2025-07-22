@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Log;
 use PhpParser\Node\Scalar\Float_;
 use App\Models\Order;
 use App\Models\User;
+use App\Models\Notifications;
 
 class ProductController extends Controller
 {
@@ -217,6 +218,26 @@ class ProductController extends Controller
 
 
             DB::commit();
+
+            Notifications::create([
+                'loai_thong_bao' => 'Sản phẩm mới',
+                'mo_ta' => 'Sản phẩm "' . $product->ten_san_pham . '" vừa được thêm vào hệ thống.',
+                'tin_bao' => 'ID: ' . $product->san_pham_id . ', Giá: ' . number_format($product->gia) . 'đ',
+                'da_xem' => 0,
+                'ngay_tao' => now(),
+            ]);
+            $variants = \App\Models\SanPhamBienThe::where('san_pham_id', $product->san_pham_id)->get();
+            foreach ($variants as $variant) {
+                if ($variant->so_luong_ton_kho <= 5) {
+                    Notifications::create([
+                        'loai_thong_bao' => 'Sắp hết hàng',
+                        'mo_ta' => 'Biến thể "' . $variant->ten_bien_the . '" của sản phẩm "' . $product->ten_san_pham . '" sắp hết hàng.',
+                        'tin_bao' => 'Tồn kho: ' . $variant->so_luong_ton_kho . ' sản phẩm.',
+                        'da_xem' => 0,
+                        'ngay_tao' => now(),
+                    ]);
+                }
+            }
 
             return response()->json([
                 'message' => 'Thêm sản phẩm và các biến thể thành công!',

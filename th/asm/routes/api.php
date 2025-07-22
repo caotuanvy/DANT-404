@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\BinhLuanController;
 use App\Http\Controllers\Api\PaymentMethodController;
+use App\Http\Controllers\Api\NotificationsController;
 // Public Auth Routes
 Route::post('/auth/google', [GoogleAuthController::class, 'handleGoogleLogin']);
 Route::post('/register', [AuthController::class, 'register']);
@@ -106,6 +107,12 @@ Route::get('/cart', [CartController::class, 'index']);
 
 // Gio hang
 // Route::get('/gio-hang/nguoi-dung/{id}', [GioHangController::class, 'layGioHangTheoNguoiDung']);
+
+
+// Thong-bao
+Route::get('/Notifications', [NotificationsController::class, 'index']);
+Route::post('/Notifications/{id}/read', [NotificationsController::class, 'markAsRead']);
+Route::post('/Notifications/read-all', [NotificationsController::class, 'markAllAsRead']);
 
 // Don hang
 Route::get('/orders', [OrderController::class, 'index']);

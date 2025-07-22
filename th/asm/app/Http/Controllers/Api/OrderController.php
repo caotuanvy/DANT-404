@@ -8,6 +8,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\SanPhamBienThe;
 use App\Models\DiaChi;
+use App\Models\Notifications;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -148,6 +149,7 @@ class OrderController extends Controller
 
         try {
             $validatedData = $request->validate([
+
                 'tong_tien' => 'required|numeric|min:0',
                 'phuong_thuc_thanh_toan_id' => 'required|integer',
                 'hinh_thuc_giao_hang' => 'required|string|max:50',
@@ -163,6 +165,7 @@ class OrderController extends Controller
                 'dia_chi_moi.sdt' => 'required_with:dia_chi_moi|string|max:20',
                 'dia_chi_moi.dia_chi' => 'required_with:dia_chi_moi|string|max:255',
             ]);
+
         } catch (ValidationException $e) {
             Log::warning('Lỗi Validation khi đặt hàng: ' . json_encode($e->errors()));
             return response()->json(['message' => 'Dữ liệu đầu vào không hợp lệ.', 'errors' => $e->errors()], 422);
@@ -204,25 +207,42 @@ class OrderController extends Controller
                 'is_paid' => 0,
             ]);
 
-            foreach ($validatedData['san_pham'] as $item) {
-                $bienThe = SanPhamBienThe::find($item['bien_the_id']);
-                if (!$bienThe || $bienThe->so_luong_ton_kho < $item['so_luong']) {
-                    DB::rollBack();
-                    return response()->json(['message' => 'Sản phẩm "' . ($bienThe->ten_bien_the ?? 'ID: ' . $item['bien_the_id']) . '" không đủ số lượng tồn kho hoặc không tồn tại.'], 400);
-                }
+foreach ($validatedData['san_pham'] as $item) {
+    $bienThe = SanPhamBienThe::find($item['bien_the_id']);
+    if (!$bienThe || $bienThe->so_luong_ton_kho < $item['so_luong']) {
+        DB::rollBack();
+        return response()->json(['message' => 'Sản phẩm "' . ($bienThe->ten_bien_the ?? 'ID: ' . $item['bien_the_id']) . '" không đủ số lượng tồn kho hoặc không tồn tại.'], 400);
+    }
 
-                OrderItem::create([
-                    'don_hang_id' => $order->id,
-                    'san_pham_bien_the_id' => $item['bien_the_id'],
-                    'so_luong' => $item['so_luong'],
-                    'don_gia' => $bienThe->gia,
-                    'thanh_tien' => $item['so_luong'] * $bienThe->gia,
-                ]);
+    OrderItem::create([
+        'don_hang_id' => $order->id,
+        'san_pham_bien_the_id' => $item['bien_the_id'],
+        'so_luong' => $item['so_luong'],
+        'don_gia' => $bienThe->gia,
+        'thanh_tien' => $item['so_luong'] * $bienThe->gia,
+    ]);
 
-                // Giảm số lượng tồn kho của sản phẩm (Bỏ comment nếu muốn kích hoạt)
-                $bienThe->so_luong_ton_kho -= $item['so_luong'];
-                $bienThe->save();
-            }
+    // Giảm số lượng tồn kho của sản phẩm
+    $bienThe->so_luong_ton_kho -= $item['so_luong'];
+    $bienThe->save();
+
+    // Kiểm tra và lấy sản phẩm cha an toàn
+    $sanPham = $bienThe->san_pham ?? null;
+    $tenSanPham = $sanPham ? $sanPham->ten_san_pham : 'Không xác định';
+
+    // Thông báo sắp hết hàng nếu tồn kho thấp
+    if ($bienThe->so_luong_ton_kho <= 5) {
+        Notifications::create([
+            'loai_thong_bao' => 'Sắp hết hàng',
+            'mo_ta' => 'Biến thể "' . $bienThe->ten_bien_the . '" của sản phẩm "' . $tenSanPham . '" sắp hết hàng.',
+            'tin_bao' => 'Tồn kho: ' . $bienThe->so_luong_ton_kho . ' sản phẩm.',
+            'da_xem' => 0,
+            'ngay_tao' => now(),
+        ]);
+    }
+
+        }
+
 
             // Xóa/Làm trống giỏ hàng của người dùng sau khi đặt hàng thành công
             // (Không còn dựa vào cột tong_tien/trang_thai trên Cart Model)
@@ -235,7 +255,13 @@ class OrderController extends Controller
             }
 
             DB::commit();
-
+            Notifications::create([
+            'loai_thong_bao' => 'Đơn hàng mới',
+            'mo_ta' => 'Khách hàng ' . ($user->ho_ten ?? $user->name) . ' vừa đặt đơn hàng.',
+            'tin_bao' => 'Mã đơn: ' . $order->id . ', Tổng tiền: ' . number_format($order->tong_tien) . 'đ',
+            'da_xem' => 0,
+            'ngay_tao' => now(),
+            ]);
             return response()->json(['message' => 'Đặt hàng thành công!', 'order_id' => $order->id], 201);
 
         } catch (\Exception $e) {
