@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Firebase\Messaging\Notification;
+
 use Kreait\Firebase\Messaging;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
@@ -45,57 +46,54 @@ class NotificationController extends Controller
         return response()->json($users);
     }
 
-    public function sendNotification(Request $request)
-    {
-        $request->validate([
-            'title' => 'required|string',
-            'body' => 'required|string',
-            'user_id' => 'sometimes|exists:nguoi_dung,nguoi_dung_id',
-            'topic' => 'sometimes|string',
-        ]);
 
-        $title = $request->input('title');
-        $body = $request->input('body');
-        $userId = $request->input('user_id');
-        $topic = $request->input('topic');
 
-        try {
-            if ($userId) {
-                $user = User::find($userId);
+public function sendNotification(Request $request)
+{
+    $request->validate([
+        'title' => 'required|string',
+        'body' => 'required|string',
+        'user_id' => 'sometimes|exists:nguoi_dung,nguoi_dung_id',
+        'topic' => 'sometimes|string',
+    ]);
 
-                if ($user && $user->fcm_token) {
-                    $message = CloudMessage::fromArray([
-                        'token' => $user->fcm_token,
-                        'notification' => [
-                            'title' => $title,
-                            'body' => $body,
-                        ],
-                    ]);
+    $title = $request->input('title');
+    $body = $request->input('body');
+    $userId = $request->input('user_id');
+    $topic = $request->input('topic');
 
-                    $this->messaging->send($message);
+    try {
+        $notification = Notification::create($title, $body);
 
-                    return response()->json(['message' => 'Thông báo đã được gửi đến người dùng thành công!']);
-                } else {
-                    return response()->json(['message' => 'Không tìm thấy người dùng hoặc người dùng chưa có FCM token.'], 404);
-                }
-            } elseif ($topic) {
-                $message = CloudMessage::fromArray([
-                    'topic' => $topic,
-                    'notification' => [
-                        'title' => $title,
-                        'body' => $body,
-                    ],
-                ]);
+        if ($userId) {
+            $user = User::find($userId);
+
+            if ($user && $user->fcm_token) {
+                $message = CloudMessage::new()
+                    ->withNotification($notification)
+                    ->withChangedTarget('token', $user->fcm_token);
 
                 $this->messaging->send($message);
 
-                return response()->json(['message' => 'Thông báo đã được gửi đến chủ đề thành công!']);
+                return response()->json(['message' => 'Thông báo đã được gửi đến người dùng thành công!']);
             } else {
-                return response()->json(['message' => 'Vui lòng chọn người dùng hoặc nhập chủ đề để gửi thông báo.'], 400);
+                return response()->json(['message' => 'Không tìm thấy người dùng hoặc người dùng chưa có FCM token.'], 404);
             }
-        } catch (\Exception $e) {
-            Log::error('Lỗi gửi thông báo Firebase: ' . $e->getMessage(), ['exception' => $e]);
-            return response()->json(['message' => 'Gửi thông báo thất bại: ' . $e->getMessage()], 500);
+        } elseif ($topic) {
+            $message = CloudMessage::new()
+                ->withNotification($notification)
+                ->withChangedTarget('topic', $topic);
+
+            $this->messaging->send($message);
+
+            return response()->json(['message' => 'Thông báo đã được gửi đến chủ đề thành công!']);
+        } else {
+            return response()->json(['message' => 'Vui lòng chọn người dùng hoặc nhập chủ đề để gửi thông báo.'], 400);
         }
+    } catch (\Exception $e) {
+        Log::error('Lỗi gửi thông báo Firebase: ' . $e->getMessage(), ['exception' => $e]);
+        return response()->json(['message' => 'Gửi thông báo thất bại: ' . $e->getMessage()], 500);
     }
+}
+
 }

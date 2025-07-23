@@ -79,9 +79,9 @@
 
       <main class="page-content">
         <div class="container-table">
-          <button class="btn btn-outline-secondary btn-sm" @click="goBack" style="position: absolute; right: 115px;">
+          <!-- <button class="btn btn-outline-secondary btn-sm" @click="goBack" style="position: absolute; right: 115px;">
             <i class="bi bi-arrow-left me-1"></i> Quay Lại
-          </button>
+          </button> -->
           <router-view />
         </div>
       </main>

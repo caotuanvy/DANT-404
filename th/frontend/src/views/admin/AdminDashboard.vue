@@ -218,8 +218,6 @@ const overallStats = ref({
 });
 const loadingOverall = ref(true);
 const errorOverall = ref(false);
-
-// --- Revenue Chart & Table Data ---
 const filterType = ref('month');
 const selectedYear = ref(new Date().getFullYear());
 const selectedMonth = ref(new Date().getMonth() + 1);
@@ -286,26 +284,17 @@ function getCurrentWeekNumber() {
 
 function calculateGrowth(current, previous) {
   if (previous === 0) {
-    // Nếu tháng/tuần/năm trước là 0 và tháng/tuần/năm này có doanh thu, coi là "không thể tính % tăng trưởng" hoặc "mới bắt đầu"
-    // Trả về một giá trị đặc biệt, ví dụ null, để sau đó kiểm tra khi hiển thị.
-    return current > 0 ? null : 0; // Nếu current > 0, trả về null; nếu current = 0, vẫn là 0%
+    return current > 0 ? null : 0; 
   }
-  if (current === 0) return -100; // Giảm 100% nếu từ có thành không có
+  if (current === 0) return -100; 
   return ((current - previous) / previous) * 100;
 }
-
-// >>>>>> HÀM formatPercentage ĐƯỢC ĐẶT Ở ĐÂY <<<<<<
 function formatPercentage(value) {
   if (value === null || isNaN(value)) {
-    return '(Mới)'; // Hoặc chuỗi bạn muốn hiển thị cho trường hợp đặc biệt
+    return '(Mới)';
   }
-  // Chuyển sang số với 1 chữ số thập phân, sau đó parseFloat để loại bỏ .0
   return parseFloat(value.toFixed(1));
 }
-// >>>>>> KẾT THÚC VỊ TRÍ CỦA HÀM <<<<<<
-
-// --- Fetch Data Functions ---
-
 async function fetchOverallStatistics() {
   loadingOverall.value = true;
   errorOverall.value = false;
@@ -320,7 +309,7 @@ async function fetchOverallStatistics() {
       totalOrders: data.totalOrders || 0,
       avgOrderValue: data.avgOrderValue || 0,
       currentMonthRevenue: data.currentMonthRevenue || 0,
-      overallRevenueGrowth: data.overallRevenueGrowth !== undefined ? data.overallRevenueGrowth : null, // Thay đổi thành null nếu là 0 ban đầu
+      overallRevenueGrowth: data.overallRevenueGrowth !== undefined ? data.overallRevenueGrowth : null, 
       orderCountGrowth: data.orderCountGrowth !== undefined ? data.orderCountGrowth : null,
       avgOrderValueGrowth: data.avgOrderValueGrowth !== undefined ? data.avgOrderValueGrowth : null,
       currentMonthRevenueGrowth: data.currentMonthRevenueGrowth !== undefined ? data.currentMonthRevenueGrowth : null,
