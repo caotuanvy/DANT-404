@@ -21,8 +21,8 @@
     <div v-else>
       <div v-for="order in filteredOrders" :key="order.id" class="order-item">
         <div class="order-header">
-          <span class="order-current-status">{{ getStatusLabel(order.trang_thai) }}</span>
-          <span class="order-date">Ngày đặt: {{ formatDate(order.ngay_tao) }}</span>
+          <span class="order-current-status">{{ getStatusLabel(order.trang_thai_don_hang) }}</span>
+          <span class="order-date">Ngày đặt: {{ formatDate(order.ngay_dat) }}</span>
         </div>
 
         <div class="order-address">
@@ -37,11 +37,8 @@
           />
           <div class="product-details">
             <span class="product-name">
-  {{ item.bien_the?.san_pham?.ten_san_pham || 'Không rõ tên sản phẩm' }}
-  <span v-if="item.bien_the?.ten_bien_the">
-    - {{ item.bien_the.ten_bien_the }}
-  </span>
-</span>
+              {{ item.bien_the?.san_pham?.ten_san_pham || 'Không rõ tên sản phẩm' }}
+            </span>
             <span class="product-variant" v-if="item.bien_the?.mau_sac || item.bien_the?.kich_thuoc">
               Phân loại:
               {{ item.bien_the.mau_sac || 'Màu không xác định' }}
@@ -117,7 +114,7 @@ const formatDate = (dateString) => {
 
 const filteredOrders = computed(() => {
   if (currentStatus.value === "all") return allOrders.value;
-  return allOrders.value.filter((order) => order.trang_thai === currentStatus.value);
+  return allOrders.value.filter((order) => order.trang_thai_don_hang === currentStatus.value);
 });
 
 const filterOrdersByStatus = (status) => {
@@ -137,14 +134,14 @@ const fetchOrders = async () => {
   const token = localStorage.getItem("token");
 
   try {
-    const response = await axios.get("http://localhost:8000/api/user/orders", {
+    const response = await axios.get("/user/orders", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
 
     allOrders.value = response.data;
-    console.log("Fetched orders:", response.data);
+    // console.log("Fetched orders:", response.data);
   } catch (error) {
     console.error("Lỗi khi tải đơn hàng:", error.response?.data || error.message);
     allOrders.value = [];

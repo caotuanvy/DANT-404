@@ -68,6 +68,9 @@ export default {
         formData.append("mo_ta", this.description || "");
         if (this.imageFile) {
           formData.append("image", this.imageFile);
+          formData.append("slug", this.imageFile.name.replace(/\.[^/.]+$/, "")); // Thêm dòng này
+        } else {
+          formData.append("slug", "");
         }
 
         const response = await axios.post(
