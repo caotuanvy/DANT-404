@@ -14,14 +14,14 @@
           >
           <div class="vohop-newsitem-content">
             <h3>{{ item.tieude }}</h3>
-            <div v-html="getNoiDungHtml(item.noidung)"></div>
+            <div v-html="getNoiDungSnippet(item.noidung)"></div>
           </div>
           <div class="vohop-newsitem-footer">
             <span>
               <i class="fa-regular fa-calendar"></i>
               {{ item.ngay_dang }}
             </span>
-            <button class="vohop-btn">Xem chi tiết</button>
+            <button class="vohop-btn" @click="goToNewsDetail(item.id)">Xem chi tiết</button>
           </div>
         </div>
       </div>
@@ -31,10 +31,10 @@
         <h3><i class="fa-solid fa-list"></i> DANH MỤC</h3>
         <ul>
           <li
-            v-for="(item, idx) in danhMucList"
+            v-for="(item,) in danhMucList"
             :key="item.id_danh_muc_tin_tuc"
-            :class="{ active: activeDanhMuc === idx }"
-            @click="handleSelectDanhMuc(idx, item.id_danh_muc_tin_tuc)"
+            :class="{ active: activeDanhMuc === item.id_danh_muc_tin_tuc }"
+            @click="handleSelectDanhMuc(item.id_danh_muc_tin_tuc)"
           >
             <i class="fa-solid fa-angle-right"></i> {{ item.ten_danh_muc }}
           </li>
@@ -46,6 +46,7 @@
           class="vohop-tinnoibat-item"
           v-for="tin in tinNoiBatList"
           :key="tin.id"
+          @click="goToNewsDetail(tin.id)"
         >
           <img :src="tin.hinh_anh ? (tin.hinh_anh.startsWith('http') ? tin.hinh_anh : `http://localhost:8000/storage/${tin.hinh_anh}`) : 'https://via.placeholder.com/60x60'" alt="">
           <span>{{ tin.tieude }}</span>
@@ -64,10 +65,14 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router' // Import useRouter để điều hướng
+
 const newsList = ref([])
-const activeDanhMuc = ref(null)
+const activeDanhMuc = ref(null) // Sẽ lưu ID danh mục đang hoạt động
 const danhMucList = ref([])
 const tinNoiBatList = ref([])
+
+const router = useRouter() // Khởi tạo router
 
 onMounted(async () => {
   await fetchDanhMucList()
@@ -80,6 +85,7 @@ async function fetchDanhMucList() {
     const res = await fetch('http://localhost:8000/api/danh-muc-tin-tuc')
     danhMucList.value = await res.json()
   } catch (err) {
+    console.error("Lỗi khi tải danh mục:", err)
     danhMucList.value = []
   }
 }
@@ -89,16 +95,19 @@ async function fetchAllNews() {
     const res = await fetch('http://localhost:8000/api/tintuc-cong-khai')
     newsList.value = await res.json()
   } catch (err) {
+    console.error("Lỗi khi tải tất cả tin tức công khai:", err)
     newsList.value = []
   }
 }
 
-async function handleSelectDanhMuc(idx, id) {
-  activeDanhMuc.value = idx
+// Thay đổi handleSelectDanhMuc để truyền ID trực tiếp
+async function handleSelectDanhMuc(id) {
+  activeDanhMuc.value = id // Cập nhật activeDanhMuc bằng ID
   try {
     const res = await fetch(`http://localhost:8000/api/tintuc-cong-khai/danh-muc/${id}`)
     newsList.value = await res.json()
   } catch (err) {
+    console.error("Lỗi khi tải tin tức theo danh mục:", err)
     newsList.value = []
   }
 }
@@ -108,52 +117,60 @@ async function fetchTinNoiBat() {
     const res = await fetch('http://localhost:8000/api/tin-noi-bat')
     tinNoiBatList.value = await res.json()
   } catch (err) {
+    console.error("Lỗi khi tải tin nổi bật:", err)
     tinNoiBatList.value = []
   }
 }
 
-// Hàm kiểm tra và chuyển đổi nội dung EditorJS sang HTML
-function isJSON(str) {
+// Chức năng chuyển hướng đến trang chi tiết tin tức
+function goToNewsDetail(newsId) {
+  router.push({ name: 'NewsDetail', params: { id: newsId } })
+  // Lưu ý: 'NewsDetail' là tên route bạn cần định nghĩa trong router của Vue
+  // Ví dụ trong router/index.js (hoặc router.js) của bạn:
+  // {
+  //   path: '/tin-tuc/:id',
+  //   name: 'NewsDetail',
+  //   component: () => import('../views/NewsDetail.vue') // Đường dẫn đến component chi tiết tin tức
+  // }
+}
+
+// Hàm kiểm tra và xử lý nội dung để hiển thị snippet
+function getNoiDungSnippet(noidung) {
+  // Ưu tiên hiển thị HTML nếu nó là kết quả từ AI (không phải JSON EditorJS)
+  // Nếu nội dung là HTML (từ API generateSeoContent), nó sẽ không phải JSON.
+  // Chúng ta sẽ hiển thị một đoạn nhỏ của nội dung đó.
+  if (typeof noidung === 'string' && noidung.startsWith('<')) { // Giả định HTML sẽ bắt đầu bằng thẻ
+    // Loại bỏ các thẻ HTML để lấy văn bản thuần túy và cắt ngắn
+    const doc = new DOMParser().parseFromString(noidung, 'text/html')
+    const textContent = doc.body.textContent || ""
+    return textContent.length > 150 ? textContent.slice(0, 150) + '...' : textContent
+  }
+
+  // Nếu là JSON từ EditorJS (nếu bạn vẫn dùng ở một số nơi)
   try {
-    const parsed = JSON.parse(str)
-    return parsed && typeof parsed === 'object'
-  } catch {
-    return false
-  }
-}
-
-function convertBlocksToHtml(data) {
-  if (!data || !data.blocks) return ''
-  return data.blocks.map(block => {
-    switch (block.type) {
-      case 'header':
-        return `<h${block.data.level}>${block.data.text}</h${block.data.level}>`
-      case 'paragraph':
-        return `<p>${block.data.text}</p>`
-      case 'list':
-        const tag = block.data.style === 'ordered' ? 'ol' : 'ul'
-        return `<${tag}>${block.data.items.map(i => `<li>${i}</li>`).join('')}</${tag}>`
-      case 'quote':
-        return `<blockquote>${block.data.text}</blockquote>`
-      case 'delimiter':
-        return `<hr />`
-      default:
-        return ''
+    const parsed = JSON.parse(noidung)
+    if (parsed && typeof parsed === 'object' && parsed.blocks) {
+      // Chuyển đổi một phần nhỏ của các khối thành HTML để làm snippet
+      let snippet = ''
+      for (const block of parsed.blocks) {
+        if (block.type === 'paragraph' || block.type === 'header') {
+          snippet += block.data.text + ' '
+          if (snippet.length > 150) break
+        }
+      }
+      return snippet.slice(0, 150) + (snippet.length > 150 ? '...' : '')
     }
-  }).join('')
-}
-
-function getNoiDungHtml(noidung) {
-  if (isJSON(noidung)) {
-    const blockData = JSON.parse(noidung)
-    return convertBlocksToHtml(blockData)
+  } catch (e) {
+    // Không phải JSON hợp lệ, xử lý như văn bản thuần
   }
-  // Nếu không phải JSON thì cắt 100 ký tự đầu
-  return noidung ? noidung.slice(0, 100) + '...' : ''
+
+  // Nếu không phải JSON và không phải HTML rõ ràng, xử lý như văn bản thuần túy
+  return noidung ? (noidung.length > 150 ? noidung.slice(0, 150) + '...' : noidung) : ''
 }
 </script>
 
 <style scoped>
+/* Giữ nguyên phần CSS */
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css');
 
 :root {
@@ -296,9 +313,15 @@ function getNoiDungHtml(noidung) {
   gap: 7px;
   transition: color 0.2s, background 0.2s;
   cursor: pointer;
+  padding: 5px 8px; /* Thêm padding để dễ click */
+}
+.vohop-danhmuc li:last-child {
+    margin-bottom: 0;
 }
 .vohop-danhmuc li:hover {
   color: var(--main-blue);
+  background: #eafaff; /* Thêm hover background */
+  border-radius: 6px;
 }
 .vohop-danhmuc li.active {
   background: #eafaff;
@@ -314,6 +337,7 @@ function getNoiDungHtml(noidung) {
   margin-bottom: 0;
   border: 1.5px solid var(--main-border);
   background: #eafaff;
+  flex-shrink: 0; /* Đảm bảo ảnh không bị co lại */
 }
 .vohop-tinnoibat-item {
   display: flex;
@@ -322,12 +346,17 @@ function getNoiDungHtml(noidung) {
   margin-bottom: 12px;
   cursor: pointer;
   transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  padding: 8px 0; /* Thêm padding để dễ click */
+}
+.vohop-tinnoibat-item:last-child {
+    margin-bottom: 0;
 }
 .vohop-tinnoibat-item:hover,
 .vohop-tinnoibat-item:focus {
   background: #eafaff;
   color: var(--main-blue);
   box-shadow: 0 2px 8px #33ccff44;
+  border-radius: 8px; /* Bo tròn khi hover */
 }
 .vohop-tinnoibat-item:active {
   background: #33ccff;
@@ -338,6 +367,8 @@ function getNoiDungHtml(noidung) {
   font-size: 14px;
   color: #333;
   font-weight: 500;
+  line-height: 1.4; /* Tăng line-height cho dễ đọc */
+  flex-grow: 1; /* Cho phép text mở rộng */
 }
 .vohop-tags button {
   border: 1.5px solid var(--main-blue);
