@@ -1,7 +1,17 @@
 <template>
   <div class="news-details-layout">
     <!-- Bên trái: Nội dung chi tiết tin tức -->
-    <div class="news-details-container" v-if="news">
+    <!-- Thêm div này để bao bọc nội dung chính và hiển thị thông báo lỗi/loading -->
+    <div v-if="loading" class="news-details-container loading-message">
+        <i class="fa-solid fa-spinner fa-spin"></i> Đang tải tin tức...
+    </div>
+    <div v-else-if="error" class="news-details-container error-message">
+        <i class="fa-solid fa-exclamation-triangle"></i> Lỗi: {{ error }}
+    </div>
+    <div v-else-if="!news" class="news-details-container no-data-message">
+        <i class="fa-solid fa-info-circle"></i> Không tìm thấy tin tức này hoặc tin tức không khả dụng.
+    </div>
+    <div class="news-details-container" v-else>
       <div class="news-banner"></div>
       <h1 class="news-title">
         <i class="fa-solid fa-bullhorn"></i>
@@ -10,17 +20,23 @@
       <div class="news-meta">
         <span class="meta-date">
           <i class="fa-regular fa-calendar"></i>
-          {{ news.ngay_dang }}
+          {{ formatDate(news.ngay_dang) }}
         </span>
         <span class="meta-view">
           <i class="fa-solid fa-eye"></i>
           {{ news.luot_xem }} lượt xem
         </span>
+        <!-- Thêm hiển thị danh mục nếu có -->
+        <span class="meta-category" v-if="news.danh_muc">
+            <i class="fa-solid fa-tag"></i>
+            {{ news.danh_muc.ten_danh_muc }}
+          </span>
       </div>
       <img
         class="news-image"
-        :src="news.hinh_anh ? (news.hinh_anh.startsWith('http') ? news.hinh_anh : `http://localhost:8000/storage/${news.hinh_anh}`) : 'https://via.placeholder.com/800x350'"
+        :src="news.hinh_anh ? (news.hinh_anh.startsWith('http') ? news.hinh_anh : `http://localhost:8000/storage/${news.hinh_anh}`) : 'https://via.placeholder.com/800x350/f0f0f0/888888?text=Image+Not+Found'"
         alt="Hình ảnh"
+        @error="handleImageError"
       >
       <div class="news-content" v-html="getNoiDungHtml(news.noidung)"></div>
     </div>
@@ -28,17 +44,32 @@
     <!-- Bên phải: Tin liên quan có hình và nội dung -->
     <aside class="news-sidebar">
       <div class="sidebar-section">
-        <h3><i class="fa-solid fa-link"></i> Tin liên quan</h3>
-        <div class="related-news-list">
-          <div class="related-news-item" v-for="i in 3" :key="i">
-            <img class="related-news-img" src="https://via.placeholder.com/90x60" alt="Hình liên quan">
+        <h3><i class="fa-solid fa-fire"></i> Tin liên quan</h3> <!-- Đổi icon cho phù hợp hơn -->
+        <!-- Logic mới cho tin liên quan -->
+        <div v-if="relatedNews.length > 0" class="related-news-list">
+          <div
+            class="related-news-item"
+            v-for="item in relatedNews"
+            :key="item.id"
+            @click="goToNewsDetail(item.id)"
+          >
+            <img
+              class="related-news-img"
+              :src="item.hinh_anh ? (item.hinh_anh.startsWith('http') ? item.hinh_anh : `http://localhost:8000/storage/${item.hinh_anh}`) : 'https://via.placeholder.com/90x60/e0e0e0/555555?text=No+Image'"
+              :alt="item.tieude"
+              @error="handleImageError"
+            >
             <div class="related-news-info">
-              <a href="#" class="related-news-title">Tiêu đề tin liên quan {{ i }}</a>
+              <!-- Sử dụng javascript:void(0) để thẻ <a> không điều hướng trang, click sự kiện vue sẽ làm nhiệm vụ này -->
+              <a href="javascript:void(0);" class="related-news-title">{{ item.tieude }}</a>
               <p class="related-news-desc">
-                Mô tả ngắn gọn về tin liên quan số {{ i }}. Nội dung này giúp người đọc biết sơ lược về tin.
+                {{ getNoiDungSnippet(item.noidung, 70) }}
               </p>
             </div>
           </div>
+        </div>
+        <div v-else class="no-related-news">
+          <i class="fa-solid fa-info-circle"></i> Không có tin liên quan nào.
         </div>
       </div>
     </aside>
@@ -46,37 +77,151 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import axios from 'axios' // Đảm bảo bạn đã cài đặt axios (npm install axios)
 
 const route = useRoute()
-const news = ref(null)
+const router = useRouter() // Để có thể chuyển hướng khi click tin liên quan
 
+const news = ref(null)
+const relatedNews = ref([]) // Biến để lưu trữ tin liên quan
+const loading = ref(true)   // Trạng thái tải tin tức chính
+const error = ref(null)     // Thông báo lỗi nếu có
+
+// WATCHER: Theo dõi sự thay đổi của route.params.id
+// Khi người dùng click vào một tin liên quan, ID trên URL sẽ thay đổi.
+// Watcher này sẽ phát hiện sự thay đổi đó và gọi lại hàm fetchNewsDetails để tải nội dung mới.
+watch(() => route.params.id, (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    fetchNewsDetails(newId);
+  }
+});
+
+// ON MOUNTED: Hàm được gọi khi component được gắn kết (lần đầu tiên)
 onMounted(() => {
-  fetchNewsDetails()
+  fetchNewsDetails(route.params.id)
 })
 
-async function fetchNewsDetails() {
+/**
+ * Hàm lấy chi tiết tin tức từ API.
+ * @param {string|number} id - ID của tin tức cần lấy.
+ */
+async function fetchNewsDetails(id) {
+  loading.value = true; // Bắt đầu tải, đặt trạng thái loading
+  news.value = null;    // Xóa dữ liệu tin tức cũ
+  error.value = null;   // Xóa lỗi cũ
+  relatedNews.value = []; // Xóa tin liên quan cũ
+
   try {
-    const res = await fetch(`http://localhost:8000/api/tintuc-cong-khai/${route.params.id}`)
-    news.value = await res.json()
-  } catch {
-    news.value = null
+    const newsResponse = await axios.get(`http://localhost:8000/api/tintuc-cong-khai/${id}`);
+    news.value = newsResponse.data;
+
+    // Sau khi tải được tin tức chính, kiểm tra và gọi API tin liên quan
+    // Đảm bảo news.value và news.value.id_danh_muc_tin_tuc tồn tại
+    if (news.value && news.value.id && news.value.id_danh_muc_tin_tuc) {
+      await fetchRelatedNews(news.value.id, news.value.id_danh_muc_tin_tuc);
+    } else {
+      // Nếu không có category ID, có thể không tải tin liên quan hoặc log cảnh báo
+      console.warn('Không có ID danh mục để tải tin liên quan.');
+    }
+
+    // Cuộn lên đầu trang sau khi tải tin tức mới (quan trọng cho trải nghiệm người dùng)
+    window.scrollTo({ top: 0, behavior: 'auto' });
+
+  } catch (err) {
+    console.error("Lỗi khi tải chi tiết tin tức:", err);
+    error.value = err.response?.data?.message || err.message || "Không thể tải tin tức. Vui lòng thử lại.";
+    news.value = null; // Đảm bảo news là null nếu có lỗi
+  } finally {
+    loading.value = false; // Kết thúc tải, đặt trạng thái loading
   }
 }
 
-// Hàm chuyển EditorJS sang HTML nếu cần
+/**
+ * Hàm lấy tin tức liên quan dựa trên ID tin tức hiện tại và ID danh mục.
+ * @param {string|number} currentNewsId - ID của tin tức đang xem.
+ * @param {string|number} categoryId - ID của danh mục tin tức.
+ */
+async function fetchRelatedNews(currentNewsId, categoryId) {
+  try {
+    // Gọi API tin liên quan của Laravel
+    const response = await axios.get(`http://localhost:8000/api/tin-lien-quan/${currentNewsId}/${categoryId}`);
+    relatedNews.value = response.data;
+  } catch (err) {
+    console.error("Lỗi khi tải tin liên quan:", err);
+    relatedNews.value = []; // Đặt về mảng rỗng nếu có lỗi
+  }
+}
+
+/**
+ * Hàm điều hướng đến trang chi tiết của một tin tức khác.
+ * @param {string|number} newsId - ID của tin tức muốn chuyển đến.
+ */
+function goToNewsDetail(newsId) {
+  // Sử dụng router.push để thay đổi URL và kích hoạt watcher ở trên
+  router.push({ name: 'NewsDetail', params: { id: newsId } });
+}
+
+/**
+ * Hàm định dạng ngày tháng.
+ * @param {string} dateString - Chuỗi ngày tháng từ API.
+ * @returns {string} - Chuỗi ngày tháng đã định dạng.
+ */
+function formatDate(dateString) {
+  if (!dateString) return '';
+  // Tạo đối tượng Date từ chuỗi, xử lý cả định dạng ISO (YYYY-MM-DDTHH:mm:ss.sssZ) và YYYY-MM-DD HH:mm:ss
+  const date = new Date(dateString);
+  // Kiểm tra xem ngày có hợp lệ không
+  if (isNaN(date.getTime())) {
+    // Thử parse lại nếu định dạng không chuẩn (ví dụ chỉ có ngày)
+    const [year, month, day] = dateString.split('-');
+    if (year && month && day) {
+      const newDate = new Date(year, month - 1, day); // Month is 0-indexed
+      if (!isNaN(newDate.getTime())) {
+        dateString = newDate.toISOString(); // Convert to ISO to ensure proper parsing later
+      }
+    }
+  }
+
+  const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+  return new Date(dateString).toLocaleDateString('vi-VN', options);
+}
+
+
+/**
+ * Hàm xử lý lỗi khi tải ảnh. Thay thế ảnh bằng placeholder.
+ * @param {Event} event - Sự kiện lỗi của thẻ <img>.
+ */
+function handleImageError(event) {
+  event.target.src = 'https://via.placeholder.com/800x350/f0f0f0/888888?text=Image+Not+Found';
+  event.target.alt = 'Hình ảnh không khả dụng';
+}
+
+// --- Các hàm xử lý nội dung EditorJS/HTML ---
+
+/**
+ * Kiểm tra xem một chuỗi có phải là JSON hợp lệ hay không.
+ * @param {string} str - Chuỗi cần kiểm tra.
+ * @returns {boolean}
+ */
 function isJSON(str) {
-  if (typeof str === 'object' && str !== null) return true
+  if (typeof str === 'object' && str !== null) return true // Đã là object rồi
   try {
     const parsed = JSON.parse(str)
-    return parsed && typeof parsed === 'object'
+    return parsed && typeof parsed === 'object' && parsed !== null // Phải là object/array sau khi parse
   } catch {
     return false
   }
 }
+
+/**
+ * Chuyển đổi dữ liệu EditorJS blocks thành chuỗi HTML.
+ * @param {object} data - Dữ liệu EditorJS (chứa mảng 'blocks').
+ * @returns {string} - Chuỗi HTML đã tạo.
+ */
 function convertBlocksToHtml(data) {
-  if (!data || !data.blocks) return ''
+  if (!data || !data.blocks || !Array.isArray(data.blocks)) return ''
   return data.blocks.map(block => {
     switch (block.type) {
       case 'header':
@@ -85,45 +230,123 @@ function convertBlocksToHtml(data) {
         return `<p>${block.data.text}</p>`
       case 'list':
         const tag = block.data.style === 'ordered' ? 'ol' : 'ul'
-        return `<${tag}>${block.data.items.map(i => {
-          if (typeof i === 'string') return `<li>${i}</li>`
-          if (typeof i === 'object' && i !== null) {
-            // Lấy tất cả value là string trong object, nối lại
-            const values = Object.values(i).filter(v => typeof v === 'string')
-            if (values.length) return `<li>${values.join(' ')}</li>`
-            return ''
-          }
-          return ''
-        }).join('')}</${tag}>`
+        if (!block.data.items || !Array.isArray(block.data.items)) return '';
+        return `<${tag}>${block.data.items.map(item => {
+            // EditorJS có thể trả về item là string hoặc object với thuộc tính 'content'
+            if (typeof item === 'string') return `<li>${item}</li>`;
+            if (typeof item === 'object' && item !== null && item.content) return `<li>${item.content}</li>`;
+            return '';
+        }).join('')}</${tag}>`;
       case 'quote':
-        return `<blockquote>${block.data.text}</blockquote>`
+        const citation = block.data.caption ? `<footer class="quote-caption">&mdash; ${block.data.caption}</footer>` : '';
+        return `<blockquote class="news-quote"><p>${block.data.text}</p>${citation}</blockquote>`;
       case 'delimiter':
-        return `<hr />`
+        return `<hr class="news-hr" />`
+      case 'image': // Xử lý block type image
+        // EditorJS có thể có data.file.url hoặc data.url trực tiếp
+        const imageUrl = block.data.file?.url || block.data.url;
+        const imageCaption = block.data.caption ? `<figcaption class="image-caption">${block.data.caption}</figcaption>` : '';
+        if (imageUrl) {
+            return `<figure class="news-image-figure"><img src="${imageUrl}" alt="${block.data.caption || 'Hình ảnh'}" class="news-embedded-image"/>${imageCaption}</figure>`;
+        }
+        return '';
+      case 'raw': // Xử lý raw HTML
+        return block.data.html || '';
+      case 'code': // Xử lý code blocks
+        return `<pre class="news-code-block"><code>${block.data.code}</code></pre>`;
+      case 'embed': // Xử lý nhúng (ví dụ YouTube)
+        if (block.data.embed) {
+          return `<div class="news-embed-container"><iframe src="${block.data.embed}" frameborder="0" allowfullscreen></iframe></div>`;
+        }
+        return '';
+      // Thêm các case khác nếu EditorJS của bạn sử dụng các loại block khác (table, warning, etc.)
       default:
+        console.warn('Unknown EditorJS block type:', block.type, block);
         return ''
     }
   }).join('')
 }
+
+/**
+ * Lấy nội dung HTML đã chuyển đổi từ dữ liệu 'noidung' (có thể là HTML hoặc EditorJS JSON).
+ * @param {string|object} noidung - Nội dung tin tức.
+ * @returns {string} - Nội dung HTML.
+ */
 function getNoiDungHtml(noidung) {
-  // Nếu là object (EditorJS), dùng luôn
-  if (typeof noidung === 'object' && noidung !== null && noidung.blocks) {
-    return convertBlocksToHtml(noidung)
-  }
-  // Nếu là string JSON, parse ra object
+  // Nếu là string JSON, parse ra object rồi chuyển sang HTML
   if (typeof noidung === 'string' && isJSON(noidung)) {
-    const blockData = JSON.parse(noidung)
-    if (blockData.blocks) return convertBlocksToHtml(blockData)
+    try {
+      const blockData = JSON.parse(noidung);
+      if (blockData && blockData.blocks && Array.isArray(blockData.blocks)) {
+        return convertBlocksToHtml(blockData);
+      }
+    } catch (e) {
+      console.warn("Error parsing JSON content, falling back to raw HTML:", e);
+      return noidung || ''; // Trả về nội dung gốc nếu parse lỗi
+    }
   }
-  // Nếu là object nhưng không phải EditorJS, trả về rỗng (không hiển thị gì)
-  if (typeof noidung === 'object') {
-    return ''
+  // Nếu là object EditorJS (đã parse sẵn), chuyển sang HTML
+  if (typeof noidung === 'object' && noidung !== null && noidung.blocks) {
+    return convertBlocksToHtml(noidung);
   }
-  // Nếu là string HTML thường
-  return noidung || ''
+  // Nếu là string HTML thuần hoặc các trường hợp khác, trả về luôn
+  return noidung || '';
+}
+
+/**
+ * Lấy một đoạn trích ngắn (snippet) từ nội dung tin tức (EditorJS JSON hoặc HTML).
+ * @param {string|object} noidung - Nội dung tin tức.
+ * @param {number} maxLength - Độ dài tối đa của đoạn trích.
+ * @returns {string} - Đoạn trích văn bản.
+ */
+function getNoiDungSnippet(noidung, maxLength = 100) {
+  let textContent = '';
+
+  if (typeof noidung === 'string') {
+    if (noidung.startsWith('<')) {
+      const doc = new DOMParser().parseFromString(noidung, 'text/html');
+      textContent = doc.body.textContent || "";
+    } else if (isJSON(noidung)) {
+      try {
+        const parsed = JSON.parse(noidung);
+        if (parsed && parsed.blocks && Array.isArray(parsed.blocks)) {
+          for (const block of parsed.blocks) {
+            if (block.data && block.data.text) {
+              textContent += block.data.text + ' ';
+            } else if (block.data && block.data.items) {
+              textContent += block.data.items.map(item => (typeof item === 'string' ? item : item.content || '')).join(' ') + ' ';
+            } else if (block.data && block.data.caption) {
+                textContent += block.data.caption + ' ';
+            }
+            if (textContent.length > maxLength * 1.5) break;
+          }
+        }
+      } catch (e) {
+        textContent = noidung;
+      }
+    } else {
+      textContent = noidung;
+    }
+  } else if (typeof noidung === 'object' && noidung !== null && noidung.blocks) {
+    for (const block of noidung.blocks) {
+      if (block.data && block.data.text) {
+        textContent += block.data.text + ' ';
+      } else if (block.data && block.data.items) {
+        textContent += block.data.items.map(item => (typeof item === 'string' ? item : item.content || '')).join(' ') + ' ';
+      } else if (block.data && block.data.caption) {
+        textContent += block.data.caption + ' ';
+      }
+      if (textContent.length > maxLength * 1.5) break;
+    }
+  }
+
+  const trimmedText = textContent.replace(/\s+/g, ' ').trim();
+  return trimmedText.length > maxLength ? trimmedText.slice(0, maxLength).trim() + '...' : trimmedText;
 }
 </script>
 
 <style scoped>
+/* Giữ nguyên CSS của bạn */
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css');
 .news-details-layout {
   display: flex;
@@ -169,9 +392,11 @@ function getNoiDungHtml(noidung) {
   box-shadow: 0 1px 6px #0001;
   padding: 10px 10px 10px 10px;
   transition: box-shadow 0.2s;
+  cursor: pointer; /* Thêm con trỏ để người dùng biết có thể click */
 }
 .related-news-item:hover {
   box-shadow: 0 4px 16px #1976d211;
+  transform: translateY(-2px); /* Hiệu ứng nhấc nhẹ lên khi hover */
 }
 .related-news-img {
   width: 90px;
@@ -192,7 +417,6 @@ function getNoiDungHtml(noidung) {
   text-decoration: none;
   margin-bottom: 4px;
   display: block;
-  transition: color 0.2s;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
