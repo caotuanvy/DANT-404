@@ -115,11 +115,12 @@ class TintucController extends Controller
     ]);
     }
     // tin tuc công khai
-   public function tintucCongKhai()
+    public function tintucCongKhai()
     {
-    // Lấy tất cả tin tức đã duyệt, sắp xếp mới nhất
+    // Lấy tất cả tin tức đã duyệt VÀ có trạng thái là 1 (đang hiển thị), sắp xếp mới nhất
     $tintucs = Tintuc::with('danhMuc')
-        ->where('duyet_tin_tuc', 1)
+        //->where('duyet_tin_tuc', 1)
+        ->where('trang_thai', 1) // THÊM ĐIỀU KIỆN NÀY
         ->orderByDesc('ngay_dang')
         ->get();
 
@@ -128,7 +129,11 @@ class TintucController extends Controller
     // tin tuc cong khai theo id
     public function chitietCongKhai($id)
     {
-    $tintuc = Tintuc::with('danhMuc')->where('duyet_tin_tuc', 1)->findOrFail($id);
+    // Đảm bảo tin tức đã duyệt VÀ có trạng thái là 1
+    $tintuc = Tintuc::with('danhMuc')
+        //->where('duyet_tin_tuc', 1)
+        ->where('trang_thai', 1) // THÊM ĐIỀU KIỆN NÀY
+        ->findOrFail($id); // findOrFail sẽ tự động trả về 404 nếu không tìm thấy hoặc không thỏa mãn điều kiện
 
     return response()->json([
         'id' => $tintuc->id,
@@ -145,14 +150,14 @@ class TintucController extends Controller
     ]);
     }
     // Lấy tin tức nổi bật
-    public function tinNoiBat()
+   public function tinNoiBat()
     {
-    // Lấy 5 tin tức có lượt xem cao nhất, đã duyệt
-    $tins = Tintuc::where('luot_xem', 1)
+    $tins = Tintuc::where('trang_thai', 1) // BỎ ĐIỀU KIỆN 'duyet_tin_tuc' NẾU KHÔNG CẦN
+        // ->where('duyet_tin_tuc', 1) // BỎ DÒNG NÀY ĐI HOẶC COMMENT LẠI
         ->orderByDesc('luot_xem')
         ->take(5)
         ->get();
-
+    // Trả về danh sách tin tức nổi bật
     return response()->json($tins);
     }
     // Tạo nội dung SEO cho tin tức
