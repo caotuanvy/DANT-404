@@ -147,7 +147,7 @@ Route::prefix('admin')->group(function () {
     Route::get('/products-sell-top', [ProductController::class, 'getTopSelling']);
     Route::get('products-featured', [ProductController::class, 'getFeatured']);
     Route::get('/products/detail/{slug}', [ProductController::class, 'showSpDetail']);
-
+    Route::get('/products-sell-top-all', [ProductController::class, 'allBestSelling']);
 });
 Route::post('/tinymce/upload-image', [ProductController::class, 'uploadEditorImage']);
 
