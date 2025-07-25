@@ -52,6 +52,11 @@ const routes = [
   name: 'ChiTietTinTucCongKhai',
   component: () => import('../components/user/NewsDetails.vue')
   },
+   {
+  path: '/san-pham-ban-chay',
+  name: 'SanPhamBanChay',
+  component: () => import('../components/user/AllBestSellProduct.vue')
+  },
   {
   path: '/tin-tuc-chi-tiet/:id',
   name: 'ChiTietTinTucCongKhai',
