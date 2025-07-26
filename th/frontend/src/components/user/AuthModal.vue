@@ -3,6 +3,7 @@ import Swal from 'sweetalert2';
 import axios from 'axios';
 import { ref, reactive, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { appState } from '@/main.js';
 
 const router = useRouter();
 
@@ -568,73 +569,85 @@ const handleGoogleCredentialResponse = async (response) => {
 };
 
 // Facebook Login
-const handleFacebookLogin = () => {
-    if (window.FB) {
-        window.FB.login(async function(response) {
-            if (response.authResponse) {
-                const accessToken = response.authResponse.accessToken;
-                console.log('Access Token Facebook:', accessToken);
-
-                try {
-                    const res = await axios.post('/api/auth/facebook', {
-                        access_token: accessToken
-                    });
-
-                    const user = res.data.user;
-                    const token = res.data.token;
-
-                    closeModal();
-                    localStorage.setItem('token', token);
-                    localStorage.setItem('user', JSON.stringify(user));
-                    localStorage.setItem('vai_tro_id', user.vai_tro_id);
-                    localStorage.setItem('sdt', user.sdt);
-
-                    await Swal.fire({
-                        icon: 'success',
-                        title: 'Chào mừng!',
-                        text: `Xin chào ${user.ho_ten || user.email}, chúc bạn một ngày tuyệt vời!`,
-                        toast: true,
-                        position: 'top-end',
-                        timer: 3000,
-                        timerProgressBar: true,
-                        showConfirmButton: false
-                    });
-
-                } catch (error) {
-                    console.error('Đăng nhập Facebook thất bại:', error);
-                    Swal.fire({
-                        toast: true,
-                        position: 'top-end',
-                        icon: 'error',
-                        title: error.response?.data?.message || 'Đăng nhập Facebook thất bại. Vui lòng thử lại.',
-                        showConfirmButton: false,
-                        timer: 5000,
-                        timerProgressBar: true
-                    });
-                }
-            } else {
-                console.log('Người dùng hủy đăng nhập Facebook hoặc không cấp quyền.');
-                Swal.fire({
-                    toast: true,
-                    position: 'top-end',
-                    icon: 'warning',
-                    title: 'Đăng nhập Facebook bị hủy.',
-                    showConfirmButton: false,
-                    timer: 3000,
-                    timerProgressBar: true
-                });
+const waitForFacebookSdk = () => {
+    return new Promise((resolve, reject) => {
+        const interval = setInterval(() => {
+            if (window.FB && appState.isFacebookSdkLoaded) {
+                clearInterval(interval);
+                resolve(window.FB);
             }
-        }, { scope: 'email,public_profile' });
-    } else {
-        console.error('Facebook SDK chưa được tải.');
-        Swal.fire({
+        }, 100);
+
+        setTimeout(() => {
+            clearInterval(interval);
+            reject(new Error('Facebook SDK load quá lâu.'));
+        }, 10000);
+    });
+};
+
+const handleFacebookLogin = async () => {
+    try {
+        const FB = await waitForFacebookSdk();
+
+        console.log('Facebook SDK đã sẵn sàng, tiến hành login…');
+
+        const fbResponse = await new Promise((resolve, reject) => {
+            FB.login(
+                (res) => {
+                    if (res.authResponse) {
+                        resolve(res);
+                    } else {
+                        reject(new Error('Người dùng hủy đăng nhập hoặc không cấp quyền.'));
+                    }
+                },
+                { scope: 'email,public_profile' }
+            );
+        });
+
+        const accessToken = fbResponse.authResponse.accessToken;
+        console.log('Access Token Facebook:', accessToken);
+
+        const { data } = await axios.post('/api/auth/facebook', {
+            access_token: accessToken,
+        });
+
+        const { user, token } = data;
+
+        closeModal();
+
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('vai_tro_id', user.vai_tro_id);
+        localStorage.setItem('sdt', user.sdt);
+
+        await Swal.fire({
+            icon: 'success',
+            title: 'Chào mừng!',
+            text: `Xin chào ${user.ho_ten || user.email}, chúc bạn một ngày tuyệt vời!`,
+            toast: true,
+            position: 'top-end',
+            timer: 3000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+        });
+    } catch (error) {
+        console.error('Đăng nhập Facebook thất bại:', error);
+
+        let message = 'Đăng nhập Facebook thất bại. Vui lòng thử lại.';
+        if (error.response?.data?.message) {
+            message = error.response.data.message;
+        } else if (error.message) {
+            message = error.message;
+        }
+
+        await Swal.fire({
             toast: true,
             position: 'top-end',
             icon: 'error',
-            title: 'Không thể kết nối Facebook. Vui lòng thử lại sau.',
+            title: message,
             showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true
+            timer: 5000,
+            timerProgressBar: true,
         });
     }
 };
