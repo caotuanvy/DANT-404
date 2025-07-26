@@ -397,6 +397,8 @@ onMounted(async () => {
  transition: background-color 0.3s ease, transform 0.2s ease;
  margin-bottom: -15px;
  margin-top: -10px;
+ list-style-type: none;
+ text-decoration:none;
 }
 .view-more-button:hover {
  background-color: #0056b3;
