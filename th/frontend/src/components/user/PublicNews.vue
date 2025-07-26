@@ -124,7 +124,7 @@ async function fetchTinNoiBat() {
 
 // Chức năng chuyển hướng đến trang chi tiết tin tức
 function goToNewsDetail(newsId) {
-  router.push({ name: 'NewsDetail', params: { id: newsId } })
+  router.push({ name: 'ChiTietTinTucCongKhai', params: { id: newsId } })
   // Lưu ý: 'NewsDetail' là tên route bạn cần định nghĩa trong router của Vue
   // Ví dụ trong router/index.js (hoặc router.js) của bạn:
   // {

@@ -160,7 +160,7 @@ async function fetchRelatedNews(currentNewsId, categoryId) {
  */
 function goToNewsDetail(newsId) {
   // Sử dụng router.push để thay đổi URL và kích hoạt watcher ở trên
-  router.push({ name: 'NewsDetail', params: { id: newsId } });
+  router.push({ name: 'ChiTietTinTucCongKhai', params: { id: newsId } });
 }
 
 /**
