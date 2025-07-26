@@ -16,10 +16,12 @@ use App\Http\Controllers\Api\SlideShowController;
 use App\Http\Controllers\Api\TintucController;
 use App\Http\Controllers\Api\DiaChiController;
 use App\Http\Controllers\Api\CartController;
-use App\Http\Controllers\Api\GioHangController;
 use App\Http\Controllers\Api\IntroduceController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\BinhLuanController;
+use App\Http\Controllers\Api\PaymentMethodController;
+use App\Http\Controllers\Api\NotificationsController;
 // Public Auth Routes
 Route::post('/auth/google', [GoogleAuthController::class, 'handleGoogleLogin']);
 Route::post('/register', [AuthController::class, 'register']);
@@ -37,10 +39,10 @@ Route::apiResource('products', ProductController::class);
 Route::put('/products/{id}/toggle-noi-bat', [ProductController::class, 'toggleNoiBat']);
 Route::get('/categories/{id}/products', [CategoryController::class, 'getProductsByCategory']);
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/carts/add', [GioHangController::class, 'themVaoGioHang']);
+// Route::middleware('auth:sanctum')->group(function () {
+//     Route::post('/carts/add', [GioHangController::class, 'themVaoGioHang']);
     // Route::get('/carts', [GioHangController::class, 'xemGioHang']);
-});
+// });
 
 
 // Product Image Upload (public add, delete protected)
@@ -63,6 +65,7 @@ Route::get('/tintuc-cong-khai', [TintucController::class, 'tintucCongKhai']);
 Route::get('/tintuc-cong-khai/{id}', [TintucController::class, 'chitietCongKhai']);
 Route::get('/tin-noi-bat', [TintucController::class, 'tinNoiBat']);
 Route::get('/xemtintuc-admin/{id}', [TintucController::class, 'xemchitiettintucadmin']);
+Route::get('/tin-lien-quan/{currentNewsId}/{categoryId}', [TintucController::class, 'tinLienQuan']);
 
 
 // Danh muc tin tuc
@@ -75,6 +78,14 @@ Route::apiResource('danh-muc-tin-tuc', DanhMucTtController::class);
 Route::get('/xemdanhmuc-admin/{id}', [DanhMucTtController::class, 'xemChiTietDanhMucAdmin']);
 Route::get('tintuc-cong-khai/danh-muc/{id}', [DanhMucTtController::class, 'tintucCongKhaiTheoDanhMuc']);
 
+// Binh luan
+Route::prefix('admin/binhluan')->group(function () {
+    Route::get('/', [BinhLuanController::class, 'index']); // Lấy danh sách
+    Route::put('/{id}/toggle', [BinhLuanController::class, 'toggleTrangThai']); // Ẩn / hiện
+    Route::put('/{id}/reset-bao-cao', [BinhLuanController::class, 'resetBaoCao']); // Reset báo cáo (nếu bạn vẫn dùng)
+    Route::put('/{id}/set-bao-cao', [BinhLuanController::class, 'setBaoCao']);
+});
+
 // Dia chi
 Route::apiResource('addresses', DiaChiController::class);
 Route::get('/dia_chi/nguoi_dung/{nguoi_dung_id}', [DiaChiController::class, 'index'])->name('dia_chi.by_user');
@@ -83,13 +94,34 @@ Route::put('/dia_chi/{id}', [DiaChiController::class, 'update']);
 Route::get('/dia-chi/mac-dinh/{nguoi_dung_id}', [DiaChiController::class, 'diaChiMacDinh']);
 
 // Cart
-Route::middleware('auth:sanctum')->post('/cart/add', [CartController::class, 'add']);
+Route::middleware('auth:sanctum')->group(function () {
+    // Lấy giỏ hàng của người dùng hiện tại (hoặc theo ID)
+    Route::get('/cart/{nguoiDungId?}', [CartController::class, 'getCart']);
+    // Thêm sản phẩm vào giỏ hàng
+    Route::post('/cart/add', [CartController::class, 'addItem']);
+    // Nếu muốn giữ chức năng xem tất cả giỏ hàng cho admin/debug
+    Route::delete('/cart/{userId}/{sanPhamBienTheId}', [CartController::class, 'deleteItem']);
+
+    Route::get('/carts/all', [CartController::class, 'getAllCartsAndItems']);
+});
 Route::get('/cart', [CartController::class, 'index']);
 
 // Gio hang
-Route::get('/gio-hang/nguoi-dung/{id}', [GioHangController::class, 'layGioHangTheoNguoiDung']);
+// Route::get('/gio-hang/nguoi-dung/{id}', [GioHangController::class, 'layGioHangTheoNguoiDung']);
 
-// Slide Show (admin)
+
+// Thong-bao
+Route::get('/Notifications', [NotificationsController::class, 'index']);
+Route::post('/Notifications/{id}/read', [NotificationsController::class, 'markAsRead']);
+Route::post('/Notifications/read-all', [NotificationsController::class, 'markAllAsRead']);
+
+// Don hang
+Route::get('/orders', [OrderController::class, 'index']);
+Route::patch('/orders/{order}/payment', [OrderController::class, 'confirmPayment']);
+
+//payment methods
+Route::get('/payment-methods', [PaymentMethodController::class, 'index']);// Slide Show (admin)
+
 Route::prefix('admin')->group(function () {
    Route::get('slide', [SlideShowController::class, 'index']);
     Route::get('slide/{id}', [SlideShowController::class, 'show']);
@@ -116,7 +148,7 @@ Route::prefix('admin')->group(function () {
     Route::get('/products-sell-top', [ProductController::class, 'getTopSelling']);
     Route::get('products-featured', [ProductController::class, 'getFeatured']);
     Route::get('/products/detail/{slug}', [ProductController::class, 'showSpDetail']);
-
+    Route::get('/products-sell-top-all', [ProductController::class, 'allBestSelling']);
 });
 Route::post('/tinymce/upload-image', [ProductController::class, 'uploadEditorImage']);
 
@@ -134,7 +166,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Orders
     Route::get('/user/orders', [OrderController::class, 'userOrders']);
     Route::get('/user/orders/{id}', [OrderController::class, 'getByUser']);
-    Route::apiResource('orders', OrderController::class)->only(['index', 'store']);
+    Route::apiResource('orders', OrderController::class)->only(['store']);
     Route::patch('/orders/{id}/approve', [OrderController::class, 'approve']);
     Route::patch('/orders/{id}/reject', [OrderController::class, 'reject']);
     Route::patch('/orders/{id}/hide', [OrderController::class, 'hideOrder']);
