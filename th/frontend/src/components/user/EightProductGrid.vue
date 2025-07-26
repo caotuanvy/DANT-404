@@ -1,42 +1,47 @@
 <template>
   <section class="main-2">
-  <section class="product-section">
-    <div class="product-grid">
-      <div v-for="sp in products.slice(0, 8)" :key="sp.san_pham_id" class="product-card">
-        <div v-if="getValidDiscountPercentage(sp.khuyen_mai) > 0" class="discount-badge">
-          -{{ getValidDiscountPercentage(sp.khuyen_mai) }}%
-        </div>
+    <section class="product-section">
+      <div class="product-grid">
+        <router-link 
+          v-for="sp in products.slice(0, 8)" 
+          :key="sp.san_pham_id" 
+          :to="`/san-pham/${sp.slug}`" 
+          class="product-card-link"
+        >
+          <div class="product-card">
+            <div v-if="getValidDiscountPercentage(sp.khuyen_mai) > 0" class="discount-badge">
+              -{{ getValidDiscountPercentage(sp.khuyen_mai) }}%
+            </div>
 
-        <img :src="getImageUrl(sp.hinh_anh)" :alt="sp.ten_san_pham" class="product-img" />
+            <img :src="getImageUrl(sp.hinh_anh)" :alt="sp.ten_san_pham" class="product-img" />
 
-        <div class="product-info">
-          <span class="product-category">{{ sp.ten_danh_muc || 'Danh mục' }}</span>
-          <h3 class="product-name">{{ sp.ten_san_pham }}</h3>
-          <p class="product-description">{{ sp.Mo_ta_seo || '...' }}</p>
+            <div class="product-info">
+              <span class="product-category">{{ sp.ten_danh_muc || 'Danh mục' }}</span>
+              <h3 class="product-name">{{ sp.ten_san_pham }}</h3>
+              <p class="product-description">{{ sp.Mo_ta_seo || '...' }}</p>
 
-          <div class="product-rating">
-            ⭐ {{ sp.diem_danh_gia || '4.8' }} 
-            <span class="rating-count">({{ sp.so_danh_gia || 100 }} đánh giá)</span>
+              <div class="product-rating">
+                ⭐ {{ sp.diem_danh_gia || '4.8' }} 
+                <span class="rating-count">({{ sp.so_danh_gia || 100 }} đánh giá)</span>
+              </div>
+
+              <div class="price-section">
+                <p class="current-price">
+                  {{ formatCurrency(calculateDisplayPrice(sp.gia, sp.khuyen_mai)) }} ₫
+                </p>
+                <p v-if="getValidDiscountPercentage(sp.khuyen_mai) > 0" class="original-price">
+                  {{ formatCurrency(sp.gia) }} ₫
+                </p>
+              </div>
+
+              <button class="add-to-cart-button" @click.prevent="addToCart(sp)">
+                🛒 Thêm
+              </button>
+            </div>
           </div>
-
-          <div class="price-section">
-             <p class="current-price">
-              {{ formatCurrency(calculateDisplayPrice(sp.gia, sp.khuyen_mai)) }} ₫
-            </p>
-            <p v-if="getValidDiscountPercentage(sp.khuyen_mai) > 0" class="original-price">
-              {{ formatCurrency(sp.gia) }} ₫
-            </p>
-           
-           
-          </div>
-          <button class="add-to-cart-button" @click="themVaoGio(sp)">
-            🛒 Thêm
-          </button>
-          
-        </div>
+        </router-link>
       </div>
-    </div>
-  </section>
+    </section>
   </section>
 </template>
 
@@ -71,9 +76,36 @@ const formatCurrency = (amount) => {
   return Math.round(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 }
 
-const themVaoGio = (sp) => {
-  alert(`Đã thêm "${sp.ten_san_pham}" vào giỏ hàng!`)
-}
+const addToCart = async (product) => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    alert('Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng!');
+    return;
+  }
+
+  try {
+    const response = await axios.post('http://localhost:8000/api/cart/add', 
+      {
+        san_pham_bien_the_id: product.san_pham_bien_the_id,
+        quantity: 1                   
+      }, 
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    alert(`Đã thêm "${product.ten_san_pham}" vào giỏ hàng thành công!`);
+    console.log(response.data); 
+  } catch (err) {
+    if (err.response && err.response.status === 401) {
+      alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+    } else {
+      console.error('Lỗi khi thêm vào giỏ hàng:', err);
+      alert('Đã xảy ra lỗi khi thêm sản phẩm vào giỏ hàng.');
+    }
+  }
+};
 
 onMounted(async () => {
   const res = await axios.get('http://localhost:8000/api/admin/products-featured')
@@ -216,6 +248,11 @@ onMounted(async () => {
 .main-2{
   background-color: white !important;
   
+}
+.product-card-link {
+  text-decoration: none; 
+  color: inherit;
+  display: block;
 }
 </style>
 
