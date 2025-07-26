@@ -325,6 +325,27 @@ class TintucController extends Controller
             return response()->json(['error' => 'Không có file nào được tải lên.'], 400);
         }
     }
+    // Lấy tin tức liên quan theo danh mục
+    public function tinLienQuan($currentNewsId, $categoryId)
+{
+    try {
+        // Lấy tin tức cùng danh mục, loại trừ tin hiện tại, đã duyệt và đang hiển thị
+        $relatedNews = Tintuc::with('danhMuc') // 'danhMuc' là tên mối quan hệ trong model Tintuc của bạn
+                             ->where('id_danh_muc_tin_tuc', $categoryId)
+                             ->where('id', '!=', $currentNewsId) // Loại trừ tin tức hiện tại
+                             //->where('duyet_tin_tuc', 1) // Chỉ lấy tin đã duyệt
+                             ->where('trang_thai', 1) // Chỉ lấy tin đang hiển thị
+                             ->orderBy('ngay_dang', 'desc') // Sắp xếp theo ngày đăng mới nhất
+                             ->limit(5) // Giới hạn số lượng tin liên quan (ví dụ: 5 tin)
+                             ->get();
+
+        return response()->json($relatedNews);
+
+    } catch (\Exception $e) {
+        \Log::error("Lỗi khi lấy tin tức liên quan: " . $e->getMessage());
+        return response()->json(['message' => 'Không thể tải tin tức liên quan.'], 500);
+    }
+}
 
 
 }
