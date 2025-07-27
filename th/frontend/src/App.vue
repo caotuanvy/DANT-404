@@ -54,10 +54,15 @@
           <li>
             <a href="/Danh-muc-san-pham"><i class="fas fa-bars"></i> Danh mục sản phẩm</a>
           </li>
-          <li><a href="/">Trang Chủ</a></li>
+          <!-- <li><a href="/">Trang Chủ</a></li>
           <li><router-link to="/gioi-thieu">Giới Thiệu</router-link></li>
           <li><a href="/tin-tuc">Tin Tức</a></li>
-          <li><a href="#">Liên Hệ</a></li>
+          <li><a href="#">Liên Hệ</a></li> -->
+          <li v-for="page in staticPages.slice(0, 6)" :key="page.id">
+          <router-link :to="`/${page.Ten_trang}`">
+            {{ page.Tieu_de_trang }}
+          </router-link>
+        </li>
         </ul>
         <div class="contact-info">
           <div class="contact-info-chil">
@@ -128,28 +133,25 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, onUnmounted } from "vue"; // Đảm bảo onUnmounted đã được import
+import { ref, computed, onMounted, watch, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import AuthModal from "./components/user/AuthModal.vue";
 import Swal from "sweetalert2";
+import axios from "axios"; // Bổ sung axios để gọi API
 
 const router = useRouter();
 
-// --- Trạng thái hiển thị Modal đăng nhập ---
 const showLoginModal = ref(false);
-
-// --- Trạng thái người dùng và menu thả xuống ---
 const isLoggedIn = ref(false);
 const userName = ref("");
 const userRoleId = ref(null);
 const showUserMenu = ref(false);
+const staticPages = ref([]); // <== THÊM
 
-// --- Computed property để ẩn/hiện header/footer/nav trên trang admin ---
 const isAdminRoute = computed(() => {
   return router.currentRoute.value.path.startsWith("/admin");
 });
 
-// --- Hàm kiểm tra trạng thái đăng nhập từ localStorage ---
 const checkLoginStatus = () => {
   const user = localStorage.getItem("user");
   const roleId = localStorage.getItem("vai_tro_id");
@@ -177,7 +179,6 @@ const checkLoginStatus = () => {
   }
 };
 
-// --- Hàm xử lý đăng xuất ---
 const handleLogout = () => {
   Swal.fire({
     title: "Bạn có chắc chắn muốn đăng xuất?",
@@ -189,24 +190,20 @@ const handleLogout = () => {
     cancelButtonText: "Hủy",
   }).then((result) => {
     if (result.isConfirmed) {
-      // Xóa dữ liệu đăng nhập
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       localStorage.removeItem("vai_tro_id");
 
-      // Cập nhật trạng thái đăng nhập
       isLoggedIn.value = false;
       userName.value = "";
       userRoleId.value = null;
       showUserMenu.value = false;
 
-      // Điều hướng về trang chủ
       router.push("/");
 
-      // Thông báo đã đăng xuất
       Swal.fire({
         toast: true,
-        position: "top-end", // Góc trên bên phải
+        position: "top-end",
         icon: "success",
         title: "Đã đăng xuất!",
         showConfirmButton: false,
@@ -217,24 +214,20 @@ const handleLogout = () => {
   });
 };
 
-// --- Hàm chuyển hướng đến trang quản lý ---
 const navigateToAdmin = () => {
-  showUserMenu.value = false; // Đóng menu trước khi chuyển hướng
+  showUserMenu.value = false;
   router.push("/admin");
 };
 
-// --- HÀM MỚI: Chuyển hướng đến trang thông tin người dùng ---
 const navigateToUserInfo = () => {
-  showUserMenu.value = false; // Đóng menu trước khi chuyển hướng
-  router.push("/user"); // Giả định bạn có một route '/user-info' cho trang thông tin
+  showUserMenu.value = false;
+  router.push("/user");
 };
 
-// --- Hàm bật/tắt menu thả xuống của người dùng ---
 const toggleUserMenu = () => {
   showUserMenu.value = !showUserMenu.value;
 };
 
-// --- Đóng menu khi click ra ngoài ---
 const closeUserMenuOnClickOutside = (event) => {
   const userMenuWrapper = document.querySelector(".user-menu-wrapper");
   if (userMenuWrapper && !userMenuWrapper.contains(event.target) && showUserMenu.value) {
@@ -242,25 +235,32 @@ const closeUserMenuOnClickOutside = (event) => {
   }
 };
 
-// --- Lifecycle Hook: Kiểm tra trạng thái đăng nhập khi component được mount ---
+// ✅ Hàm mới: gọi API lấy danh sách trang tĩnh
+const fetchStaticPages = async () => {
+  try {
+    const response = await axios.get("http://localhost:8000/api/static-pages");
+    staticPages.value = response.data;
+  } catch (error) {
+    console.error("Lỗi khi tải static pages:", error);
+  }
+};
+
 onMounted(() => {
   checkLoginStatus();
-  // Thêm event listener để đóng menu khi click ra ngoài
+  fetchStaticPages(); // ✅ gọi API khi mount
   document.addEventListener("click", closeUserMenuOnClickOutside);
 });
 
-// --- Lifecycle Hook: Xóa event listener khi component bị unmount ---
 onUnmounted(() => {
   document.removeEventListener("click", closeUserMenuOnClickOutside);
 });
 
-// --- Watcher: Kiểm tra lại trạng thái đăng nhập khi modal đóng ---
 watch(showLoginModal, (newVal) => {
   if (!newVal) {
-    // Nếu modal vừa đóng (newVal là false)
-    checkLoginStatus(); // Kiểm tra lại trạng thái đăng nhập
+    checkLoginStatus();
   }
 });
+
 </script>
 <style>
 /* Global styles (cơ bản) */

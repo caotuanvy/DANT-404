@@ -10,6 +10,7 @@ import UserOrders from '../components/user/UserOrders.vue';
 import ChangePassword from '../components/user/ChangePassword.vue';
 import Cart from '../components/user/Cart.vue';
 import axios from 'axios';
+import StaticPage from "@/components/user/StaticPage.vue";
 
 const routes = [
   { path: '/', component: Home },
@@ -26,7 +27,11 @@ const routes = [
     name: 'gioi-thieu',
     component: () => import('../components/user/ISV.vue')
   },
-  
+  {
+  path: '/:slug',
+  name: 'StaticPage',
+  component: () => import('../components/user/ISV.vue') 
+},
   {
     path: '/Danh-muc-san-pham',
     name: 'DAnhMucSanPham',

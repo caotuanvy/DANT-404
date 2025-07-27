@@ -121,7 +121,7 @@ Route::patch('/orders/{order}/payment', [OrderController::class, 'confirmPayment
 
 //payment methods
 Route::get('/payment-methods', [PaymentMethodController::class, 'index']);// Slide Show (admin)
-
+Route::get('/static-pages', [IntroduceController::class, 'index']);
 Route::prefix('admin')->group(function () {
    Route::get('slide', [SlideShowController::class, 'index']);
     Route::get('slide/{id}', [SlideShowController::class, 'show']);
