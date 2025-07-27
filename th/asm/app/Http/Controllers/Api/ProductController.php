@@ -986,4 +986,4 @@ public function getDetailsBySlugs(Request $request)
             'currentMonthRevenueGrowth' => $calculateGrowth($currentMonthRevenue, $previousMonthRevenue),
         ]);
     }
-}
+}   

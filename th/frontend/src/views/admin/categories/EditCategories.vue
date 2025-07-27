@@ -35,6 +35,15 @@
         </div>
       </div>
       <div>
+        <label for="parent">Danh mục cha:</label>
+        <select v-model="danh_muc_cha_id" id="parent">
+          <option :value="null">-- Không có --</option>
+          <option v-for="cat in parentCategories" :key="cat.id" :value="cat.id">
+            {{ cat.ten_danh_muc }}
+          </option>
+        </select>
+      </div>
+      <div>
         <button type="submit">Cập nhật danh mục</button>
       </div>
     </form>
@@ -52,10 +61,14 @@ export default {
       currentImage: null,
       imageFile: null,
       previewImage: null,
+      // THAY ĐỔI: Tên biến từ parent_id thành danh_muc_cha_id
+      danh_muc_cha_id: null,
+      parentCategories: [],
     };
   },
   mounted() {
     this.fetchCategory();
+    this.fetchParentCategories();
   },
   methods: {
     async fetchCategory() {
@@ -72,9 +85,25 @@ export default {
         this.category_name = res.data.ten_danh_muc;
         this.description = res.data.mo_ta;
         this.currentImage = res.data.image_url;
+        // THAY ĐỔI: Lấy giá trị từ danh_muc_cha_id thay vì parent_id
+        this.danh_muc_cha_id = res.data.danh_muc_cha_id || null;
       } catch (error) {
         console.error("Lỗi khi lấy danh mục:", error);
         alert("Không thể tải dữ liệu danh mục.");
+      }
+    },
+    async fetchParentCategories() {
+      try {
+        const token = localStorage.getItem("token");
+        // THAY ĐỔI: API endpoint từ /api/categories thành /api/danh-muc-cha
+        const res = await axios.get(`http://localhost:8000/api/danh-muc-cha`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        this.parentCategories = res.data; // Không cần lọc nếu backend trả về đúng DanhMucCha
+      } catch (error) {
+        console.error("Lỗi khi lấy danh mục cha:", error);
       }
     },
     onFileChange(e) {
@@ -90,11 +119,19 @@ export default {
         const formData = new FormData();
         formData.append("ten_danh_muc", this.category_name);
         formData.append("mo_ta", this.description);
+        // THAY ĐỔI: Tên trường gửi đi từ parent_id thành danh_muc_cha_id
+        formData.append("danh_muc_cha_id", this.danh_muc_cha_id);
+
+        // RẤT QUAN TRỌNG CHO PHƯƠNG THỨC PUT VỚI FORM-DATA
+        // Thêm trường _method=PUT để Laravel nhận diện đây là PUT request khi dùng FormData
+        formData.append("_method", "PUT");
+
         if (this.imageFile) {
           formData.append("image", this.imageFile);
         }
-        const res = await axios.post(
-          `http://localhost:8000/api/categories/${this.$route.params.id}?_method=PUT`,
+
+        const res = await axios.post( // Vẫn dùng axios.post và thêm _method=PUT
+          `http://localhost:8000/api/categories/${this.$route.params.id}`, // Bỏ `?_method=PUT` ở đây, vì đã thêm vào formData
           formData,
           {
             headers: {
