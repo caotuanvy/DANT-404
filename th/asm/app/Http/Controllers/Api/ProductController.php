@@ -448,7 +448,7 @@ public function getTopSelling()
                 'sp.Mo_ta_seo',
                 'sp.slug',
                 DB::raw('MIN(img.duongdan) as hinh_anh'),
-                DB::raw('SUM(CASE WHEN dh.trang_thai = 1 THEN ctdh.so_luong ELSE 0 END) as so_luong_ban'),
+                DB::raw('SUM(CASE WHEN dh.trang_thai_don_hang = 1 THEN ctdh.so_luong ELSE 0 END) as so_luong_ban'),
                 DB::raw('MIN(sbt.gia) as gia'),
                 DB::raw('SUM(sbt.so_luong_ton_kho) as tong_ton_kho'),
             )
@@ -498,7 +498,7 @@ public function getFeatured()
             'sp.Mo_ta_seo',
             'dm.ten_danh_muc',
             DB::raw('MIN(img.duongdan) as hinh_anh'),
-            DB::raw('SUM(CASE WHEN dh.trang_thai = 1 THEN ctdh.so_luong ELSE 0 END) as so_luong_ban'),
+            DB::raw('SUM(CASE WHEN dh.trang_thai_don_hang = 1 THEN ctdh.so_luong ELSE 0 END) as so_luong_ban'),
             DB::raw('MIN(sbt.gia) as gia'),
             DB::raw('MIN(sbt.bien_the_id) as san_pham_bien_the_id'),
             DB::raw('SUM(sbt.so_luong_ton_kho) as tong_ton_kho')
@@ -1013,51 +1013,4 @@ public function getDetailsBySlugs(Request $request)
             'currentMonthRevenueGrowth' => $calculateGrowth($currentMonthRevenue, $previousMonthRevenue),
         ]);
     }
-     public function allBestSelling()
-{
-    $topSelling = DB::table('san_pham as sp')
-        ->join('san_pham_bien_the as sbt', 'sp.san_pham_id', '=', 'sbt.san_pham_id')
-        ->leftJoin('hinh_anh_san_pham as img', 'sp.san_pham_id', '=', 'img.san_pham_id')
-        ->leftJoin('chi_tiet_don_hang as ctdh', 'sbt.bien_the_id', '=', 'ctdh.san_pham_bien_the_id')
-        ->leftJoin('don_hang as dh', 'ctdh.don_hang_id', '=', 'dh.id')
-        ->select(
-            'sp.san_pham_id',
-            'sp.ten_san_pham',
-            'sp.khuyen_mai',
-            'sp.Mo_ta_seo',
-            'sp.slug',
-            DB::raw('MIN(img.duongdan) as hinh_anh'),
-            DB::raw('SUM(CASE WHEN dh.trang_thai = 1 THEN ctdh.so_luong ELSE 0 END) as so_luong_ban'),
-            DB::raw('MIN(sbt.gia) as gia'),
-            DB::raw('SUM(sbt.so_luong_ton_kho) as tong_ton_kho')
-        )
-        ->where('sp.trang_thai', '!=', 0)
-        ->groupBy(
-            'sp.slug',
-            'sp.san_pham_id',
-            'sp.ten_san_pham',
-            'sp.Mo_ta_seo',
-            'sp.khuyen_mai'
-        )
-        ->orderByDesc('so_luong_ban')
-        // ->limit(4)
-        ->get();
-    $result = $topSelling->map(function ($item) {
-        $maxLength = 50;
-        return [
-            'san_pham_id'      => $item->san_pham_id,
-            'ten_san_pham'     => $item->ten_san_pham,
-            'so_luong_ban'     => $item->so_luong_ban,
-            'hinh_anh'         => $item->hinh_anh,
-            'gia'              => $item->gia,
-            'khuyen_mai'       => $item->khuyen_mai,
-            'Mo_ta_seo'        => Str::limit($item->Mo_ta_seo, $maxLength, '...'),
-            'slug'             => $item->slug,
-            'so_luong_ton_kho' => $item->tong_ton_kho,
-            'tong_so_luong'    => $item->tong_ton_kho + $item->so_luong_ban,
-        ];
-    });
-
-    return response()->json($result);
-}
 }

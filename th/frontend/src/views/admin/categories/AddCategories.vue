@@ -22,6 +22,15 @@
         ></textarea>
       </div>
       <div>
+        <label for="parent">Danh mục cha:</label>
+        <select v-model="danh_muc_cha_id" id="parent">
+          <option :value="null">-- Không có --</option>
+          <option v-for="cat in parentCategories" :key="cat.id" :value="cat.id">
+            {{ cat.ten_danh_muc }}
+          </option>
+        </select>
+      </div>
+      <div>
         <label for="image">Hình ảnh:</label>
         <input type="file" id="image" @change="onFileChange" accept="image/*" />
         <div v-if="previewImage">
@@ -45,9 +54,28 @@ export default {
       description: "",
       imageFile: null,
       previewImage: null,
+      // THAY ĐỔI: Tên biến từ parent_id thành danh_muc_cha_id
+      danh_muc_cha_id: null,
+      parentCategories: [],
     };
   },
+  mounted() {
+    this.fetchParentCategories();
+  },
   methods: {
+    async fetchParentCategories() {
+      try {
+        const token = localStorage.getItem("token");
+        // THAY ĐỔI: API endpoint từ /api/categories thành /api/danh-muc-cha
+        const res = await axios.get("http://localhost:8000/api/danh-muc-cha", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        // BỎ LỌC: Backend đã trả về đúng danh mục cha, không cần lọc !cat.parent_id nữa
+        this.parentCategories = res.data;
+      } catch (error) {
+        console.error("Lỗi khi lấy danh mục cha:", error);
+      }
+    },
     onFileChange(e) {
       const file = e.target.files[0];
       if (file) {
@@ -66,11 +94,16 @@ export default {
         const formData = new FormData();
         formData.append("ten_danh_muc", this.category_name);
         formData.append("mo_ta", this.description || "");
+        // THAY ĐỔI: Tên trường gửi đi từ parent_id thành danh_muc_cha_id
+        formData.append("danh_muc_cha_id", this.danh_muc_cha_id);
         if (this.imageFile) {
           formData.append("image", this.imageFile);
-          formData.append("slug", this.imageFile.name.replace(/\.[^/.]+$/, "")); // Thêm dòng này
+          // LƯU Ý: Slug thường nên được tạo từ tên danh mục hoặc là tên file an toàn.
+          // imageFile.name.replace(/\.[^/.]+$/, "") chỉ lấy tên file gốc.
+          // Nếu bạn đã chỉnh sửa backend để tự tạo slug từ tên file, thì có thể bỏ dòng này.
+          formData.append("slug", this.imageFile.name.replace(/\.[^/.]+$/, ""));
         } else {
-          formData.append("slug", "");
+          formData.append("slug", ""); // Hoặc tạo slug từ category_name nếu không có ảnh
         }
 
         const response = await axios.post(
@@ -102,6 +135,7 @@ export default {
 </script>
 
 <style scoped>
+/* Giữ nguyên style */
 form {
   max-width: 500px;
   margin: 0 auto;

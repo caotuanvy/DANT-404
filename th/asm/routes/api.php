@@ -1,4 +1,3 @@
-
 <?php
 
 use Illuminate\Http\Request;
@@ -19,9 +18,13 @@ use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\IntroduceController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\DanhMucChaController;
+use App\Http\Controllers\Api\CategoryProductController;
+use App\Http\Controllers\Api\ChildCategoryController;
 use App\Http\Controllers\Api\BinhLuanController;
 use App\Http\Controllers\Api\PaymentMethodController;
 use App\Http\Controllers\Api\NotificationsController;
+
 // Public Auth Routes
 Route::post('/auth/google', [GoogleAuthController::class, 'handleGoogleLogin']);
 Route::post('/register', [AuthController::class, 'register']);
@@ -43,7 +46,6 @@ Route::get('/categories/{id}/products', [CategoryController::class, 'getProducts
 //     Route::post('/carts/add', [GioHangController::class, 'themVaoGioHang']);
     // Route::get('/carts', [GioHangController::class, 'xemGioHang']);
 // });
-
 
 // Product Image Upload (public add, delete protected)
 Route::post('/products/{product_id}/images', [ProductImageController::class, 'store']);
@@ -123,7 +125,7 @@ Route::patch('/orders/{order}/payment', [OrderController::class, 'confirmPayment
 Route::get('/payment-methods', [PaymentMethodController::class, 'index']);// Slide Show (admin)
 Route::get('/static-pages', [IntroduceController::class, 'index']);
 Route::prefix('admin')->group(function () {
-   Route::get('slide', [SlideShowController::class, 'index']);
+    Route::get('slide', [SlideShowController::class, 'index']);
     Route::get('slide/{id}', [SlideShowController::class, 'show']);
     Route::post('slide', [SlideShowController::class, 'store']);
     Route::post('slide/update', [SlideShowController::class, 'update']);
@@ -152,7 +154,7 @@ Route::prefix('admin')->group(function () {
 });
 Route::post('/tinymce/upload-image', [ProductController::class, 'uploadEditorImage']);
 
-// Protected Routes
+// Protected Routes (Yêu cầu xác thực Sanctum)
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
@@ -188,6 +190,40 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/product-images/{id}', [ProductImageController::class, 'destroy']);
     Route::post('/products/generate-seo', [ProductController::class, 'generateSeoContent']);
 
+    // ROUTE GỠ BỎ DANH MỤC CON - ĐÃ DI CHUYỂN VÀO ĐÂY
+    // Route này yêu cầu xác thực Sanctum (auth:sanctum)
+    Route::patch('child-categories/{subcategoryId}/detach', [ChildCategoryController::class, 'detachSubcategory']);
+
+
+    // Admin-specific routes (chỉ truy cập nếu có middleware 'admin' VÀ 'auth:sanctum')
+    // Nếu bạn không có middleware 'admin' hoặc không cần nó cho các route này, có thể bỏ group này
+    Route::middleware('admin')->group(function () {
+        // Các route chỉ dành cho admin (ví dụ: quản lý người dùng, cài đặt hệ thống, v.v.)
+        // Nếu không có route nào ở đây, có thể bỏ toàn bộ khối admin middleware này.
+    });
+
 });
+
+// Các route không cần xác thực
 Route::get('user/{slug}', [ProductController::class, 'showBySlug'])
-      ->where('slug', '[a-zA-Z0-9-]+');
+->where('slug', '[a-zA-Z0-9-]+');
+
+Route::put('/categories/{id}/toggle-status', [CategoryController::class, 'toggleStatus']);
+Route::get('/danh-muc-cha', [DanhMucChaController::class, 'index']);
+Route::put('/danh-muc-cha/{id}', [DanhMucChaController::class, 'update']);
+Route::put('/danh-muc-cha/{id}/toggle-status', [DanhMucChaController::class, 'toggleStatus']);
+Route::post('/danh-muc-cha', [DanhMucChaController::class, 'store']);
+Route::get('/danh-muc-cha/{id}', [DanhMucChaController::class, 'show']);
+Route::get('/parent-categories', [CategoryController::class, 'getParentCategories']);
+Route::get('/categories/{id}/products', [CategoryProductController::class, 'getProductsByCategory']);
+
+Route::delete('/categories/{categoryId}/products/{productId}', [CategoryProductController::class, 'removeProductFromCategory']);
+// Route này cũng có thể là Public nếu không cần xác thực để lấy danh mục con
+Route::get('/categories/{categoryId}/children', [ChildCategoryController::class, 'getSubcategories']);
+Route::get('/categories/{categoryId}/products', [CategoryProductController::class, 'getProductsByCategory']);
+Route::get('/categories/{categoryId}/products/{productId}', [CategoryProductController::class, 'getProductByCategory']);
+Route::post('/categories/{categoryId}/products', [CategoryProductController::class, 'addProductToCategory']);
+Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/categories/{id}', [CategoryController::class, 'show']);
+Route::put('/categories/{id}', [CategoryController::class, 'update']);
+
