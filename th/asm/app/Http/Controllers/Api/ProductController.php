@@ -448,7 +448,7 @@ public function getTopSelling()
                 'sp.Mo_ta_seo',
                 'sp.slug',
                 DB::raw('MIN(img.duongdan) as hinh_anh'),
-                DB::raw('SUM(CASE WHEN dh.trang_thai = 1 THEN ctdh.so_luong ELSE 0 END) as so_luong_ban'),
+                DB::raw('SUM(CASE WHEN dh.trang_thai_don_hang = 1 THEN ctdh.so_luong ELSE 0 END) as so_luong_ban'),
                 DB::raw('MIN(sbt.gia) as gia'),
                 DB::raw('SUM(sbt.so_luong_ton_kho) as tong_ton_kho'),
             )
@@ -498,7 +498,7 @@ public function getFeatured()
             'sp.Mo_ta_seo',
             'dm.ten_danh_muc',
             DB::raw('MIN(img.duongdan) as hinh_anh'),
-            DB::raw('SUM(CASE WHEN dh.trang_thai = 1 THEN ctdh.so_luong ELSE 0 END) as so_luong_ban'),
+            DB::raw('SUM(CASE WHEN dh.trang_thai_don_hang = 1 THEN ctdh.so_luong ELSE 0 END) as so_luong_ban'),
             DB::raw('MIN(sbt.gia) as gia'),
             DB::raw('MIN(sbt.bien_the_id) as san_pham_bien_the_id'),
             DB::raw('SUM(sbt.so_luong_ton_kho) as tong_ton_kho')
