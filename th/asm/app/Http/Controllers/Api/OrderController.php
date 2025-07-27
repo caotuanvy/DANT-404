@@ -1,174 +1,273 @@
 <?php
 
-// app/Http/Controllers/Api/OrderController.php
-
 namespace App\Http\Controllers\Api;
 
 use App\Models\Order;
-use App\Http\Controllers\Controller;
-use App\Models\DiaChi;
 use App\Models\OrderItem;
+use App\Models\Cart;
+use App\Models\CartItem;
+use App\Models\SanPhamBienThe;
+use App\Models\DiaChi;
+use App\Models\Notifications;
+
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth; // Import facade Auth để lấy người dùng hiện tại
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
+use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
-    /**
-     * Lấy tất cả đơn hàng (thường dùng cho quản trị viên) với các bộ lọc tìm kiếm.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function index(Request $request)
-    {
-        // Truy vấn các đơn hàng chưa bị xóa mềm ('ngay_xoa' là null)
+    public function index(Request $request){
         $query = Order::whereNull('ngay_xoa')
-            // Tải các mối quan hệ liên quan để hiển thị thông tin chi tiết
             ->with('user', 'paymentMethod', 'orderItems.bien_the.sanPham', 'diachi');
 
-        // Áp dụng bộ lọc tìm kiếm nếu có
+        if ($request->has('status') && $request->status) {
+            $query->where('trang_thai_don_hang', $request->status);
+        }
+
         if ($request->has('search') && $request->search) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                // Tìm kiếm theo ID đơn hàng
                 $q->where('id', 'like', "%$search%")
-                    // Hoặc tìm kiếm theo tên người dùng liên quan đến đơn hàng
-                    ->orWhereHas('user', function ($q2) use ($search) {
-                        $q2->where('ho_ten', 'like', "%$search%");
-                    });
+                ->orWhereHas('user', function ($userQuery) use ($search) {
+                    $userQuery->where('ho_ten', 'like', "%$search%");
+                });
             });
         }
 
-        // Lấy tất cả các đơn hàng phù hợp
-        $orders = $query->get();
+        if ($request->has('date') && $request->date) {
+            try {
+                $date = Carbon::parse($request->date)->toDateString();
+                $query->whereDate('ngay_dat', $date);
+            } catch (\Exception $e) {
+                Log::warning('Định dạng ngày không hợp lệ trong OrderController::index: ' . $request->date);
+            }
+        }
+
+        if ($request->has('payment_method') && $request->payment_method) {
+            $query->where('phuong_thuc_thanh_toan_id', $request->payment_method);
+        }
+
+        if ($request->has('price_range') && $request->price_range) {
+            $priceParts = explode('-', $request->price_range);
+            if (count($priceParts) == 2) {
+                $minPrice = (int) $priceParts[0];
+                $maxPrice = (int) $priceParts[1];
+                $query->whereBetween('tong_tien', [$minPrice, $maxPrice]);
+            }
+        }
+
+        $perPage = $request->input('per_page', 10);
+        $orders = $query->orderBy('ngay_dat', 'desc')->paginate($perPage);
+
         return response()->json($orders);
     }
 
-    /**
-     * Ẩn một đơn hàng bằng cách đặt thời gian xóa mềm.
-     *
-     * @param  int  $id ID của đơn hàng cần ẩn
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function hideOrder($id)
     {
-        $order = Order::findOrFail($id); // Tìm đơn hàng theo ID hoặc ném lỗi 404
-        $order->ngay_xoa = now(); // Đặt cột 'ngay_xoa' thành thời gian hiện tại
-        $order->save(); // Lưu thay đổi vào cơ sở dữ liệu
-        return response()->json(['message' => 'Đã ẩn đơn hàng thành công']);
+        try {
+            $order = Order::findOrFail($id);
+            $order->ngay_xoa = now();
+            $order->save();
+            return response()->json(['message' => 'Đã ẩn đơn hàng thành công'], 200);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi ẩn đơn hàng ' . $id . ': ' . $e->getMessage());
+            return response()->json(['message' => 'Không thể ẩn đơn hàng. Vui lòng thử lại.'], 500);
+        }
     }
 
-    /**
-     * Cập nhật trạng thái của một đơn hàng.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id ID của đơn hàng cần cập nhật
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function updateStatus(Request $request, $id)
     {
-        $order = Order::findOrFail($id); // Tìm đơn hàng theo ID hoặc ném lỗi 404
-        $order->trang_thai = $request->input('trang_thai'); // Cập nhật trạng thái từ request
-        $order->save(); // Lưu thay đổi
-        return response()->json($order); // Trả về đơn hàng đã được cập nhật
-    }
+        $request->validate([
+            'trang_thai_don_hang' => 'required|integer|min:1|max:5', // <-- Validate là số nguyên từ 1-5
+        ]);
 
-    /**
-     * Lấy lịch sử đơn hàng của người dùng hiện tại.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
+        try {
+            $order = Order::findOrFail($id);
+            $order->trang_thai_don_hang = $request->input('trang_thai_don_hang');
+            $order->save();
+            return response()->json($order, 200);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi cập nhật trạng thái đơn hàng ' . $id . ': ' . $e->getMessage());
+            return response()->json(['message' => 'Không thể cập nhật trạng thái. Vui lòng thử lại.'], 500);
+        }
+    }
     public function userOrders(Request $request)
     {
-        // Lấy ID của người dùng đang đăng nhập
-        $userId = Auth::id(); // Hoặc auth()->id();
-
-        // Kiểm tra xem người dùng đã đăng nhập chưa
+        $userId = Auth::id();
         if (!$userId) {
             return response()->json(['message' => 'Bạn cần đăng nhập để xem lịch sử đơn hàng.'], 401);
         }
 
-        // Truy vấn các đơn hàng thuộc về người dùng hiện tại và chưa bị xóa mềm
         $query = Order::where('nguoi_dung_id', $userId)
-            // Tải các mối quan hệ cần thiết để hiển thị chi tiết đơn hàng
             ->with('paymentMethod', 'orderItems.bien_the.sanPham', 'diachi');
 
-        // Tùy chọn tìm kiếm trong lịch sử đơn hàng của người dùng (ví dụ: theo ID đơn hàng hoặc tên sản phẩm)
         if ($request->has('search') && $request->search) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                // Tìm kiếm theo ID đơn hàng
                 $q->where('id', 'like', "%$search%")
-                    // Hoặc tìm kiếm theo tên sản phẩm trong các mục của đơn hàng
-                    ->orWhereHas('orderItems.bien_the.sanPham', function ($q3) use ($search) {
-                        $q3->where('ten_san_pham', 'like', "%$search%");
-                    });
+                  ->orWhereHas('orderItems.bien_the.sanPham', function ($q3) use ($search) {
+                      $q3->where('ten_san_pham', 'like', "%$search%");
+                  });
             });
         }
 
-        // Lấy tất cả các đơn hàng phù hợp của người dùng
-        $orders = $query->get();
-        return response()->json($orders);
+        $orders = $query->orderBy('ngay_dat', 'desc')->get();
+        return response()->json($orders, 200);
     }
+
+    public function confirmPayment(Request $request, Order $order)
+    {
+        try {
+            if ($order->is_paid == 1) {
+                return response()->json(['message' => 'Đơn hàng này đã được xác nhận thanh toán trước đó.'], 400);
+            }
+            $order->is_paid = 1;
+            $order->save();
+
+            return response()->json([
+                'message' => 'Xác nhận thanh toán thành công',
+                'order' => $order
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi xác nhận thanh toán đơn hàng ' . $order->id . ': ' . $e->getMessage());
+            return response()->json(['message' => 'Không thể xác nhận thanh toán. Vui lòng thử lại.'], 500);
+        }
+    }
+
     public function store(Request $request)
     {
-        $request->validate([
-            'nguoi_dung_id' => 'required|exists:nguoi_dung,nguoi_dung_id',
-            'tong_tien' => 'required|numeric',
-            'phuong_thuc_thanh_toan_id' => 'required|exists:phuong_thuc_thanh_toan,phuong_thuc_thanh_toan_id',
-            'dia_chi_id' => 'nullable|exists:dia_chi,id_dia_chi',
-            'hinh_thuc_giao_hang' => 'required|string',
-            'san_pham' => 'required|array',
-            'san_pham.*.bien_the_id' => 'required|exists:san_pham_bien_the,bien_the_id',
-            'san_pham.*.so_luong' => 'required|integer|min:1',
-            'san_pham.*.don_gia' => 'required|numeric|min:0',
-        ]);
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['message' => 'Vui lòng đăng nhập.'], 401);
+        }
 
-        DB::beginTransaction();
+        $userId = $user->nguoi_dung_id ?? $user->id;
+
         try {
-            // Tạo đơn hàng trước, tạm chưa có dia_chi_id
-            $order = Order::create([
-                'nguoi_dung_id' => $request->nguoi_dung_id,
-                'tong_tien' => $request->tong_tien,
-                'phuong_thuc_thanh_toan_id' => $request->phuong_thuc_thanh_toan_id,
-                'hinh_thuc_giao_hang' => $request->hinh_thuc_giao_hang,
-                'trang_thai' => 1,
-                'ngay_tao' => now(),
+            $validatedData = $request->validate([
+
+                'tong_tien' => 'required|numeric|min:0',
+                'phuong_thuc_thanh_toan_id' => 'required|integer',
+                'hinh_thuc_giao_hang' => 'required|string|max:50',
+                'phi_van_chuyen' => 'required|numeric|min:0',
+                'san_pham' => 'required|array|min:1',
+                'san_pham.*.bien_the_id' => 'required|integer|exists:san_pham_bien_the,bien_the_id',
+                'san_pham.*.so_luong' => 'required|integer|min:1',
+                'san_pham.*.don_gia' => 'required|numeric|min:0',
+
+                'dia_chi_id' => 'sometimes|integer|exists:dia_chi,id_dia_chi',
+                'dia_chi_moi' => 'sometimes|array',
+                'dia_chi_moi.ho_ten' => 'required_with:dia_chi_moi|string|max:255',
+                'dia_chi_moi.sdt' => 'required_with:dia_chi_moi|string|max:20',
+                'dia_chi_moi.dia_chi' => 'required_with:dia_chi_moi|string|max:255',
             ]);
 
-            // Nếu không có dia_chi_id nhưng có thông tin địa chỉ mới
-            if (!$request->filled('dia_chi_id') && $request->has('dia_chi_moi')) {
-                $diaChiMoi = $request->input('dia_chi_moi');
-                $newAddress = \App\Models\DiaChi::create([
-                    'nguoi_dung_id' => $request->nguoi_dung_id,
-                    'ho_ten' => $diaChiMoi['ho_ten'],
-                    'sdt' => $diaChiMoi['sdt'],
-                    'dia_chi' => $diaChiMoi['dia_chi'],
-                ]);
+        } catch (ValidationException $e) {
+            Log::warning('Lỗi Validation khi đặt hàng: ' . json_encode($e->errors()));
+            return response()->json(['message' => 'Dữ liệu đầu vào không hợp lệ.', 'errors' => $e->errors()], 422);
+        }
 
-                $order->dia_chi_id = $newAddress->id_dia_chi;
-                $order->save();
-            } elseif ($request->filled('dia_chi_id')) {
-                $order->dia_chi_id = $request->dia_chi_id;
-                $order->save();
+        try {
+            DB::beginTransaction();
+
+            $shippingAddressId = null;
+            if (isset($validatedData['dia_chi_id'])) {
+                $shippingAddress = DiaChi::find($validatedData['dia_chi_id']);
+                if (!$shippingAddress || ($shippingAddress->nguoi_dung_id != $userId && !($user->isAdmin ?? false))) {
+                    DB::rollBack();
+                    return response()->json(['message' => 'Địa chỉ giao hàng không hợp lệ hoặc không thuộc về bạn.'], 400);
+                }
+                $shippingAddressId = $shippingAddress->id_dia_chi ?? $shippingAddress->id;
+            } elseif (isset($validatedData['dia_chi_moi'])) {
+                $newAddress = DiaChi::create([
+                    'nguoi_dung_id' => $userId,
+                    'ho_ten' => $validatedData['dia_chi_moi']['ho_ten'],
+                    'sdt' => $validatedData['dia_chi_moi']['sdt'],
+                    'dia_chi' => $validatedData['dia_chi_moi']['dia_chi'],
+                ]);
+                $shippingAddressId = $newAddress->id_dia_chi ?? $newAddress->id;
+            } else {
+                DB::rollBack();
+                return response()->json(['message' => 'Vui lòng cung cấp địa chỉ giao hàng.'], 400);
             }
 
-            foreach ($request->san_pham as $sp) {
-                \App\Models\OrderItem::create([
-                    'don_hang_id' => $order->id,
-                    'bien_the_id' => $sp['bien_the_id'],
-                    'so_luong' => $sp['so_luong'],
-                    'don_gia' => $sp['don_gia'],
-                ]);
+            $order = Order::create([
+                'nguoi_dung_id' => $userId,
+                'tong_tien' => $validatedData['tong_tien'],
+                'phuong_thuc_thanh_toan_id' => $validatedData['phuong_thuc_thanh_toan_id'],
+                'hinh_thuc_giao_hang' => $validatedData['hinh_thuc_giao_hang'],
+                'phi_van_chuyen' => $validatedData['phi_van_chuyen'],
+                'dia_chi_id' => $shippingAddressId,
+                'ngay_dat' => now(),
+                'trang_thai_don_hang' => '1',
+                'is_paid' => 0,
+            ]);
+
+foreach ($validatedData['san_pham'] as $item) {
+    $bienThe = SanPhamBienThe::find($item['bien_the_id']);
+    if (!$bienThe || $bienThe->so_luong_ton_kho < $item['so_luong']) {
+        DB::rollBack();
+        return response()->json(['message' => 'Sản phẩm "' . ($bienThe->ten_bien_the ?? 'ID: ' . $item['bien_the_id']) . '" không đủ số lượng tồn kho hoặc không tồn tại.'], 400);
+    }
+
+    OrderItem::create([
+        'don_hang_id' => $order->id,
+        'san_pham_bien_the_id' => $item['bien_the_id'],
+        'so_luong' => $item['so_luong'],
+        'don_gia' => $bienThe->gia,
+        'thanh_tien' => $item['so_luong'] * $bienThe->gia,
+    ]);
+
+    // Giảm số lượng tồn kho của sản phẩm
+    $bienThe->so_luong_ton_kho -= $item['so_luong'];
+    $bienThe->save();
+
+    // Kiểm tra và lấy sản phẩm cha an toàn
+    $sanPham = $bienThe->san_pham ?? null;
+    $tenSanPham = $sanPham ? $sanPham->ten_san_pham : 'Không xác định';
+
+    // Thông báo sắp hết hàng nếu tồn kho thấp
+    if ($bienThe->so_luong_ton_kho <= 5) {
+        Notifications::create([
+            'loai_thong_bao' => 'Sắp hết hàng',
+            'mo_ta' => 'Biến thể "' . $bienThe->ten_bien_the . '" của sản phẩm "' . $tenSanPham . '" sắp hết hàng.',
+            'tin_bao' => 'Tồn kho: ' . $bienThe->so_luong_ton_kho . ' sản phẩm.',
+            'da_xem' => 0,
+            'ngay_tao' => now(),
+        ]);
+    }
+
+        }
+
+
+            // Xóa/Làm trống giỏ hàng của người dùng sau khi đặt hàng thành công
+            // (Không còn dựa vào cột tong_tien/trang_thai trên Cart Model)
+            $cart = Cart::where('nguoi_dung_id', $userId)->first();
+            if ($cart) {
+                $cart->chiTiet()->delete(); // Xóa tất cả chi tiết giỏ hàng liên quan đến giỏ hàng này
+                $cart->delete(); // Xóa bản ghi giỏ hàng chính
+                // HOẶC: Nếu bạn muốn giữ lại bản ghi giỏ hàng nhưng làm trống nó và thay đổi trạng thái:
+                // $cart->update(['ngay_sua' => now()]); // Cập nhật thời gian sửa
             }
 
             DB::commit();
-            return response()->json(['message' => 'Đơn hàng đã được tạo thành công', 'order_id' => $order->id], 201);
+            Notifications::create([
+            'loai_thong_bao' => 'Đơn hàng mới',
+            'mo_ta' => 'Khách hàng ' . ($user->ho_ten ?? $user->name) . ' vừa đặt đơn hàng.',
+            'tin_bao' => 'Mã đơn: ' . $order->id . ', Tổng tiền: ' . number_format($order->tong_tien) . 'đ',
+            'da_xem' => 0,
+            'ngay_tao' => now(),
+            ]);
+            return response()->json(['message' => 'Đặt hàng thành công!', 'order_id' => $order->id], 201);
+
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Lỗi tạo đơn hàng', 'error' => $e->getMessage()], 500);
+            Log::error('Lỗi khi đặt hàng: ' . $e->getMessage() . ' - File: ' . $e->getFile() . ' - Line: ' . $e->getLine());
+            return response()->json(['message' => 'Không thể đặt hàng. Vui lòng thử lại sau.', 'error_detail' => $e->getMessage()], 500);
         }
     }
 }

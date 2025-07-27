@@ -52,6 +52,11 @@ const routes = [
     name: 'ChiTietTinTucCongKhai',
     component: () => import('../components/user/NewsDetails.vue')
   },
+   {
+  path: '/san-pham-ban-chay',
+  name: 'SanPhamBanChay',
+  component: () => import('../components/user/AllBestSellProduct.vue')
+  },
   {
     path: '/tin-tuc-chi-tiet/:id',
     name: 'ChiTietTinTucCongKhaiId',
@@ -123,6 +128,11 @@ const routes = [
         path: 'tintuc',
         component: () => import('../components/admin/Tintucnew.vue'),
         meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
+      path: 'binhluan',
+      component: () => import('../components/admin/Binhluan.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
       },
       {
         path: 'slide',

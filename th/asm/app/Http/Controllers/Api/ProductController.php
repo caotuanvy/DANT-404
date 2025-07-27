@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Log;
 use PhpParser\Node\Scalar\Float_;
 use App\Models\Order;
 use App\Models\User;
+use App\Models\Notifications;
 
 class ProductController extends Controller
 {
@@ -217,6 +218,26 @@ class ProductController extends Controller
 
 
             DB::commit();
+
+            Notifications::create([
+                'loai_thong_bao' => 'Sản phẩm mới',
+                'mo_ta' => 'Sản phẩm "' . $product->ten_san_pham . '" vừa được thêm vào hệ thống.',
+                'tin_bao' => 'ID: ' . $product->san_pham_id . ', Giá: ' . number_format($product->gia) . 'đ',
+                'da_xem' => 0,
+                'ngay_tao' => now(),
+            ]);
+            $variants = \App\Models\SanPhamBienThe::where('san_pham_id', $product->san_pham_id)->get();
+            foreach ($variants as $variant) {
+                if ($variant->so_luong_ton_kho <= 5) {
+                    Notifications::create([
+                        'loai_thong_bao' => 'Sắp hết hàng',
+                        'mo_ta' => 'Biến thể "' . $variant->ten_bien_the . '" của sản phẩm "' . $product->ten_san_pham . '" sắp hết hàng.',
+                        'tin_bao' => 'Tồn kho: ' . $variant->so_luong_ton_kho . ' sản phẩm.',
+                        'da_xem' => 0,
+                        'ngay_tao' => now(),
+                    ]);
+                }
+            }
 
             return response()->json([
                 'message' => 'Thêm sản phẩm và các biến thể thành công!',
@@ -467,10 +488,11 @@ public function getFeatured()
         ->leftJoin('hinh_anh_san_pham as img', 'sp.san_pham_id', '=', 'img.san_pham_id')
         ->leftJoin('chi_tiet_don_hang as ctdh', 'sbt.bien_the_id', '=', 'ctdh.san_pham_bien_the_id')
         ->leftJoin('don_hang as dh', 'ctdh.don_hang_id', '=', 'dh.id')
-        ->leftJoin('danh_muc_san_pham as dm', 'sp.ten_danh_muc_id', '=', 'dm.category_id') // sửa đúng cột để join
+        ->leftJoin('danh_muc_san_pham as dm', 'sp.ten_danh_muc_id', '=', 'dm.category_id')
         ->select(
             'sp.san_pham_id',
             'sp.ten_san_pham',
+            'sp.slug',
             'sp.khuyen_mai',
             'sp.mo_ta',
             'sp.Mo_ta_seo',
@@ -478,6 +500,7 @@ public function getFeatured()
             DB::raw('MIN(img.duongdan) as hinh_anh'),
             DB::raw('SUM(CASE WHEN dh.trang_thai = 1 THEN ctdh.so_luong ELSE 0 END) as so_luong_ban'),
             DB::raw('MIN(sbt.gia) as gia'),
+            DB::raw('MIN(sbt.bien_the_id) as san_pham_bien_the_id'),
             DB::raw('SUM(sbt.so_luong_ton_kho) as tong_ton_kho')
         )
         ->where('sp.noi_bat', 1)
@@ -485,6 +508,7 @@ public function getFeatured()
         ->groupBy(
             'sp.san_pham_id',
             'sp.ten_san_pham',
+            'sp.slug',
             'sp.khuyen_mai',
             'sp.mo_ta',
             'sp.Mo_ta_seo',
@@ -495,19 +519,22 @@ public function getFeatured()
 
     $result = $featured->map(function ($item) {
         return [
-            'san_pham_id'      => $item->san_pham_id,
-            'ten_san_pham'     => $item->ten_san_pham,
-            'ten_danh_muc'     => $item->ten_danh_muc,
-            'mo_ta_ngan'       => $item->mo_ta,
-            'so_luong_ban'     => $item->so_luong_ban,
-            'hinh_anh'         => $item->hinh_anh,
-            'gia'              => $item->gia,
-            'khuyen_mai'       => $item->khuyen_mai,
-            'Mo_ta_seo'    => $item->Mo_ta_seo,
-            'tong_ton_kho'     => $item->tong_ton_kho,
-            'tong_so_luong'    => $item->tong_ton_kho + $item->so_luong_ban,
-            'diem_danh_gia'    => 4.8,
-            'so_danh_gia'      => 100
+            'san_pham_id'   => $item->san_pham_id,
+            'san_pham_bien_the_id' => $item->san_pham_bien_the_id,
+            'ten_san_pham'  => $item->ten_san_pham,
+            'slug'          => $item->slug,
+            'ten_danh_muc'  => $item->ten_danh_muc,
+            'mo_ta_ngan'    => $item->mo_ta,
+            'so_luong_ban'  => $item->so_luong_ban,
+            'hinh_anh'      => $item->hinh_anh,
+            'gia'           => $item->gia,
+            'khuyen_mai'    => $item->khuyen_mai,
+            'Mo_ta_seo'     => $item->Mo_ta_seo,
+            'tong_ton_kho'  => $item->tong_ton_kho,
+            'tong_so_luong' => $item->tong_ton_kho + $item->so_luong_ban,
+
+            'diem_danh_gia' => 4.8,
+            'so_danh_gia'   => 100
         ];
     });
 
@@ -986,4 +1013,4 @@ public function getDetailsBySlugs(Request $request)
             'currentMonthRevenueGrowth' => $calculateGrowth($currentMonthRevenue, $previousMonthRevenue),
         ]);
     }
-}   
+}

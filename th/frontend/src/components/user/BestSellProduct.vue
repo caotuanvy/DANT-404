@@ -55,8 +55,10 @@
       </div>
 
       <div class="button-container">
-        <button class="view-more-button">Xem thêm</button>
-      </div>
+  <router-link to="/san-pham-ban-chay" class="view-more-button">
+    Xem thêm
+  </router-link>
+</div>
     </section>
 
     <div v-if="comparisonList.length > 0" class="comparison-bar">
@@ -395,6 +397,8 @@ onMounted(async () => {
  transition: background-color 0.3s ease, transform 0.2s ease;
  margin-bottom: -15px;
  margin-top: -10px;
+ list-style-type: none;
+ text-decoration:none;
 }
 .view-more-button:hover {
  background-color: #0056b3;

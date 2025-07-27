@@ -59,29 +59,27 @@
         </div>
 
         <div class="header-right">
-          <span class="version-text">VERSION 1.5.4</span>
+  <span class="version-text">VERSION 1.5.4</span>
 
-          <div class="notification-badge">
-            <i class="bi bi-bell"></i>
-            <span class="badge">3</span>
-          </div>
+  <!-- Thay thế notification-badge bằng component AdminNotification -->
+  <AdminNotification />
 
-          <div class="user-menu" @click="openAdminInfoModal">
-            <img :src="logo" alt="Admin" class="admin-avatar" />
-            <div class="user-info">
-              <span class="admin-name">{{ adminInfo ? adminInfo.name : 'Administrator' }}</span>
-              <span class="admin-role">{{ adminInfo ? adminInfo.role : 'Super Admin' }}</span>
-            </div>
-            <i class="bi bi-chevron-down dropdown-icon"></i>
-          </div>
-        </div>
+  <div class="user-menu" @click="openAdminInfoModal">
+    <img :src="logo" alt="Admin" class="admin-avatar" />
+    <div class="user-info">
+      <span class="admin-name">{{ adminInfo ? adminInfo.name : 'Administrator' }}</span>
+      <span class="admin-role">{{ adminInfo ? adminInfo.role : 'Super Admin' }}</span>
+    </div>
+    <i class="bi bi-chevron-down dropdown-icon"></i>
+  </div>
+</div>
       </header>
 
       <main class="page-content">
         <div class="container-table">
-          <button class="btn btn-outline-secondary btn-sm" @click="goBack" style="position: absolute; right: 115px;">
+          <!-- <button class="btn btn-outline-secondary btn-sm" @click="goBack" style="position: absolute; right: 115px;">
             <i class="bi bi-arrow-left me-1"></i> Quay Lại
-          </button>
+          </button> -->
           <router-view />
         </div>
       </main>
@@ -128,6 +126,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'; // Import computed
 import { useRouter } from 'vue-router';
 import logo from '@/assets/images/icon-admin.png';
 import logo1 from '@/assets/images/image60.png';
+import AdminNotification from '@/components/admin/AdminNotification.vue';
 
 const showAdminInfoModal = ref(false);
 const adminInfo = ref(null);
@@ -233,6 +232,7 @@ const menu = [
       { to: '/admin/album', label: 'Album', icon: 'bi bi-image' },
       { to: '/admin/danhmuctintuc', label: 'Danh Mục Tin tức', icon: 'bi bi-newspaper' },
       { to: '/admin/tintuc', label: 'Tin tức', icon: 'bi bi-newspaper' },
+      { to: '/admin/binhluan', label: 'Bình Luận', icon: 'bi bi-file-earmark-text' },
       { to: '/admin/video', label: 'Video', icon: 'bi bi-camera-video' },
       { to: '/admin/payment', label: 'Hình thức thanh toán', icon: 'bi bi-cash' },
       { to: '/admin/send-push', label: 'Thông báo đẩy', icon: 'bi bi-bell' },

@@ -56,7 +56,7 @@
           </li>
           <li><a href="/">Trang Chủ</a></li>
           <li><router-link to="/gioi-thieu">Giới Thiệu</router-link></li>
-          <li><a href="#">Tin Tức</a></li>
+          <li><a href="/tin-tuc">Tin Tức</a></li>
           <li><a href="#">Liên Hệ</a></li>
         </ul>
         <div class="contact-info">

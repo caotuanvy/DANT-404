@@ -119,12 +119,13 @@ class DanhMucTtController extends Controller
     // danh muc tin tuc cong khai theo danh muc
     public function tintucCongKhaiTheoDanhMuc($id_danh_muc)
     {
-        $tintucs = Tintuc::with('danhMuc')
-            ->where('duyet_tin_tuc', 1)
-            ->where('id_danh_muc_tin_tuc', $id_danh_muc)
-            ->orderByDesc('ngay_dang')
-            ->get();
+    $tintucs = Tintuc::with('danhMuc')
+        ->where('id_danh_muc_tin_tuc', $id_danh_muc)
+        //->where('duyet_tin_tuc', 1) // Giữ nguyên điều kiện duyệt
+        ->where('trang_thai', 1) // CÁI NÀY LÀ MỚI THÊM VÀ RẤT QUAN TRỌNG
+        ->orderByDesc('ngay_dang')
+        ->get();
 
-        return response()->json($tintucs);
+    return response()->json($tintucs);
     }
 }

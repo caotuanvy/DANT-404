@@ -55,8 +55,10 @@
     </div>
 
     <div class="button-container">
-      <button class="view-more-button">Xem thêm</button>
-    </div>
+  <router-link to="/san-pham-ban-chay" class="view-more-button">
+    Xem thêm
+  </router-link>
+</div>
 
 </section>
 </section>
