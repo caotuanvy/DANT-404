@@ -63,8 +63,8 @@ const routes = [
   component: () => import('../components/user/AllBestSellProduct.vue')
   },
   {
-    path: '/tin-tuc-chi-tiet/:id',
-    name: 'ChiTietTinTucCongKhaiId',
+    path: '/tin-tuc-chi-tiet/:slug',
+    name: 'ChiTietTinTucCongKhaiSlug',
     component: () => import('../components/user/NewsDetails.vue')
   },
   { path: '/san-pham/:slug', name: 'ProductDetailUser', component: () => import('../components/user/ProductDetail.vue'),},

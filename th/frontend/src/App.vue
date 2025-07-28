@@ -54,11 +54,11 @@
           <li>
             <a href="/Danh-muc-san-pham"><i class="fas fa-bars"></i> Danh mục sản phẩm</a>
           </li>
-          <!-- <li><a href="/">Trang Chủ</a></li>
+          <li><a href="/">Trang Chủ</a></li>
           <li><router-link to="/gioi-thieu">Giới Thiệu</router-link></li>
           <li><a href="/tin-tuc">Tin Tức</a></li>
-          <li><a href="#">Liên Hệ</a></li> -->
-          <li v-for="page in staticPages.slice(0, 6)" :key="page.id">
+          <li><a href="#">Liên Hệ</a></li>
+          <li v-for="page in staticPages.slice(0, 1)" :key="page.id">
           <router-link :to="`/${page.Ten_trang}`">
             {{ page.Tieu_de_trang }}
           </router-link>

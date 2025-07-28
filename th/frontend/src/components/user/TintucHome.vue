@@ -5,7 +5,7 @@
       <router-link
         v-for="news in newsList"
         :key="news.id"
-        :to="{ name: 'ChiTietTinTucCongKhai', params: { id: news.id } }"
+        :to="{ name: 'ChiTietTinTucCongKhaiSlug', params: { slug: news.slug } }"
         class="news-card-link"
       >
         <div class="news-card">

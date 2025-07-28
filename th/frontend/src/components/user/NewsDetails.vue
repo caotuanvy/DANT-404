@@ -51,7 +51,7 @@
             class="related-news-item"
             v-for="item in relatedNews"
             :key="item.id"
-            @click="goToNewsDetail(item.id)"
+            @click="goToNewsDetail(item.slug)"
           >
             <img
               class="related-news-img"
@@ -92,29 +92,29 @@ const error = ref(null)     // Thông báo lỗi nếu có
 // WATCHER: Theo dõi sự thay đổi của route.params.id
 // Khi người dùng click vào một tin liên quan, ID trên URL sẽ thay đổi.
 // Watcher này sẽ phát hiện sự thay đổi đó và gọi lại hàm fetchNewsDetails để tải nội dung mới.
-watch(() => route.params.id, (newId, oldId) => {
-  if (newId && newId !== oldId) {
-    fetchNewsDetails(newId);
+watch(() => route.params.slug, (newSlug, oldSlug) => {
+  if (newSlug && newSlug !== oldSlug) {
+    fetchNewsDetails(newSlug);
   }
 });
 
 // ON MOUNTED: Hàm được gọi khi component được gắn kết (lần đầu tiên)
 onMounted(() => {
-  fetchNewsDetails(route.params.id)
+  fetchNewsDetails(route.params.slug)
 })
 
 /**
  * Hàm lấy chi tiết tin tức từ API.
  * @param {string|number} id - ID của tin tức cần lấy.
  */
-async function fetchNewsDetails(id) {
+async function fetchNewsDetails(slug) {
   loading.value = true; // Bắt đầu tải, đặt trạng thái loading
   news.value = null;    // Xóa dữ liệu tin tức cũ
   error.value = null;   // Xóa lỗi cũ
   relatedNews.value = []; // Xóa tin liên quan cũ
 
   try {
-    const newsResponse = await axios.get(`http://localhost:8000/api/tintuc-cong-khai/${id}`);
+    const newsResponse = await axios.get(`http://localhost:8000/api/tintuc-cong-khai/slug/${slug}`)
     news.value = newsResponse.data;
 
     // Sau khi tải được tin tức chính, kiểm tra và gọi API tin liên quan
@@ -156,11 +156,11 @@ async function fetchRelatedNews(currentNewsId, categoryId) {
 
 /**
  * Hàm điều hướng đến trang chi tiết của một tin tức khác.
- * @param {string|number} newsId - ID của tin tức muốn chuyển đến.
+ * @param {string|number} newsSlug - ID của tin tức muốn chuyển đến.
  */
-function goToNewsDetail(newsId) {
+function goToNewsDetail(newsSlug) {
   // Sử dụng router.push để thay đổi URL và kích hoạt watcher ở trên
-  router.push({ name: 'ChiTietTinTucCongKhai', params: { id: newsId } });
+  router.push({ name: 'ChiTietTinTucCongKhaiSlug', params: { slug: newsSlug } });
 }
 
 /**

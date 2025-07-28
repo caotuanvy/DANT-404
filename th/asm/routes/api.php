@@ -64,7 +64,7 @@ Route::get('/tintuc/{id}', [TintucController::class, 'show']);
 Route::put('/tintuc/{id}', [TintucController::class, 'update']);
 Route::delete('/tintuc/{id}', [TintucController::class, 'destroy']);
 Route::get('/tintuc-cong-khai', [TintucController::class, 'tintucCongKhai']);
-Route::get('/tintuc-cong-khai/{id}', [TintucController::class, 'chitietCongKhai']);
+Route::get('tintuc-cong-khai/slug/{slug}', [TintucController::class, 'chitietCongKhaiBySlug']);
 Route::get('/tin-noi-bat', [TintucController::class, 'tinNoiBat']);
 Route::get('/xemtintuc-admin/{id}', [TintucController::class, 'xemchitiettintucadmin']);
 Route::get('/tin-lien-quan/{currentNewsId}/{categoryId}', [TintucController::class, 'tinLienQuan']);

@@ -127,13 +127,17 @@ class TintucController extends Controller
     return response()->json($tintucs);
     }
     // tin tuc cong khai theo id
-    public function chitietCongKhai($id)
+    public function chitietCongKhaiBySlug($slug)
     {
-    // Đảm bảo tin tức đã duyệt VÀ có trạng thái là 1
+    // Lấy tin tức công khai theo slug
     $tintuc = Tintuc::with('danhMuc')
-        //->where('duyet_tin_tuc', 1)
-        ->where('trang_thai', 1) // THÊM ĐIỀU KIỆN NÀY
-        ->findOrFail($id); // findOrFail sẽ tự động trả về 404 nếu không tìm thấy hoặc không thỏa mãn điều kiện
+        ->where('slug', $slug)
+        ->where('trang_thai', 1)
+        ->first();
+
+    if (!$tintuc) {
+        return response()->json(['message' => 'Không tìm thấy tin tức'], 404);
+    }
 
     return response()->json([
         'id' => $tintuc->id,
@@ -148,7 +152,7 @@ class TintucController extends Controller
         'luot_like' => $tintuc->luot_like,
         'luot_xem' => $tintuc->luot_xem,
     ]);
-    }
+   }
     // Lấy tin tức nổi bật
    public function tinNoiBat()
     {
@@ -326,18 +330,27 @@ class TintucController extends Controller
         }
     }
     // Lấy tin tức liên quan theo danh mục
-    public function tinLienQuan($currentNewsId, $categoryId)
-{
+   public function tinLienQuan($currentNewsId, $categoryId)
+   {
     try {
-        // Lấy tin tức cùng danh mục, loại trừ tin hiện tại, đã duyệt và đang hiển thị
-        $relatedNews = Tintuc::with('danhMuc') // 'danhMuc' là tên mối quan hệ trong model Tintuc của bạn
-                             ->where('id_danh_muc_tin_tuc', $categoryId)
-                             ->where('id', '!=', $currentNewsId) // Loại trừ tin tức hiện tại
-                             //->where('duyet_tin_tuc', 1) // Chỉ lấy tin đã duyệt
-                             ->where('trang_thai', 1) // Chỉ lấy tin đang hiển thị
-                             ->orderBy('ngay_dang', 'desc') // Sắp xếp theo ngày đăng mới nhất
-                             ->limit(5) // Giới hạn số lượng tin liên quan (ví dụ: 5 tin)
-                             ->get();
+        $relatedNews = Tintuc::with('danhMuc')
+            ->where('id_danh_muc_tin_tuc', $categoryId)
+            ->where('id', '!=', $currentNewsId)
+            ->where('trang_thai', 1)
+            ->orderBy('ngay_dang', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'slug' => $item->slug,
+                    'tieude' => $item->tieude,
+                    'hinh_anh' => $item->hinh_anh,
+                    'noidung' => $item->noidung,
+                    'ngay_dang' => $item->ngay_dang,
+                    'danhMuc' => $item->danhMuc,
+                ];
+            });
 
         return response()->json($relatedNews);
 
@@ -345,7 +358,7 @@ class TintucController extends Controller
         \Log::error("Lỗi khi lấy tin tức liên quan: " . $e->getMessage());
         return response()->json(['message' => 'Không thể tải tin tức liên quan.'], 500);
     }
-}
-
+   }
+   
 
 }

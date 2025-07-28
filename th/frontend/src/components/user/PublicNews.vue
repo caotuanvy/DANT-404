@@ -21,7 +21,7 @@
               <i class="fa-regular fa-calendar"></i>
               {{ item.ngay_dang }}
             </span>
-            <button class="vohop-btn" @click="goToNewsDetail(item.id)">Xem chi tiết</button>
+            <button class="vohop-btn" @click="goToNewsDetail(item)">Xem chi tiết</button>
           </div>
         </div>
       </div>
@@ -46,7 +46,7 @@
           class="vohop-tinnoibat-item"
           v-for="tin in tinNoiBatList"
           :key="tin.id"
-          @click="goToNewsDetail(tin.id)"
+          @click="goToNewsDetail(tin)"
         >
           <img :src="tin.hinh_anh ? (tin.hinh_anh.startsWith('http') ? tin.hinh_anh : `http://localhost:8000/storage/${tin.hinh_anh}`) : 'https://via.placeholder.com/60x60'" alt="">
           <span>{{ tin.tieude }}</span>
@@ -123,8 +123,8 @@ async function fetchTinNoiBat() {
 }
 
 // Chức năng chuyển hướng đến trang chi tiết tin tức
-function goToNewsDetail(newsId) {
-  router.push({ name: 'ChiTietTinTucCongKhai', params: { id: newsId } })
+function goToNewsDetail(news) {
+  router.push({ name: 'ChiTietTinTucCongKhaiSlug', params: { slug: news.slug } })
   // Lưu ý: 'NewsDetail' là tên route bạn cần định nghĩa trong router của Vue
   // Ví dụ trong router/index.js (hoặc router.js) của bạn:
   // {
