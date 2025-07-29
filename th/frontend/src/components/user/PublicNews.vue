@@ -13,6 +13,7 @@
             alt="Hình ảnh"
           >
           <div class="vohop-newsitem-content">
+            <span v-if="item.noi_bat" class="vohop-featured-tag">Nổi bật</span>
             <h3>{{ item.tieude }}</h3>
             <div v-html="getNoiDungSnippet(item.noidung)"></div>
           </div>

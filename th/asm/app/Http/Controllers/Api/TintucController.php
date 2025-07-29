@@ -121,7 +121,7 @@ class TintucController extends Controller
     $tintucs = Tintuc::with('danhMuc')
         //->where('duyet_tin_tuc', 1)
         ->where('trang_thai', 1) // THÊM ĐIỀU KIỆN NÀY
-        ->orderByDesc('ngay_dang')
+        ->orderByRaw('noi_bat DESC, ngay_dang DESC')// Sắp xếp theo nổi bật trước, sau đó theo ngày đăng mới nhất
         ->get();
 
     return response()->json($tintucs);
@@ -359,6 +359,6 @@ class TintucController extends Controller
         return response()->json(['message' => 'Không thể tải tin tức liên quan.'], 500);
     }
    }
-   
+
 
 }
