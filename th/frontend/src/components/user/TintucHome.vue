@@ -44,7 +44,7 @@ const formatDate = (dateStr) => {
 
 onMounted(async () => {
   const res = await axios.get('http://localhost:8000/api/tintuc-cong-khai')
-  newsList.value = res.data.slice(0, 6)
+  newsList.value = res.data.slice(0, 3)
 })
 </script>
 

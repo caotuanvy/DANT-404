@@ -72,7 +72,7 @@
               </div>
               <div class="form-group">
                 <label for="ngay_dang" class="form-label">Ngày đăng</label>
-                <input type="date" id="ngay_dang" v-model="ngay_dang" class="form-control" />
+                <input type="datetime-local" id="ngay_dang" v-model="ngay_dang" class="form-control" />
               </div>
               <div class="form-group">
                 <label class="form-label">Hình ảnh</label>
@@ -454,13 +454,18 @@ export default {
       this.seoCriteria[15].passed = !!this.file || (this.previewImage && this.previewImage.length > 0) || /<img[^>]+alt=["'][^"']+["']/i.test(this.newsDescriptionLong);
     }
   },
-  mounted() {
-    this.getDanhMucs();
-    // Khởi tạo ngày đăng mặc định là ngày hiện tại nếu chưa có
-    if (!this.ngay_dang) {
-      this.ngay_dang = new Date().toISOString().slice(0, 10);
-    }
+    mounted() {
+  this.getDanhMucs();
+  // Khởi tạo ngày đăng mặc định là ngày và giờ hiện tại nếu chưa có
+  if (!this.ngay_dang) {
+    const now = new Date();
+    // Lấy múi giờ địa phương (UTC+7)
+    const offset = now.getTimezoneOffset() * 60000; // Offset in milliseconds
+    const localIsoString = new Date(now.getTime() - offset).toISOString();
+    // Định dạng cho input type="datetime-local" (YYYY-MM-DDTHH:mm)
+    this.ngay_dang = localIsoString.slice(0, 16);
   }
+}
 };
 </script>
 

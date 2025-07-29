@@ -139,6 +139,9 @@ class TintucController extends Controller
         return response()->json(['message' => 'Không tìm thấy tin tức'], 404);
     }
 
+    $tintuc->increment('luot_xem');
+    $tintuc->refresh();
+
     return response()->json([
         'id' => $tintuc->id,
         'id_danh_muc_tin_tuc' => $tintuc->id_danh_muc_tin_tuc,
