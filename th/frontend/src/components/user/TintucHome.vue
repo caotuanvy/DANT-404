@@ -189,8 +189,8 @@ onMounted(async () => {
 
 .news-headline {
   font-size: 16px;
-  font-weight: 700;
-  margin-bottom: 8px;
+  font-weight: 600;
+  margin-bottom: 4px;
   color: #2c3e50;
   line-height: 1.4;
   overflow: hidden;
@@ -199,7 +199,7 @@ onMounted(async () => {
 .news-description {
   font-size: 13px;
   color: #6c757d;
-  height: 40px;
+  height: 90px;
   overflow: hidden;
   margin-bottom: 15px;
   line-height: 1.5;
