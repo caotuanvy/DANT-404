@@ -67,12 +67,17 @@
       </div>
     </aside>
   </div>
+  <div>
+    <BinhLuanTT />
+  </div>
 </template>
+
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
+import BinhLuanTT from '@/components/user/BinhLuanTT.vue';
 
 const route = useRoute()
 const router = useRouter()

@@ -72,4 +72,55 @@ class BinhLuanController extends Controller
             'bao_cao_moi' => $binhLuan->bao_cao
         ]);
     }
+
+    // ... (các method hiện có)
+
+/**
+ * Lấy danh sách bình luận cho một tin tức cụ thể.
+ *
+ * @param  int  $tinTucId
+ * @return \Illuminate\Http\JsonResponse
+ */
+public function getCommentsForNews($tinTucId)
+{
+    $comments = BinhLuan::with('nguoiDung:nguoi_dung_id,ho_ten')
+                        ->where('tin_tuc_id', $tinTucId)
+                        ->where('trang_thai', 1) // Chỉ lấy các bình luận được hiển thị (đã duyệt)
+                        ->orderByDesc('ngay_binh_luan')
+                        ->get();
+
+    return response()->json($comments);
+}
+
+/**
+ * Thêm một bình luận mới cho tin tức.
+ *
+ * @param  \Illuminate\Http\Request  $request
+ * @return \Illuminate\Http\JsonResponse
+ */
+public function addCommentForNews(Request $request)
+{
+    $request->validate([
+        'tin_tuc_id' => 'required|integer|exists:tin_tucs,id',
+        'nguoi_dung_id' => 'required|integer|exists:nguoi_dungs,nguoi_dung_id',
+        'noi_dung' => 'required|string|max:1000',
+    ]);
+
+    $binhLuan = BinhLuan::create([
+        'tin_tuc_id' => $request->tin_tuc_id,
+        'nguoi_dung_id' => $request->nguoi_dung_id,
+        'noi_dung' => $request->noi_dung,
+        'ngay_binh_luan' => now(),
+        'trang_thai' => 0, // Mặc định là ẩn cho đến khi admin duyệt
+        'bao_cao' => 0,
+    ]);
+
+    // Trả về bình luận vừa tạo cùng với thông tin người dùng
+    $binhLuan->load('nguoiDung:nguoi_dung_id,ho_ten');
+
+    return response()->json([
+        'message' => 'Bình luận của bạn đã được gửi và sẽ được hiển thị sau khi quản trị viên duyệt.',
+        'binh_luan' => $binhLuan
+    ], 201);
+}
 }
