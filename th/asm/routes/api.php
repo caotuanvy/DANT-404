@@ -89,14 +89,8 @@ Route::prefix('admin/binhluan')->group(function () {
 });
 
 Route::prefix('binh-luan')->group(function () {
-    // Lấy danh sách bình luận cho một tin tức cụ thể
-    // Endpoint: GET /api/binh-luan/tin-tuc/{tinTucId}
+    Route::post('{id}/like', [BinhLuanController::class, 'toggleLike']);
     Route::get('tin-tuc/{tinTucId}', [BinhLuanController::class, 'getCommentsForNews']);
-
-    // Gửi bình luận mới cho tin tức
-    // Endpoint: POST /api/binh-luan/tin-tuc
-    // Yêu cầu: tin_tuc_id, nguoi_dung_id, noi_dung
-    // Lưu ý: Bạn cần xử lý việc lấy `nguoi_dung_id` của người dùng đã đăng nhập.
     Route::post('tin-tuc', [BinhLuanController::class, 'addCommentForNews']);
 });
 

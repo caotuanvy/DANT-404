@@ -64,7 +64,14 @@
         </div>
         <p class="comment-content">{{ comment.noi_dung }}</p>
         <div class="comment-actions">
-          <button class="action-button"><i class="fa-regular fa-heart"></i><span>0</span></button>
+         <button
+            class="action-button"
+            :class="{ liked: comment.liked }"
+            @click="toggleLike(comment)"
+          >
+            <i :class="['fa-regular', 'fa-heart', { 'fa-solid': comment.liked, 'text-red': comment.liked }]"></i>
+            <span>{{ comment.luot_thich }}</span>
+          </button>
           <button class="action-button"><i class="fa-solid fa-reply"></i><span>Trả lời</span></button>
         </div>
       </li>
@@ -162,6 +169,20 @@ function expandForm() {
 function collapseForm() {
   if (!newComment.value.noidung.trim()) {
     isFormExpanded.value = false;
+  }
+}
+
+// Hàm để toggle like
+async function toggleLike(comment) {
+  try {
+    const response = await axios.post(
+      `http://localhost:8000/api/binh-luan/${comment.binh_luan_id}/like`,
+      { like: !comment.liked } // gửi trạng thái muốn chuyển đổi
+    );
+    comment.luot_thich = response.data.luot_thich;
+    comment.liked = !comment.liked;
+  } catch (error) {
+    console.error("Lỗi khi like:", error);
   }
 }
 
@@ -459,6 +480,9 @@ function timeAgo(dateString) {
   margin-right: 8px;
   color: #a0aec0;
 }
+.liked .fa-heart {
+  color: red;
+}
 
 /* RESPONSIVE DESIGN */
 @media (max-width: 768px) {
@@ -509,5 +533,6 @@ function timeAgo(dateString) {
   .comment-actions {
     margin-left: 52px;
   }
+  
 }
 </style>

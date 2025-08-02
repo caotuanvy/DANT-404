@@ -87,7 +87,7 @@ public function getCommentsForNews($tinTucId)
         ->where('tin_tuc_id', $tinTucId)
         ->where('trang_thai', 1)
         ->orderByDesc('ngay_binh_luan')
-        ->select(['binh_luan_id', 'tin_tuc_id', 'nguoi_dung_id', 'noidung', 'ngay_binh_luan'])
+        ->select(['binh_luan_id', 'tin_tuc_id', 'nguoi_dung_id', 'noidung', 'ngay_binh_luan', 'luot_thich']) // Thêm luot_thich
         ->get();
 
     return response()->json($comments);
@@ -122,5 +122,24 @@ public function addCommentForNews(Request $request)
         'message' => 'Bình luận của bạn đã được gửi và sẽ được hiển thị sau khi quản trị viên duyệt.',
         'binh_luan' => $binhLuan
     ], 201);
+}
+
+public function toggleLike($id)
+{
+    $binhLuan = BinhLuan::findOrFail($id);
+
+    // Nhận trạng thái like từ request (true: like, false: unlike)
+    $isLike = request()->input('like', true);
+
+    if ($isLike) {
+        $binhLuan->luot_thich = ($binhLuan->luot_thich ?? 0) + 1;
+    } else {
+        $binhLuan->luot_thich = max(0, ($binhLuan->luot_thich ?? 0) - 1);
+    }
+    $binhLuan->save();
+
+    return response()->json([
+        'luot_thich' => $binhLuan->luot_thich
+    ]);
 }
 }
