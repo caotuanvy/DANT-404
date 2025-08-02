@@ -17,7 +17,7 @@
       </div>
       <div class="comment-form-content">
         <textarea
-          v-model="newComment.noi_dung"
+          v-model="newComment.noidung"
           class="comment-textarea"
           placeholder="Viết bình luận..."
           rows="1"
@@ -30,14 +30,18 @@
             <i class="fa-regular fa-face-smile"></i>
             <i class="fa-regular fa-image"></i>
           </div>
-          <button type="submit" class="submit-button" :disabled="isSubmitting || !newComment.noi_dung.trim()">
+          <button
+            type="submit"
+            class="submit-button"
+            :disabled="isSubmitting || !newComment.noidung.trim()"
+            @click="submitComment"
+          >
             <i v-if="isSubmitting" class="fa-solid fa-spinner fa-spin"></i>
             <span v-else>Đăng</span>
           </button>
         </div>
       </div>
     </div>
-
     <div v-if="loading" class="info-message loading">
       <i class="fa-solid fa-spinner fa-spin"></i> Đang tải bình luận...
     </div>
@@ -55,6 +59,7 @@
               <span class="comment-author">{{ comment.nguoi_dung.ho_ten || 'Người dùng' }}</span>
             </div>
             <span class="comment-date">{{ timeAgo(comment.ngay_binh_luan) }}</span>
+            <span class="comment-noidung">{{ comment.noidung }}</span> <!-- Hiển thị nội dung -->
           </div>
         </div>
         <p class="comment-content">{{ comment.noi_dung }}</p>
@@ -75,6 +80,8 @@ import axios from 'axios';
 // Lấy `tin_tuc_id` từ props hoặc route params
 const route = useRoute();
 
+const user = JSON.parse(localStorage.getItem('user')) || {};
+
 // State
 const comments = ref([]);
 const loading = ref(false);
@@ -83,8 +90,8 @@ const isFormExpanded = ref(false);
 
 const newComment = ref({
   tin_tuc_id: null,
-  nguoi_dung_id: 1, // CHÚ Ý: Thay thế bằng ID người dùng thực tế sau khi đăng nhập
-  noi_dung: '',
+  nguoi_dung_id: user.nguoi_dung_id || null, // Lấy từ user đã đăng nhập
+  noidung: '',
 });
 const userName = ref('Nguyễn Văn A'); // CHÚ Ý: Thay thế bằng tên người dùng thực tế
 
@@ -129,30 +136,15 @@ async function fetchComments() {
 
 // Gửi bình luận mới
 async function submitComment() {
-  if (!newComment.value.noi_dung.trim()) {
+  if (!newComment.value.noidung.trim()) {
     return;
   }
 
   isSubmitting.value = true;
   try {
     const response = await axios.post(`http://localhost:8000/api/binh-luan/tin-tuc`, newComment.value);
-    
-    // Giả lập dữ liệu trả về từ server để hiển thị ngay lập tức
-    const newCommentData = {
-      id: Date.now(),
-      noi_dung: newComment.value.noi_dung,
-      ngay_binh_luan: new Date().toISOString(),
-      nguoi_dung: {
-        ho_ten: userName.value,
-        nguoi_dung_id: newComment.value.nguoi_dung_id,
-        avatar: 'https://i.pravatar.cc/50?u=' + newComment.value.nguoi_dung_id
-      },
-      likes: 0,
-      replies: 0
-    };
-    comments.value.unshift(newCommentData);
-    
-    newComment.value.noi_dung = '';
+    fetchComments(); // Hoặc cập nhật comments.value nếu muốn
+    newComment.value.noidung = '';
     isFormExpanded.value = false;
   } catch (error) {
     console.error("Lỗi khi gửi bình luận:", error);
@@ -168,9 +160,9 @@ function expandForm() {
 }
 
 function collapseForm() {
-    if (!newComment.value.noi_dung.trim()) {
-        isFormExpanded.value = false;
-    }
+  if (!newComment.value.noidung.trim()) {
+    isFormExpanded.value = false;
+  }
 }
 
 // Hàm định dạng thời gian tùy chỉnh (thay thế cho date-fns)

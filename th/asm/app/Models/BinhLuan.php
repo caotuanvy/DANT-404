@@ -3,6 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\SanPham;
+use App\Models\Tintuc;
+use App\Models\User;
 
 class BinhLuan extends Model
 {
@@ -48,6 +51,7 @@ class BinhLuan extends Model
 
     // Quan hệ tới người dùng
     public function nguoiDung()
-    {        return $this->belongsTo(User::class, 'nguoi_dung_id');
-    }
+{
+    return $this->belongsTo(User::class, 'nguoi_dung_id', 'nguoi_dung_id');
+}
 }

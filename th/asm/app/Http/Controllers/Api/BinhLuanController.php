@@ -84,10 +84,11 @@ class BinhLuanController extends Controller
 public function getCommentsForNews($tinTucId)
 {
     $comments = BinhLuan::with('nguoiDung:nguoi_dung_id,ho_ten')
-                        ->where('tin_tuc_id', $tinTucId)
-                        ->where('trang_thai', 1) // Chỉ lấy các bình luận được hiển thị (đã duyệt)
-                        ->orderByDesc('ngay_binh_luan')
-                        ->get();
+        ->where('tin_tuc_id', $tinTucId)
+        ->where('trang_thai', 1)
+        ->orderByDesc('ngay_binh_luan')
+        ->select(['binh_luan_id', 'tin_tuc_id', 'nguoi_dung_id', 'noidung', 'ngay_binh_luan'])
+        ->get();
 
     return response()->json($comments);
 }
@@ -101,21 +102,20 @@ public function getCommentsForNews($tinTucId)
 public function addCommentForNews(Request $request)
 {
     $request->validate([
-        'tin_tuc_id' => 'required|integer|exists:tin_tucs,id',
-        'nguoi_dung_id' => 'required|integer|exists:nguoi_dungs,nguoi_dung_id',
-        'noi_dung' => 'required|string|max:1000',
+        'tin_tuc_id' => 'required|integer|exists:tintuc,id',
+        'nguoi_dung_id' => 'required|integer|exists:nguoi_dung,nguoi_dung_id', // Sửa lại tên bảng
+        'noidung' => 'required|string|max:1000',
     ]);
 
     $binhLuan = BinhLuan::create([
         'tin_tuc_id' => $request->tin_tuc_id,
         'nguoi_dung_id' => $request->nguoi_dung_id,
-        'noi_dung' => $request->noi_dung,
+        'noidung' => $request->noidung,
         'ngay_binh_luan' => now(),
-        'trang_thai' => 0, // Mặc định là ẩn cho đến khi admin duyệt
+        'trang_thai' => 1, // Mặc định là hiển thị
         'bao_cao' => 0,
     ]);
 
-    // Trả về bình luận vừa tạo cùng với thông tin người dùng
     $binhLuan->load('nguoiDung:nguoi_dung_id,ho_ten');
 
     return response()->json([
