@@ -174,16 +174,24 @@ function collapseForm() {
 
 // Hàm để toggle like
 async function toggleLike(comment) {
-  try {
-    const response = await axios.post(
-      `http://localhost:8000/api/binh-luan/${comment.binh_luan_id}/like`,
-      { like: !comment.liked } // gửi trạng thái muốn chuyển đổi
-    );
-    comment.luot_thich = response.data.luot_thich;
-    comment.liked = !comment.liked;
-  } catch (error) {
-    console.error("Lỗi khi like:", error);
-  }
+  // Tạo một độ trễ nhân tạo (ví dụ: 500ms) trước khi gọi API
+  // Đây là cách làm chậm lại tốc độ phản hồi của nút like
+  const delay = ms => new Promise(res => setTimeout(res, ms));
+  await delay(10); // Đợi 500ms (nửa giây)
+
+  try {
+    const response = await axios.post(
+      `http://localhost:8000/api/binh-luan/${comment.binh_luan_id}/like`,
+      { like: !comment.liked } // gửi trạng thái muốn chuyển đổi
+    );
+    
+    // Cập nhật giao diện sau khi có phản hồi từ API
+    comment.luot_thich = response.data.luot_thich;
+    comment.liked = !comment.liked;
+  } catch (error) {
+    console.error("Lỗi khi like:", error);
+    alert("Đã xảy ra lỗi khi thích bình luận. Vui lòng thử lại.");
+  }
 }
 
 // Hàm định dạng thời gian tùy chỉnh (thay thế cho date-fns)
