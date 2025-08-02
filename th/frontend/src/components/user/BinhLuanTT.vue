@@ -72,6 +72,14 @@
             <i :class="['fa-regular', 'fa-heart', { 'fa-solid': comment.liked, 'text-red': comment.liked }]"></i>
             <span>{{ comment.luot_thich }}</span>
           </button>
+        <button
+           class="action-button"
+           :class="{ disliked: comment.disliked }"
+           @click="toggleDislike(comment)"
+          >
+           <i :class="['fa-regular', 'fa-thumbs-down', { 'fa-solid': comment.disliked, 'text-blue': comment.disliked }]"></i>
+           <span>{{ comment.luot_khong_thich || 0 }}</span>
+        </button>
           <button class="action-button"><i class="fa-solid fa-reply"></i><span>Trả lời</span></button>
         </div>
       </li>
@@ -123,23 +131,32 @@ async function getNewsIdFromSlug(slug) {
 
 // Lấy danh sách bình luận
 async function fetchComments() {
-  const newsId = await getNewsIdFromSlug(route.params.slug);
-  if (!newsId) {
-    comments.value = [];
-    return;
-  }
-  newComment.value.tin_tuc_id = newsId;
+    const newsId = await getNewsIdFromSlug(route.params.slug);
+    if (!newsId) {
+        comments.value = [];
+        return;
+    }
+    newComment.value.tin_tuc_id = newsId;
 
-  loading.value = true;
-  try {
-    const response = await axios.get(`http://localhost:8000/api/binh-luan/tin-tuc/${newsId}`);
-    comments.value = response.data;
-  } catch (error) {
-    console.error("Lỗi khi tải bình luận:", error);
-  } finally {
-    loading.value = false;
-  }
+    loading.value = true;
+    try {
+        const response = await axios.get(`http://localhost:8000/api/binh-luan/tin-tuc/${newsId}`);
+        comments.value = response.data;
+        
+        // Thêm các trường trạng thái liked/disliked vào mỗi bình luận
+        // để có thể vô hiệu hóa nút sau khi nhấn
+        comments.value.forEach(comment => {
+            comment.liked = false;
+            comment.disliked = false;
+        });
+
+    } catch (error) {
+        console.error("Lỗi khi tải bình luận:", error);
+    } finally {
+        loading.value = false;
+    }
 }
+
 
 // Gửi bình luận mới
 async function submitComment() {
@@ -174,24 +191,38 @@ function collapseForm() {
 
 // Hàm để toggle like
 async function toggleLike(comment) {
-  // Tạo một độ trễ nhân tạo (ví dụ: 500ms) trước khi gọi API
-  // Đây là cách làm chậm lại tốc độ phản hồi của nút like
-  const delay = ms => new Promise(res => setTimeout(res, ms));
-  await delay(10); // Đợi 500ms (nửa giây)
+    if (comment.liked) {
+        return;
+    }
 
-  try {
-    const response = await axios.post(
-      `http://localhost:8000/api/binh-luan/${comment.binh_luan_id}/like`,
-      { like: !comment.liked } // gửi trạng thái muốn chuyển đổi
-    );
-    
-    // Cập nhật giao diện sau khi có phản hồi từ API
-    comment.luot_thich = response.data.luot_thich;
-    comment.liked = !comment.liked;
-  } catch (error) {
-    console.error("Lỗi khi like:", error);
-    alert("Đã xảy ra lỗi khi thích bình luận. Vui lòng thử lại.");
-  }
+    try {
+        const response = await axios.post(
+            `http://localhost:8000/api/binh-luan/${comment.binh_luan_id}/like`
+        );
+        comment.luot_thich = response.data.luot_thich;
+        comment.liked = true;
+    } catch (error) {
+        console.error("Lỗi khi like:", error);
+        alert("Đã xảy ra lỗi khi thích bình luận. Vui lòng thử lại.");
+    }
+}
+
+// Hàm để toggle dislike
+async function toggleDislike(comment) {
+    if (comment.disliked) {
+        return;
+    }
+
+    try {
+        const response = await axios.post(
+            `http://localhost:8000/api/binh-luan/${comment.binh_luan_id}/dislike`
+        );
+        comment.luot_khong_thich = response.data.luot_khong_thich;
+        comment.disliked = true;
+    } catch (error) {
+        console.error("Lỗi khi dislike:", error);
+        alert("Đã xảy ra lỗi khi không thích bình luận. Vui lòng thử lại.");
+    }
 }
 
 // Hàm định dạng thời gian tùy chỉnh (thay thế cho date-fns)
@@ -488,9 +519,13 @@ function timeAgo(dateString) {
   margin-right: 8px;
   color: #a0aec0;
 }
+.disliked.fa-thumbs-down {
+  color: blue;
+}
 .liked .fa-heart {
   color: red;
 }
+
 
 /* RESPONSIVE DESIGN */
 @media (max-width: 768px) {

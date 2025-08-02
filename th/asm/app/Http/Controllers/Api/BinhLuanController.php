@@ -87,7 +87,7 @@ public function getCommentsForNews($tinTucId)
         ->where('tin_tuc_id', $tinTucId)
         ->where('trang_thai', 1)
         ->orderByDesc('ngay_binh_luan')
-        ->select(['binh_luan_id', 'tin_tuc_id', 'nguoi_dung_id', 'noidung', 'ngay_binh_luan', 'luot_thich']) // Thêm luot_thich
+        ->select(['binh_luan_id', 'tin_tuc_id', 'nguoi_dung_id', 'noidung', 'ngay_binh_luan', 'luot_thich', 'luot_khong_thich']) // Thêm luot_thich
         ->get();
 
     return response()->json($comments);
@@ -128,18 +128,27 @@ public function toggleLike($id)
 {
     $binhLuan = BinhLuan::findOrFail($id);
 
-    // Nhận trạng thái like từ request (true: like, false: unlike)
-    $isLike = request()->input('like', true);
+    // Tăng lượt thích lên 1
+    $binhLuan->luot_thich = ($binhLuan->luot_thich ?? 0) + 1;
 
-    if ($isLike) {
-        $binhLuan->luot_thich = ($binhLuan->luot_thich ?? 0) + 1;
-    } else {
-        $binhLuan->luot_thich = max(0, ($binhLuan->luot_thich ?? 0) - 1);
-    }
     $binhLuan->save();
 
     return response()->json([
-        'luot_thich' => $binhLuan->luot_thich
+        'luot_thich' => $binhLuan->luot_thich,
+    ]);
+}
+
+public function toggleDislike($id)
+{
+    $binhLuan = BinhLuan::findOrFail($id);
+
+    // Tăng lượt không thích lên 1
+    $binhLuan->luot_khong_thich = ($binhLuan->luot_khong_thich ?? 0) + 1;
+
+    $binhLuan->save();
+
+    return response()->json([
+        'luot_khong_thich' => $binhLuan->luot_khong_thich
     ]);
 }
 }
