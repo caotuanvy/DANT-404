@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\BinhLuan;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class BinhLuanController extends Controller
 {
@@ -100,30 +102,90 @@ public function getCommentsForNews($tinTucId)
  * @return \Illuminate\Http\JsonResponse
  */
 public function addCommentForNews(Request $request)
-{
-    $request->validate([
-        'tin_tuc_id' => 'required|integer|exists:tintuc,id',
-        'nguoi_dung_id' => 'required|integer|exists:nguoi_dung,nguoi_dung_id', // Sửa lại tên bảng
-        'noidung' => 'required|string|max:1000',
-    ]);
+    {
+        // Bước 1: Xác thực dữ liệu đầu vào
+        $validatedData = $request->validate([
+            'tin_tuc_id' => 'required|integer|exists:tintuc,id',
+            'nguoi_dung_id' => 'required|integer|exists:nguoi_dung,nguoi_dung_id',
+            // Đã sửa tên trường từ 'image' sang 'file_anh' để khớp với frontend
+            'noidung' => 'required_without:file_anh|string|nullable|max:1000',
+            'file_anh' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ]);
 
-    $binhLuan = BinhLuan::create([
-        'tin_tuc_id' => $request->tin_tuc_id,
-        'nguoi_dung_id' => $request->nguoi_dung_id,
-        'noidung' => $request->noidung,
-        'ngay_binh_luan' => now(),
-        'trang_thai' => 1, // Mặc định là hiển thị
-        'bao_cao' => 0,
-    ]);
+        $noidung_text = $validatedData['noidung'] ?? ''; // Lấy nội dung văn bản
+        $html_content_for_image = ''; // Biến để chứa thẻ <img> nếu có ảnh
 
-    $binhLuan->load('nguoiDung:nguoi_dung_id,ho_ten');
+        // Bước 2: Xử lý upload file ảnh (nếu có)
+        // Đã sửa tên trường từ 'image' sang 'file_anh' để khớp với frontend
+        if ($request->hasFile('file_anh')) {
+            $fileAnh = $request->file('file_anh');
+            // Tạo tên file duy nhất để tránh trùng lặp
+            $fileName = time() . '_' . $fileAnh->getClientOriginalName();
 
-    return response()->json([
-        'message' => 'Bình luận của bạn đã được gửi và sẽ được hiển thị sau khi quản trị viên duyệt.',
-        'binh_luan' => $binhLuan
-    ], 201);
-}
+            // Lưu file vào storage/app/public/uploads/comment_images
+            $path = $fileAnh->storeAs('uploads/comment_images', $fileName, 'public');
 
+            // Lấy đường dẫn công khai để lưu vào database
+            $imageUrl = Storage::url($path);
+
+            // Tạo thẻ <img> với đường dẫn ảnh và style cơ bản
+            $html_content_for_image = "<p><img src=\"{$imageUrl}\" alt=\"Ảnh bình luận\" style=\"max-width: 100%; height: auto;\"></p>";
+        }
+
+        // Bước 3: Kết hợp nội dung văn bản và HTML của ảnh
+        // Nếu có nội dung văn bản, thêm xuống dòng và sau đó là ảnh.
+        // Nếu không có nội dung văn bản, chỉ là ảnh.
+        $finalContent = $noidung_text;
+        if (!empty($html_content_for_image)) {
+            if (!empty($finalContent)) {
+                $finalContent .= "\n" . $html_content_for_image; // Thêm xuống dòng nếu có cả text
+            } else {
+                $finalContent = $html_content_for_image; // Chỉ có ảnh
+            }
+        }
+
+        // Đảm bảo rằng sau khi kết hợp, nội dung không rỗng (chỉ chứa khoảng trắng hoặc không có gì)
+        // strip_tags để loại bỏ HTML và trim để loại bỏ khoảng trắng
+        if (empty(trim(strip_tags($finalContent)))) {
+            return response()->json(['message' => 'Nội dung bình luận không được để trống.'], 422);
+        }
+
+        // Bước 4: Lưu bình luận vào database
+        try {
+            DB::beginTransaction(); // Bắt đầu transaction để đảm bảo tính toàn vẹn dữ liệu
+            $binhLuan = BinhLuan::create([
+                'tin_tuc_id' => $validatedData['tin_tuc_id'],
+                'nguoi_dung_id' => $validatedData['nguoi_dung_id'],
+                'noidung' => $finalContent, // Lưu toàn bộ nội dung HTML vào đây
+                'ngay_binh_luan' => now(),
+                'trang_thai' => 1, // Mặc định là hiển thị
+                'bao_cao' => 0, // Mặc định là 0
+            ]);
+            DB::commit(); // Hoàn tất transaction
+
+            // Tải lại mối quan hệ nguoiDung để trả về thông tin người dùng
+            $binhLuan->load('nguoiDung:nguoi_dung_id,ho_ten');
+
+            // Bước 5: Trả về kết quả cho frontend
+            return response()->json([
+                'message' => 'Bình luận của bạn đã được gửi.',
+                'binh_luan' => $binhLuan
+            ], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack(); // Hoàn tác transaction nếu có lỗi
+            // Ghi lỗi chi tiết vào log file của Laravel để debug
+            \Log::error('Lỗi khi thêm bình luận: ' . $e->getMessage(), [
+                'request_data' => $request->all(),
+                'file_trace' => $e->getFile() . ' on line ' . $e->getLine()
+            ]);
+            // Trả về lỗi 500 cho frontend
+            return response()->json([
+                'message' => 'Có lỗi xảy ra ở máy chủ khi thêm bình luận. Vui lòng thử lại!',
+                'error' => $e->getMessage() // Chỉ trả về lỗi chi tiết trong môi trường dev
+            ], 500);
+        }
+    }
 public function toggleLike($id)
 {
     $binhLuan = BinhLuan::findOrFail($id);
