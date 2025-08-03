@@ -83,13 +83,26 @@ class BinhLuanController extends Controller
  * @param  int  $tinTucId
  * @return \Illuminate\Http\JsonResponse
  */
-public function getCommentsForNews($tinTucId)
+public function getCommentsForNews($tinTucId, Request $request)
 {
-    $comments = BinhLuan::with('nguoiDung:nguoi_dung_id,ho_ten')
+    // Lấy tham số sắp xếp từ request, mặc định là 'ngay_binh_luan'
+    $sortBy = $request->query('sort_by', 'ngay_binh_luan');
+    $orderBy = 'desc'; // Mặc định sắp xếp giảm dần
+
+    // Khởi tạo query
+    $query = BinhLuan::with('nguoiDung:nguoi_dung_id,ho_ten')
         ->where('tin_tuc_id', $tinTucId)
-        ->where('trang_thai', 1)
-        ->orderByDesc('ngay_binh_luan')
-        ->select(['binh_luan_id', 'tin_tuc_id', 'nguoi_dung_id', 'noidung', 'ngay_binh_luan', 'luot_thich', 'luot_khong_thich']) // Thêm luot_thich
+        ->where('trang_thai', 1);
+
+    // Xử lý logic sắp xếp
+    if ($sortBy === 'luot_thich') {
+        $query->orderByDesc('luot_thich');
+    } else {
+        // Mặc định là sắp xếp theo ngày_binh_luan (mới nhất)
+        $query->orderByDesc('ngay_binh_luan');
+    }
+
+    $comments = $query->select(['binh_luan_id', 'tin_tuc_id', 'nguoi_dung_id', 'noidung', 'ngay_binh_luan', 'luot_thich', 'luot_khong_thich'])
         ->get();
 
     return response()->json($comments);
