@@ -11,6 +11,7 @@ import ChangePassword from '../components/user/ChangePassword.vue';
 import Cart from '../components/user/Cart.vue';
 import axios from 'axios';
 import StaticPage from "@/components/user/StaticPage.vue";
+import PaymentSuccess from '../views/PaymentSuccess.vue';
 
 const routes = [
   { path: '/', component: Home },
@@ -57,6 +58,8 @@ const routes = [
     name: 'ChiTietTinTucCongKhai',
     component: () => import('../components/user/NewsDetails.vue')
   },
+    { path: '/payment-success', name: 'PaymentSuccess', component: PaymentSuccess },
+
    {
   path: '/san-pham-ban-chay',
   name: 'SanPhamBanChay',

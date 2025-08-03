@@ -774,6 +774,10 @@ export default {
         });
 
         this.products = []; // Xóa giỏ hàng sau khi đặt hàng thành công
+        await axios.post("http://localhost:8000/api/orders", orderData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        this.$router.push('/payment-success');
       } catch (error) {
         console.error("Lỗi khi đặt hàng:", error);
         console.log(error.response?.data);
@@ -895,11 +899,6 @@ export default {
   }
 };
 </script>
-Cart.vue:773 Object
-:8000/api/orders:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)
-Cart.vue:772 Lỗi khi đặt hàng: AxiosError
-placeOrder @ Cart.vue:772
-Cart.vue:773 Object
 <style scoped>
 /* General styles */
 .cart-page {
