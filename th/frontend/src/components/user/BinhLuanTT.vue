@@ -53,6 +53,19 @@
           </button>
         </div>
 
+        <div class="star-rating-container">
+          <span class="star-label">Đánh giá của bạn:</span>
+          <span 
+            v-for="star in 5" 
+            :key="star" 
+            class="star-icon"
+            :class="{ 'filled': star <= newComment.danh_gia }"
+            @click="setRating(star)"
+          >
+            ★
+          </span>
+        </div>
+
         <div v-if="showEmojiPicker" class="emoji-picker-container">
           <span
             v-for="emoji in emojis"
@@ -109,6 +122,16 @@
           <div class="comment-meta">
             <div class="comment-author-info">
               <span class="comment-author">{{ comment.nguoi_dung.ho_ten || 'Người dùng' }}</span>
+              <div v-if="comment.danh_gia" class="comment-rating">
+                <span 
+                  v-for="star in 5" 
+                  :key="star"
+                  class="star-icon"
+                  :class="{ 'filled': star <= comment.danh_gia }"
+                >
+                  ★
+                </span>
+              </div>
             </div>
             <span class="comment-date">{{ timeAgo(comment.ngay_binh_luan) }}</span>
           </div>
@@ -155,9 +178,7 @@ const showEmojiPicker = ref(false);
 const showLinkInput = ref(false);
 const linkUrl = ref('');
 
-// State mới để lưu lựa chọn sắp xếp
 const currentSort = ref('newest'); 
-
 const emojis = ref([
   '😀', '😂', '😅', '😇', '🥰', '😊', '😋', '😎', '🤩', '🥳',
   '😭', '😱', '😡', '👍', '👎', '❤️', '💔', '💯', '🔥', '🎉'
@@ -167,10 +188,12 @@ const newComment = ref({
     tin_tuc_id: null,
     nguoi_dung_id: user.nguoi_dung_id || null,
     noidung: '',
+    danh_gia: null, // Thêm biến này để lưu số sao
 });
 
 const isSubmitDisabled = computed(() => {
-    return isSubmitting.value || !newComment.value.noidung.trim();
+    // Chỉ vô hiệu hóa nút gửi nếu cả nội dung và đánh giá đều rỗng
+    return isSubmitting.value || (!newComment.value.noidung.trim() && !newComment.value.danh_gia);
 });
 
 watch(() => route.params.slug, (newSlug) => {
@@ -189,7 +212,7 @@ async function getNewsIdFromSlug(slug) {
         return null;
     }
 }
-// Hàm để lấy bình luận từ API
+
 async function fetchComments() {
     const newsId = await getNewsIdFromSlug(route.params.slug);
     if (!newsId) {
@@ -200,7 +223,6 @@ async function fetchComments() {
 
     loading.value = true;
     try {
-      // Logic sắp xếp mới: thêm query parameter vào URL
       let url = `http://localhost:8000/api/binh-luan/tin-tuc/${newsId}`;
       if (currentSort.value === 'popular') {
         url += '?sort_by=luot_thich';
@@ -219,44 +241,40 @@ async function fetchComments() {
     }
 }
 
-// Hàm mới để thay đổi sắp xếp và fetch lại dữ liệu
 function changeSort(sortBy) {
   currentSort.value = sortBy;
   fetchComments();
 }
 
-// Logic placeholder mới, dựa vào CSS
+// Logic cho đánh giá sao
+function setRating(star) {
+  if (newComment.value.danh_gia === star) {
+    newComment.value.danh_gia = null;
+  } else {
+    newComment.value.danh_gia = star;
+  }
+}
+
 function onInput(event) {
     newComment.value.noidung = event.target.innerHTML;
 }
 
-function onFocus(event) {
-    // Không cần xử lý
-}
-
-function onBlur(event) {
-    // Không cần xử lý
-}
-
+function onFocus(event) {}
+function onBlur(event) {}
 function onPaste(event) {
     event.preventDefault();
     const text = event.clipboardData.getData('text/plain');
     document.execCommand('insertText', false, text);
 }
-
 function toggleEmojiPicker() {
     showEmojiPicker.value = !showEmojiPicker.value;
 }
-
 function insertEmoji(emoji) {
     const inputElement = document.querySelector('.comment-input');
     inputElement.focus();
-    
     let currentContent = inputElement.innerHTML;
     currentContent += emoji;
-    
     inputElement.innerHTML = currentContent;
-    
     const selection = window.getSelection();
     const range = document.createRange();
     const childNodes = inputElement.childNodes;
@@ -266,47 +284,39 @@ function insertEmoji(emoji) {
         selection.removeAllRanges();
         selection.addRange(range);
     }
-    
     newComment.value.noidung = currentContent;
     showEmojiPicker.value = false;
 }
-
 async function handleImageFile(event) {
     const file = event.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = async (e) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        const maxWidth = 400; // Chiều rộng tối đa cho ảnh
+        const maxWidth = 400;
         const scaleFactor = maxWidth / img.width;
         const newWidth = img.width > maxWidth ? maxWidth : img.width;
         const newHeight = img.width > maxWidth ? img.height * scaleFactor : img.height;
-
         canvas.width = newWidth;
         canvas.height = newHeight;
         ctx.drawImage(img, 0, 0, newWidth, newHeight);
-
         const resizedDataUrl = canvas.toDataURL(file.type);
         const inputElement = document.querySelector('.comment-input');
         const imgNode = document.createElement('img');
         imgNode.src = resizedDataUrl;
         imgNode.alt = 'Ảnh bình luận';
-
         inputElement.appendChild(imgNode);
         const brNode = document.createElement('br');
         inputElement.appendChild(brNode);
-        
         const selection = window.getSelection();
         const range = document.createRange();
         range.setStartAfter(brNode);
         range.collapse(true);
         selection.removeAllRanges();
         selection.addRange(range);
-        
         inputElement.focus();
         newComment.value.noidung = inputElement.innerHTML;
       };
@@ -314,13 +324,11 @@ async function handleImageFile(event) {
     };
     reader.readAsDataURL(file);
 }
-
 async function uploadImageToServer(base64Data) {
     const blob = await fetch(base64Data).then(res => res.blob());
     const formData = new FormData();
     formData.append('file', blob, 'image.png');
     const token = localStorage.getItem('token'); 
-
     const response = await axios.post('http://localhost:8000/api/tinymce/upload-image', formData, {
         headers: {
             'Content-Type': 'multipart/form-data',
@@ -329,12 +337,10 @@ async function uploadImageToServer(base64Data) {
     });
     return response.data.location;
 }
-
 function addLink() {
     showLinkInput.value = true;
     linkUrl.value = '';
 }
-
 function insertLinkFromInput() {
     const url = linkUrl.value.trim();
     if (url) {
@@ -350,7 +356,6 @@ function insertLinkFromInput() {
     showLinkInput.value = false;
     linkUrl.value = '';
 }
-
 function cancelLink() {
     showLinkInput.value = false;
     linkUrl.value = '';
@@ -360,12 +365,10 @@ async function submitComment() {
     if (isSubmitDisabled.value) {
       return;
     }
-
     isSubmitting.value = true;
     try {
       const inputElement = document.querySelector('.comment-input');
       const images = inputElement.querySelectorAll('img');
-
       if (images.length > 0) {
           for (const img of images) {
               const imageUrl = await uploadImageToServer(img.src);
@@ -377,13 +380,14 @@ async function submitComment() {
           tin_tuc_id: newComment.value.tin_tuc_id,
           nguoi_dung_id: newComment.value.nguoi_dung_id,
           noidung: inputElement.innerHTML,
+          danh_gia: newComment.value.danh_gia, // Gửi giá trị đánh giá lên
       });
       
       fetchComments();
-      
       newComment.value.noidung = '';
+      newComment.value.danh_gia = null; // Reset giá trị đánh giá
       inputElement.innerHTML = '';
-      inputElement.blur(); // Tắt focus để placeholder hiển thị lại
+      inputElement.blur();
     } catch (error) {
       console.error("Lỗi khi gửi bình luận:", error);
       alert("Không thể gửi bình luận. Vui lòng thử lại.");
@@ -391,7 +395,6 @@ async function submitComment() {
       isSubmitting.value = false;
     }
 }
-
 async function toggleLike(comment) {
     if (comment.liked) {
       return;
@@ -405,7 +408,6 @@ async function toggleLike(comment) {
       alert("Đã xảy ra lỗi khi thích bình luận. Vui lòng thử lại.");
     }
 }
-
 async function toggleDislike(comment) {
     if (comment.disliked) {
       return;
@@ -419,7 +421,6 @@ async function toggleDislike(comment) {
       alert("Đã xảy ra lỗi khi không thích bình luận. Vui lòng thử lại.");
     }
 }
-
 function timeAgo(dateString) {
     if (!dateString) return '';
     const now = new Date();
@@ -533,13 +534,12 @@ function timeAgo(dateString) {
     transition: border-color 0.2s, box-shadow 0.2s;
     cursor: text;
     word-wrap: break-word;
-    position: relative; /* Đã thêm */
+    position: relative;
 }
 .comment-input:focus {
     border-color: #4a90e2;
     box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
 }
-/* Placeholder logic đã được thay đổi trong CSS */
 .comment-input:empty:not(:focus)::before {
     content: attr(placeholder);
     color: #a0aec0;
@@ -576,6 +576,33 @@ function timeAgo(dateString) {
 }
 .hidden-input {
     display: none;
+}
+
+/* Star Rating */
+.star-rating-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+.star-label {
+    font-size: 0.9rem;
+    color: #718096;
+}
+.star-icon {
+    font-size: 1.5rem;
+    color: #e0e0e0;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.star-icon.filled {
+    color: #f7b003;
+}
+.star-rating-container .star-icon:hover {
+    color: #f7b003;
+}
+.star-rating-container .star-icon:hover ~ .star-icon:not(.filled) {
+    color: #e0e0e0;
 }
 
 /* Emoji Picker */

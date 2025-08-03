@@ -18,6 +18,7 @@ class BinhLuan extends Model
         'san_pham_id',
         'tin_tuc_id',
         'noidung',
+        'danh_gia',
         'trang_thai',
         'ho_ten_khach',
         'ngay_binh_luan',
