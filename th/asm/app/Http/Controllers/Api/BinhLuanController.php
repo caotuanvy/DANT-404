@@ -85,25 +85,14 @@ class BinhLuanController extends Controller
  */
 public function getCommentsForNews($tinTucId, Request $request)
 {
-    // Lấy tham số sắp xếp từ request, mặc định là 'ngay_binh_luan'
-    $sortBy = $request->query('sort_by', 'ngay_binh_luan');
-    $orderBy = 'desc'; // Mặc định sắp xếp giảm dần
-
-    // Khởi tạo query
-    $query = BinhLuan::with('nguoiDung:nguoi_dung_id,ho_ten')
+    // Lấy 3 bình luận 5 sao mới nhất
+    $comments = BinhLuan::with('nguoiDung:nguoi_dung_id,ho_ten')
         ->where('tin_tuc_id', $tinTucId)
-        ->where('trang_thai', 1);
-
-    // Xử lý logic sắp xếp
-    if ($sortBy === 'luot_thich') {
-        $query->orderByDesc('luot_thich');
-    } else {
-        // Mặc định là sắp xếp theo ngày_binh_luan (mới nhất)
-        $query->orderByDesc('ngay_binh_luan');
-    }
-
-    // THAY ĐỔI TẠI ĐÂY: Thêm 'danh_gia' vào danh sách các cột được chọn
-    $comments = $query->select(['binh_luan_id', 'tin_tuc_id', 'nguoi_dung_id', 'noidung', 'ngay_binh_luan', 'luot_thich', 'luot_khong_thich', 'danh_gia'])
+        ->where('trang_thai', 1)
+        ->where('danh_gia', 5) // Chỉ lấy bình luận 5 sao
+        ->orderByDesc('ngay_binh_luan')
+        ->limit(3) // Giới hạn 3 bình luận
+        ->select(['binh_luan_id', 'tin_tuc_id', 'nguoi_dung_id', 'noidung', 'ngay_binh_luan', 'luot_thich', 'luot_khong_thich', 'danh_gia'])
         ->get();
 
     return response()->json($comments);
@@ -210,4 +199,85 @@ public function toggleDislike($id)
         'luot_khong_thich' => $binhLuan->luot_khong_thich
     ]);
 }
+
+public function getCommentStatistics($tinTucId)
+    {
+        // Giữ nguyên hàm này, không cần thay đổi
+        $statistics = BinhLuan::select('danh_gia', DB::raw('count(*) as total'))
+            ->where('tin_tuc_id', $tinTucId)
+            ->where('trang_thai', 1)
+            ->whereNotNull('danh_gia')
+            ->groupBy('danh_gia')
+            ->orderBy('danh_gia', 'desc')
+            ->get();
+
+        $formattedStats = [
+            '5' => 0, '4' => 0, '3' => 0, '2' => 0, '1' => 0
+        ];
+        foreach ($statistics as $stat) {
+            $formattedStats[$stat->danh_gia] = $stat->total;
+        }
+
+        $totalReviews = array_sum($formattedStats);
+
+        // Tính toán điểm đánh giá trung bình
+        $weightedSum = 0;
+        foreach ($statistics as $stat) {
+            $weightedSum += $stat->danh_gia * $stat->total;
+        }
+        $averageRating = $totalReviews > 0 ? round($weightedSum / $totalReviews, 1) : 0;
+
+        return response()->json([
+            'total' => $totalReviews,
+            'average' => $averageRating,
+            'stats' => $formattedStats
+        ]);
+    }
+
+public function getCommentsByRating(Request $request, $tinTucId)
+    {
+        $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'page' => 'nullable|integer',
+            'sort_by' => 'nullable|string|in:ngay_binh_luan,luot_thich,luot_khong_thich',
+            'sort_order' => 'nullable|string|in:asc,desc',
+        ]);
+
+        $rating = $request->input('rating');
+        $sortBy = $request->input('sort_by', 'ngay_binh_luan'); // Mặc định: 'ngay_binh_luan'
+        $sortOrder = $request->input('sort_order', 'desc'); // Mặc định: 'desc'
+
+        $comments = BinhLuan::with('nguoiDung:nguoi_dung_id,ho_ten')
+            ->where('tin_tuc_id', $tinTucId)
+            ->where('trang_thai', 1)
+            ->where('danh_gia', $rating)
+            ->orderBy($sortBy, $sortOrder) // Áp dụng sắp xếp động
+            ->paginate(5);
+
+        // API trả về dữ liệu phân trang. Frontend sẽ cần xử lý `current_page`, `last_page`, `data`
+        return response()->json($comments);
+    }
+
+    // Bạn có thể cần một hàm để lấy tất cả bình luận (không cần lọc theo sao)
+    // để dùng cho các nút "Mới nhất", "Phổ biến", "Cũ nhất" trên giao diện chính
+    public function getCommentsByNewsId(Request $request, $tinTucId)
+    {
+        $request->validate([
+            'sort_by' => 'nullable|string|in:ngay_binh_luan,luot_thich,luot_khong_thich',
+            'sort_order' => 'nullable|string|in:asc,desc',
+        ]);
+
+        $sortBy = $request->input('sort_by', 'ngay_binh_luan');
+        $sortOrder = $request->input('sort_order', 'desc');
+
+        $comments = BinhLuan::with('nguoiDung:nguoi_dung_id,ho_ten')
+            ->where('tin_tuc_id', $tinTucId)
+            ->where('trang_thai', 1)
+            ->orderBy($sortBy, $sortOrder)
+            ->paginate(10); // Phân trang cho trang chính
+
+        return response()->json($comments);
+    }
+
+
 }

@@ -89,6 +89,8 @@ Route::prefix('admin/binhluan')->group(function () {
 });
 
 Route::prefix('binh-luan')->group(function () {
+    Route::get('danh-gia/{tinTucId}', [BinhLuanController::class, 'getCommentsByRating']);
+    Route::get('thong-ke/{tinTucId}', [BinhLuanController::class, 'getCommentStatistics']);
     Route::post('{id}/dislike', [BinhLuanController::class, 'toggleDislike']);
     Route::post('{id}/like', [BinhLuanController::class, 'toggleLike']);
     Route::get('tin-tuc/{tinTucId}', [BinhLuanController::class, 'getCommentsForNews']);
