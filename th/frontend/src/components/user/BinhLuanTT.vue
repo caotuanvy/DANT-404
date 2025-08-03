@@ -16,15 +16,30 @@
         <i class="fa-solid fa-user-circle"></i>
       </div>
       <div class="comment-form-content">
-        <Editor
-          v-model="newComment.noidung"
-          :api-key="tinymceApiKey"
-          :init="editorConfig"
-        />
+        <div 
+          class="comment-input" 
+          contenteditable="true" 
+          @input="onInput"
+          @paste="onPaste"
+          :placeholder="placeholderText"
+        ></div>
 
-        <div class="form-actions expanded">
-          <div class="action-icons">
-            </div>
+        <div class="custom-toolbar">
+          <label for="file-upload" class="toolbar-icon" title="Chèn ảnh">
+            <i class="fa-regular fa-image"></i>
+          </label>
+          <input type="file" id="file-upload" class="hidden-input" @change="handleImageFile" accept="image/*">
+          
+          <button class="toolbar-icon" @click="addLink" title="Chèn liên kết">
+            <i class="fa-solid fa-link"></i>
+          </button>
+          
+          <button class="toolbar-icon" @click="toggleEmojiPicker" title="Chèn Emoji">
+            <i class="fa-regular fa-face-smile"></i>
+          </button>
+        </div>
+
+        <div class="form-actions">
           <button
             type="submit"
             class="submit-button"
@@ -87,104 +102,13 @@
 import { ref, watch, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
-import Editor from '@tinymce/tinymce-vue';
-
-// Khai báo editorConfig ở đây
-const tinymceApiKey = '41eu6h6iewknwxlxtm1mh0dge0z3tg5ubvt2clbc0dq85wgo'; // Thay thế bằng API key của bạn
-const editorConfig = {
-  height: 300,
-  menubar: false,
-  branding: false,
-  plugins: [
-    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview', 'anchor',
-    'searchreplace', 'visualblocks', 'code', 'fullscreen',
-    'insertdatetime', 'media', 'table', 'help', 'wordcount',
-    'emoticons', 'codesample', 'directionality', 'quickbars', 'charmap',
-    'imagetools'
-  ],
-  toolbar:
-    'code | newdocument | cut copy | undo redo | searchreplace | ' +
-    'bold italic underline strikethrough | superscript subscript | removeformat | ' +
-    'alignleft aligncenter alignright alignjustify | ' +
-    'bullist numlist outdent indent | ' +
-    'blockquote | link unlink anchor | ' + 
-    'image media table | emoticons codesample | fullscreen preview | help', 
-  images_upload_url: 'http://localhost:8000/api/tinymce/upload-image', // Thay đổi URL API cho phù hợp
-  images_upload_handler: (blobInfo, progress) => new Promise((resolve, reject) => {
-    const formData = new FormData();
-    formData.append('file', blobInfo.blob(), blobInfo.filename());
-
-    const token = localStorage.getItem('token'); 
-
-    axios.post('http://localhost:8000/api/tinymce/upload-image', formData, { 
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        'Authorization': token ? `Bearer ${token}` : '',
-      },
-      onUploadProgress: (event) => {
-        progress(event.loaded / event.total * 100);
-      }
-    })
-    .then(response => {
-      resolve(response.data.location); 
-    })
-    .catch(error => {
-      console.error('TinyMCE Image Upload Error:', error);
-      reject('Upload ảnh thất bại: ' + (error.response?.data?.message || error.message));
-    });
-  }),
-  content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-  style_formats: [
-    { title: 'Headings', items: [
-      { title: 'Heading 1', format: 'h1' },
-      { title: 'Heading 2', format: 'h2' },
-      { title: 'Heading 3', format: 'h3' },
-      { title: 'Heading 4', format: 'h4' },
-      { title: 'Heading 5', format: 'h5' },
-      { title: 'Heading 6', format: 'h6' }
-    ]},
-    { title: 'Inline', items: [
-      { title: 'Bold', icon: 'bold', format: 'bold' },
-      { title: 'Italic', icon: 'italic', format: 'italic' },
-      { title: 'Underline', icon: 'underline', format: 'underline' },
-      { title: 'Strikethrough', icon: 'strikethrough', format: 'strikethrough' },
-      { title: 'Superscript', icon: 'superscript', format: 'superscript' },
-      { title: 'Subscript', icon: 'subscript', format: 'subscript' },
-      { title: 'Code', icon: 'code', format: 'code' }
-    ]},
-    { title: 'Blocks', items: [
-      { title: 'Paragraph', format: 'p' },
-      { title: 'Blockquote', format: 'blockquote' },
-      { title: 'Div', format: 'div' },
-      { title: 'Pre', format: 'pre' }
-    ]},
-    { title: 'Alignment', items: [
-      { title: 'Left', icon: 'alignleft', format: 'alignleft' },
-      { title: 'Center', icon: 'aligncenter', format: 'aligncenter' },
-      { title: 'Right', icon: 'alignright', format: 'alignright' },
-      { title: 'Justify', icon: 'alignjustify', format: 'alignjustify' }
-    ]}
-  ],
-  language: 'vi',
-  skin: 'oxide', 
-  content_css: 'default', 
-  image_description: false, 
-  image_title: true, 
-  browser_spellcheck: true,
-  contextmenu: 'link image table',
-  quickbars_selection_toolbar: 'bold italic | quicklink h2 h3 blockquote',
-  quickbars_image_toolbar: 'alignleft aligncenter alignright | imageoptions',
-  quickbars_insert_toolbar: 'quicktable quickimage quicklink',
-  setup: (editor) => {
-    editor.on('init', () => {});
-  }
-};
 
 const route = useRoute();
 const user = JSON.parse(localStorage.getItem('user')) || {};
 const comments = ref([]);
 const loading = ref(false);
 const isSubmitting = ref(false);
+const placeholderText = ref('Viết bình luận...');
 
 const newComment = ref({
     tin_tuc_id: null,
@@ -193,8 +117,6 @@ const newComment = ref({
 });
 
 const isSubmitDisabled = computed(() => {
-    // Với TinyMCE, chúng ta chỉ cần kiểm tra nội dung text
-    // Bạn có thể tùy chỉnh hàm này nếu muốn kiểm tra nội dung rỗng phức tạp hơn
     return isSubmitting.value || !newComment.value.noidung.trim();
 });
 
@@ -238,6 +160,96 @@ async function fetchComments() {
     }
 }
 
+function onInput(event) {
+    newComment.value.noidung = event.target.innerHTML;
+    // Xử lý placeholder
+    if (event.target.textContent.trim() === '' && !event.target.querySelector('img')) {
+      event.target.setAttribute('data-placeholder-visible', 'true');
+    } else {
+      event.target.removeAttribute('data-placeholder-visible');
+    }
+}
+
+function onPaste(event) {
+  event.preventDefault();
+  const text = event.clipboardData.getData('text/plain');
+  document.execCommand('insertText', false, text);
+}
+
+// Hàm mới để xử lý tệp ảnh và resize
+async function handleImageFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const maxWidth = 400; // Chiều rộng tối đa cho ảnh
+      const scaleFactor = maxWidth / img.width;
+      const newWidth = img.width > maxWidth ? maxWidth : img.width;
+      const newHeight = img.width > maxWidth ? img.height * scaleFactor : img.height;
+
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+      ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+      // Chèn ảnh đã resize (dạng Base64) vào ô nhập liệu
+      const resizedDataUrl = canvas.toDataURL(file.type);
+      const inputElement = document.querySelector('.comment-input');
+      const imgNode = document.createElement('img');
+      imgNode.src = resizedDataUrl;
+      imgNode.alt = 'Ảnh bình luận';
+      inputElement.appendChild(imgNode);
+      inputElement.focus();
+      
+      // Cập nhật nội dung bình luận
+      newComment.value.noidung = inputElement.innerHTML;
+      inputElement.removeAttribute('data-placeholder-visible');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// Hàm tải ảnh lên server khi submit bình luận
+async function uploadImageToServer(base64Data) {
+    // Chuyển Base64 thành Blob
+    const blob = await fetch(base64Data).then(res => res.blob());
+    const formData = new FormData();
+    formData.append('file', blob, 'image.png'); // Tên file có thể tùy chỉnh
+    const token = localStorage.getItem('token'); 
+
+    const response = await axios.post('http://localhost:8000/api/tinymce/upload-image', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': token ? `Bearer ${token}` : '',
+        },
+    });
+    return response.data.location;
+}
+
+function addLink() {
+  const url = prompt("Nhập URL liên kết:");
+  if (url) {
+    const inputElement = document.querySelector('.comment-input');
+    const linkNode = document.createElement('a');
+    linkNode.href = url;
+    linkNode.textContent = url;
+    linkNode.target = '_blank'; // Mở trong tab mới
+    inputElement.appendChild(linkNode);
+    inputElement.focus();
+    newComment.value.noidung = inputElement.innerHTML;
+  }
+}
+
+function toggleEmojiPicker() {
+  alert('Chức năng chèn Emoji sẽ được tích hợp tại đây!');
+}
+
+
 async function submitComment() {
     if (isSubmitDisabled.value) {
         return;
@@ -245,15 +257,28 @@ async function submitComment() {
 
     isSubmitting.value = true;
     try {
-        // Gửi nội dung HTML từ TinyMCE lên backend
+        const inputElement = document.querySelector('.comment-input');
+        const images = inputElement.querySelectorAll('img');
+
+        // Tải từng ảnh lên server
+        if (images.length > 0) {
+            for (const img of images) {
+                const imageUrl = await uploadImageToServer(img.src);
+                img.src = imageUrl;
+            }
+        }
+        
         await axios.post(`http://localhost:8000/api/binh-luan/tin-tuc`, {
             tin_tuc_id: newComment.value.tin_tuc_id,
             nguoi_dung_id: newComment.value.nguoi_dung_id,
-            noidung: newComment.value.noidung,
+            noidung: inputElement.innerHTML,
         });
         
         fetchComments();
-        newComment.value.noidung = ''; // Reset nội dung editor
+        // Reset nội dung
+        newComment.value.noidung = '';
+        inputElement.innerHTML = '';
+        inputElement.setAttribute('data-placeholder-visible', 'true');
     } catch (error) {
         console.error("Lỗi khi gửi bình luận:", error);
         alert("Không thể gửi bình luận. Vui lòng thử lại.");
@@ -262,7 +287,6 @@ async function submitComment() {
     }
 }
 
-// Hàm để toggle like
 async function toggleLike(comment) {
     if (comment.liked) {
         return;
@@ -277,7 +301,6 @@ async function toggleLike(comment) {
     }
 }
 
-// Hàm để toggle dislike
 async function toggleDislike(comment) {
     if (comment.disliked) {
         return;
@@ -292,7 +315,6 @@ async function toggleDislike(comment) {
     }
 }
 
-// Hàm định dạng thời gian tùy chỉnh
 function timeAgo(dateString) {
     if (!dateString) return '';
     const now = new Date();
@@ -392,6 +414,70 @@ function timeAgo(dateString) {
     flex-grow: 1;
     position: relative;
 }
+
+/* CUSTOM COMMENT INPUT */
+.comment-input {
+  min-height: 80px;
+  padding: 10px 14px;
+  font-size: 1rem;
+  line-height: 1.5;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  outline: none;
+  background-color: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  cursor: text;
+  word-wrap: break-word;
+}
+.comment-input:focus {
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+.comment-input:empty::before {
+  content: attr(placeholder);
+  color: #a0aec0;
+  pointer-events: none;
+  display: block;
+}
+.comment-input:empty:focus::before {
+  content: '';
+}
+.comment-input[data-placeholder-visible="true"]::before {
+  content: attr(placeholder);
+  color: #a0aec0;
+  pointer-events: none;
+  display: block;
+}
+
+/* CUSTOM TOOLBAR */
+.custom-toolbar {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+.toolbar-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #f7fafc;
+  color: #4a5568;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s, color 0.2s;
+}
+.toolbar-icon:hover {
+  background-color: #e2e8f0;
+}
+.toolbar-icon i {
+  font-size: 1.2rem;
+}
+.hidden-input {
+  display: none;
+}
+
 .form-actions {
     display: flex;
     justify-content: flex-end;
@@ -467,13 +553,20 @@ function timeAgo(dateString) {
     color: #4a5568;
     line-height: 1.6;
     margin-left: 64px;
+    word-wrap: break-word;
 }
-/* CHỈNH SỬA CSS để hiển thị ảnh từ TinyMCE */
-.comment-content :deep(img) {
+/* CSS chỉnh kích thước ảnh trong comment và input */
+.comment-content :deep(img), .comment-input img {
     max-width: 100%;
     height: auto;
     border-radius: 8px;
     margin-top: 8px;
+    display: block;
+}
+.comment-content :deep(a) {
+    color: #4a90e2;
+    text-decoration: underline;
+    word-break: break-all;
 }
 .comment-content :deep(p):last-child {
     margin-bottom: 0;
