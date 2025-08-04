@@ -88,6 +88,16 @@ Route::prefix('admin/binhluan')->group(function () {
     Route::put('/{id}/set-bao-cao', [BinhLuanController::class, 'setBaoCao']);
 });
 
+Route::prefix('binh-luan')->group(function () {
+    Route::get('danh-gia/{tinTucId}', [BinhLuanController::class, 'getCommentsByRating']);
+    Route::get('thong-ke/{tinTucId}', [BinhLuanController::class, 'getCommentStatistics']);
+    Route::post('{id}/dislike', [BinhLuanController::class, 'toggleDislike']);
+    Route::post('{id}/like', [BinhLuanController::class, 'toggleLike']);
+    Route::get('tin-tuc/{tinTucId}', [BinhLuanController::class, 'getCommentsForNews']);
+    Route::post('tin-tuc', [BinhLuanController::class, 'addCommentForNews']);
+     Route::post('{id}/bao-cao', [BinhLuanController::class, 'setBaoCao']);
+});
+
 // Dia chi
 Route::apiResource('addresses', DiaChiController::class);
 Route::get('/dia_chi/nguoi_dung/{nguoi_dung_id}', [DiaChiController::class, 'index'])->name('dia_chi.by_user');

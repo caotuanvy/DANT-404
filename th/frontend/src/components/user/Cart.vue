@@ -198,75 +198,71 @@
 </template>
 
 <script>
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref, watch, computed } from "vue"; // Thêm computed
 import axios from "axios";
 import Swal from "sweetalert2";
+import { useRouter } from 'vue-router'; // Import useRouter
 
 export default {
   name: "CartPage",
-  data() {
-    return {
-      products: [], 
-      deliveryMethod: "standard", // Phương thức giao hàng mặc định
-      paymentMethod: "cod", // Phương thức thanh toán mặc định
-      discountCode: "", // Mã giảm giá
-      showAddressForm: false, // Trạng thái hiển thị form địa chỉ
-      displayedAddress: { // Địa chỉ đang hiển thị (hoặc được điền vào form)
-        ho_ten: "",
-        sdt: "",
-        dia_chi: "",
-      },
-      provinces: [], // Danh sách tỉnh/thành phố
-      districts: [], // Danh sách quận/huyện
-      wards: [], // Danh sách phường/xã
-      selectedProvinceCode: '', // Mã tỉnh/thành phố được chọn
-      selectedDistrictCode: '', // Mã quận/huyện được chọn
-      selectedWardCode: '', // Mã phường/xã được chọn
-      streetAddress: '', // Số nhà, tên đường
-      currentAddressId: null, // ID của địa chỉ đang được sử dụng/hiển thị
-      isLoadingAddressData: false, // Trạng thái tải dữ liệu địa chỉ
-      errorMessage: '', // Thông báo lỗi cho form địa chỉ
-    };
-  },
+  setup() { // Sử dụng setup composition API
+    const router = useRouter(); // Khởi tạo router
 
-  computed: {
-    totalItems() {
-      // Tính tổng số lượng sản phẩm trong giỏ hàng
-      return this.products.reduce((acc, product) => acc + product.quantity, 0);
-    },
-    subtotal() {
-      // Tính tổng tiền hàng (chưa bao gồm phí vận chuyển, giảm giá)
-      return this.products.reduce(
+    // Data properties
+    const products = ref([]); 
+    const deliveryMethod = ref("standard");
+    const paymentMethod = ref("cod");
+    const discountCode = ref("");
+    const showAddressForm = ref(false);
+    const displayedAddress = ref({
+      ho_ten: "",
+      sdt: "",
+      dia_chi: "",
+    });
+    const provinces = ref([]);
+    const districts = ref([]);
+    const wards = ref([]);
+    const selectedProvinceCode = ref('');
+    const selectedDistrictCode = ref('');
+    const selectedWardCode = ref('');
+    const streetAddress = ref('');
+    const currentAddressId = ref(null);
+    const isLoadingAddressData = ref(false);
+    const errorMessage = ref('');
+
+    // Computed properties
+    const totalItems = computed(() => {
+      return products.value.reduce((acc, product) => acc + product.quantity, 0);
+    });
+    const subtotal = computed(() => {
+      return products.value.reduce(
         (acc, product) => acc + product.price * product.quantity,
         0
       );
-    },
-    deliveryFee() {
-      // Tính phí vận chuyển dựa trên phương thức được chọn
-      if (this.deliveryMethod === "standard") {
+    });
+    const deliveryFee = computed(() => {
+      if (deliveryMethod.value === "standard") {
         return 15000;
-      } else if (this.deliveryMethod === "express") {
+      } else if (deliveryMethod.value === "express") {
         return 25000;
       } else {
         return 0;
       }
-    },
-    totalAmount() {
-      // Tính tổng số tiền phải trả (tiền hàng + phí vận chuyển)
-      return this.subtotal + this.deliveryFee;
-    },
-  },
-  methods: {
-    formatPrice(price) {
-      // Định dạng giá tiền theo chuẩn Việt Nam Đồng
+    });
+    const totalAmount = computed(() => {
+      return subtotal.value + deliveryFee.value;
+    });
+
+    // Methods
+    const formatPrice = (price) => {
       return new Intl.NumberFormat("vi-VN", {
         style: "currency",
         currency: "VND",
       }).format(price);
-    },
-    async increaseQuantity(productId) {
-      // Tăng số lượng sản phẩm trong giỏ hàng
-      const product = this.products.find((p) => p.id === productId);
+    };
+
+    const increaseQuantity = async (productId) => {
+      const product = products.value.find((p) => p.id === productId);
       if (product) {
         try {
           const user = JSON.parse(localStorage.getItem("user"));
@@ -276,21 +272,16 @@ export default {
             return;
           }
 
-          // Gửi yêu cầu cập nhật số lượng lên API
-          // Endpoint /api/cart/add để xử lý cả thêm và cập nhật
           const response = await axios.post(`http://localhost:8000/api/cart/add`, {
-            san_pham_bien_the_id: product.id, // ID của sản phẩm biến thể
-            quantity: 1 // Tăng thêm 1 đơn vị
+            san_pham_bien_the_id: product.id,
+            quantity: 1
           });
 
-          // Cập nhật số lượng sản phẩm trong frontend nếu API thành công
-          // Backend trả về cart_item đã cập nhật, sử dụng nó để đảm bảo dữ liệu khớp
           if(response.data.cart_item) {
             product.quantity = response.data.cart_item.so_luong;
             product.total_item_price = response.data.cart_item.thanh_tien;
           } else {
-            // Trường hợp sản phẩm bị xóa (ví dụ: khi giảm quantity về 0)
-            this.products = this.products.filter(p => p.id !== productId);
+            products.value = products.value.filter(p => p.id !== productId);
           }
 
           Swal.fire({
@@ -308,14 +299,14 @@ export default {
           Swal.fire("Lỗi", errorMsg, "error");
         }
       }
-    },
-    async decreaseQuantity(productId) {
-      // Giảm số lượng sản phẩm trong giỏ hàng
-      const product = this.products.find((p) => p.id === productId);
+    };
+
+    const decreaseQuantity = async (productId) => {
+      const product = products.value.find((p) => p.id === productId);
       if (product) {
-        if (product.quantity <= 1) { // Nếu số lượng là 1 hoặc ít hơn, hỏi xóa
-          this.removeProduct(productId);
-          return; // Dừng hàm để removeProduct xử lý
+        if (product.quantity <= 1) {
+          removeProduct(productId);
+          return;
         }
 
         try {
@@ -326,19 +317,16 @@ export default {
             return;
           }
 
-          // Gửi yêu cầu cập nhật số lượng lên API (giảm 1 đơn vị)
           const response = await axios.post(`http://localhost:8000/api/cart/add`, {
             san_pham_bien_the_id: product.id,
-            quantity: -1 // Giảm đi 1 đơn vị
+            quantity: -1
           });
 
-          // Cập nhật số lượng sản phẩm trong frontend nếu API thành công
           if(response.data.cart_item) {
             product.quantity = response.data.cart_item.so_luong;
             product.total_item_price = response.data.cart_item.thanh_tien;
           } else {
-            // Trường hợp sản phẩm bị xóa (khi giảm quantity về 0 từ backend)
-            this.products = this.products.filter(p => p.id !== productId);
+            products.value = products.value.filter(p => p.id !== productId);
           }
 
           Swal.fire({
@@ -356,24 +344,21 @@ export default {
           Swal.fire("Lỗi", errorMsg, "error");
         }
       }
-    },
-    changeAddress() {
-      // Hiển thị form thay đổi/thêm địa chỉ
-      this.showAddressForm = true;
-      this.errorMessage = '';
-      this.fillAddressFormFromDisplayed(); // Điền dữ liệu từ displayedAddress vào form
-    },
-    cancelAddressChange() {
-      // Hủy bỏ thay đổi địa chỉ và ẩn form
-      this.showAddressForm = false;
-      this.errorMessage = '';
-      // Đặt lại các trường form về trạng thái ban đầu của displayedAddress
-      this.fillAddressFormFromDisplayed();
-    },
-    parseAddress(fullAddress) {
-      // Hàm phân tích địa chỉ đầy đủ thành các phần (số nhà/đường, phường/xã, quận/huyện, tỉnh/thành phố)
-      // Đây là một hàm phức tạp và có thể không chính xác 100% với mọi định dạng địa chỉ.
-      // Cần đảm bảo địa chỉ trả về từ backend có định dạng nhất quán.
+    };
+
+    const changeAddress = () => {
+      showAddressForm.value = true;
+      errorMessage.value = '';
+      fillAddressFormFromDisplayed();
+    };
+
+    const cancelAddressChange = () => {
+      showAddressForm.value = false;
+      errorMessage.value = '';
+      fillAddressFormFromDisplayed();
+    };
+
+    const parseAddress = (fullAddress) => {
       if (!fullAddress) {
         return { street: '', ward: '', district: '', province: '' };
       }
@@ -391,50 +376,46 @@ export default {
 
       let remainingParts = [...parts];
 
-      // Tìm tỉnh/thành phố từ cuối chuỗi
       for (let i = remainingParts.length - 1; i >= 0; i--) {
         const part = remainingParts[i];
         const foundProvincePrefix = provincePrefixes.find(prefix => part.startsWith(prefix));
-        if (foundProvincePrefix || this.provinces.some(p => p.name_with_type === part || p.name === part)) {
+        if (foundProvincePrefix || provinces.value.some(p => p.name_with_type === part || p.name === part)) {
           province = part;
           remainingParts.splice(i, 1);
           break;
         }
       }
 
-      // Tìm quận/huyện từ các phần còn lại
       for (let i = remainingParts.length - 1; i >= 0; i--) {
         const part = remainingParts[i];
         const foundDistrictPrefix = districtPrefixes.find(prefix => part.startsWith(prefix));
-        if (foundDistrictPrefix || this.districts.some(d => d.name_with_type === part || d.name === part)) {
+        if (foundDistrictPrefix || districts.value.some(d => d.name_with_type === part || d.name === part)) {
           district = part;
           remainingParts.splice(i, 1);
           break;
         }
       }
 
-      // Tìm phường/xã từ các phần còn lại
       for (let i = remainingParts.length - 1; i >= 0; i--) {
         const part = remainingParts[i];
         const foundWardPrefix = wardPrefixes.find(prefix => part.startsWith(prefix));
-        if (foundWardPrefix || this.wards.some(w => w.name_with_type === part || w.name === part)) {
+        if (foundWardPrefix || wards.value.some(w => w.name_with_type === part || w.name === part)) {
           ward = part;
           remainingParts.splice(i, 1);
           break;
         }
       }
 
-      // Phần còn lại là số nhà và tên đường
       street = remainingParts.join(', ');
 
       return { street, ward, district, province };
-    },
-    async fetchProvinces() {
-      // Tải danh sách tỉnh/thành phố từ API công cộng
+    };
+
+    const fetchProvinces = async () => {
       try {
         const cachedProvinces = localStorage.getItem('provinces');
         if (cachedProvinces) {
-          this.provinces = JSON.parse(cachedProvinces);
+          provinces.value = JSON.parse(cachedProvinces);
           return;
         }
 
@@ -447,18 +428,18 @@ export default {
         }
 
         const apiData = await response.json();
-        this.provinces = apiData.data.data;
-        localStorage.setItem('provinces', JSON.stringify(this.provinces));
+        provinces.value = apiData.data.data;
+        localStorage.setItem('provinces', JSON.stringify(provinces.value));
       } catch (error) {
         console.error('Lỗi khi tải danh sách Tỉnh/Thành phố:', error.message);
-        this.provinces = [];
+        provinces.value = [];
       }
-    },
-    async fetchDistricts(provinceCode) {
-      // Tải danh sách quận/huyện dựa trên mã tỉnh/thành phố được chọn
+    };
+
+    const fetchDistricts = async (provinceCode) => {
       if (!provinceCode) {
-        this.districts = [];
-        this.wards = [];
+        districts.value = [];
+        wards.value = [];
         return;
       }
 
@@ -466,7 +447,7 @@ export default {
         const cacheKey = `districts_${provinceCode}`;
         const cachedDistricts = localStorage.getItem(cacheKey);
         if (cachedDistricts) {
-          this.districts = JSON.parse(cachedDistricts);
+          districts.value = JSON.parse(cachedDistricts);
           return;
         }
 
@@ -479,16 +460,16 @@ export default {
         }
 
         const apiData = await response.json();
-        this.districts = apiData.data.data;
-        localStorage.setItem(cacheKey, JSON.stringify(this.districts));
+        districts.value = apiData.data.data;
+        localStorage.setItem(cacheKey, JSON.stringify(districts.value));
       } catch (error) {
         console.error('Lỗi khi tải danh sách Quận/Huyện:', error.message);
-        this.districts = [];
-        this.wards = [];
+        districts.value = [];
+        wards.value = [];
       }
-    },
-    async fetchWards(districtCode) {
-      // Tải danh sách phường/xã dựa trên mã quận/huyện được chọn
+    };
+
+    const fetchWards = async (districtCode) => {
       if (!districtCode) {
         this.wards = [];
         return;
@@ -498,7 +479,7 @@ export default {
         const cacheKey = `wards_${districtCode}`;
         const cachedWards = localStorage.getItem(cacheKey);
         if (cachedWards) {
-          this.wards = JSON.parse(cachedWards);
+          wards.value = JSON.parse(cachedWards);
           return;
         }
 
@@ -511,40 +492,40 @@ export default {
         }
 
         const apiData = await response.json();
-        this.wards = apiData.data.data;
-        localStorage.setItem(cacheKey, JSON.stringify(this.wards));
+        wards.value = apiData.data.data;
+        localStorage.setItem(cacheKey, JSON.stringify(wards.value));
       } catch (error) {
         console.error('Lỗi khi tải danh sách Phường/Xã:', error.message);
-        this.wards = [];
+        wards.value = [];
       }
-    },
-    async fillAddressFormFromDisplayed() {
-      // Điền thông tin địa chỉ đã hiển thị vào form chỉnh sửa
-      if (this.displayedAddress.dia_chi) {
-        const { street, ward, district, province } = this.parseAddress(this.displayedAddress.dia_chi);
-        this.streetAddress = street;
+    };
 
-        const foundProvince = this.provinces.find(p =>
+    const fillAddressFormFromDisplayed = async () => {
+      if (displayedAddress.value.dia_chi) {
+        const { street, ward, district, province } = parseAddress(displayedAddress.value.dia_chi);
+        streetAddress.value = street;
+
+        const foundProvince = provinces.value.find(p =>
           p.name_with_type.toLowerCase().includes(province.toLowerCase()) ||
           p.name.toLowerCase().includes(province.toLowerCase())
         );
 
         if (foundProvince) {
-          this.selectedProvinceCode = foundProvince.code;
-          await this.fetchDistricts(this.selectedProvinceCode);
-          const foundDistrict = this.districts.find(d =>
+          selectedProvinceCode.value = foundProvince.code;
+          await fetchDistricts(selectedProvinceCode.value);
+          const foundDistrict = districts.value.find(d =>
             d.name_with_type.toLowerCase().includes(district.toLowerCase()) ||
             d.name.toLowerCase().includes(district.toLowerCase())
           );
           if (foundDistrict) {
-            this.selectedDistrictCode = foundDistrict.code;
-            await this.fetchWards(this.selectedDistrictCode);
-            const foundWard = this.wards.find(w =>
+            selectedDistrictCode.value = foundDistrict.code;
+            await fetchWards(selectedDistrictCode.value);
+            const foundWard = wards.value.find(w =>
               w.name_with_type.toLowerCase().includes(ward.toLowerCase()) ||
               w.name.toLowerCase().includes(ward.toLowerCase())
             );
             if (foundWard) {
-              this.selectedWardCode = foundWard.code;
+              selectedWardCode.value = foundWard.code;
             } else {
               console.warn('Không tìm thấy phường/xã khớp khi điền form:', ward);
             }
@@ -555,52 +536,48 @@ export default {
           console.warn('Không tìm thấy tỉnh/thành phố khớp khi điền form:', province);
         }
       } else {
-        // Reset form nếu không có địa chỉ hiển thị
-        this.selectedProvinceCode = '';
-        this.selectedDistrictCode = '';
-        this.selectedWardCode = '';
-        this.streetAddress = '';
+        selectedProvinceCode.value = '';
+        selectedDistrictCode.value = '';
+        selectedWardCode.value = '';
+        streetAddress.value = '';
       }
-    },
-    async handleUpdateAddress() {
-      // Xử lý việc lưu/cập nhật địa chỉ người dùng
-      this.errorMessage = '';
+    };
 
-      // Kiểm tra các trường bắt buộc
-      if (!this.displayedAddress.ho_ten.trim()) {
-        this.errorMessage = 'Vui lòng nhập họ tên người nhận.';
+    const handleUpdateAddress = async () => {
+      errorMessage.value = '';
+
+      if (!displayedAddress.value.ho_ten.trim()) {
+        errorMessage.value = 'Vui lòng nhập họ tên người nhận.';
         return;
       }
-      if (!this.displayedAddress.sdt.trim()) {
-        this.errorMessage = 'Vui lòng nhập số điện thoại người nhận.';
-        return;
-      }
-
-      if (!this.selectedProvinceCode || !this.selectedDistrictCode || !this.selectedWardCode || !this.streetAddress.trim()) {
-        this.errorMessage = 'Vui lòng điền đầy đủ thông tin địa chỉ (Tỉnh/Thành phố, Quận/Huyện, Phường/Xã, Số Nhà/Tên Đường).';
+      if (!displayedAddress.value.sdt.trim()) {
+        errorMessage.value = 'Vui lòng nhập số điện thoại người nhận.';
         return;
       }
 
-      // Kiểm tra tính hợp lệ của địa chỉ đã chọn
-      const foundDistrictInSelectedProvince = this.districts.some(d => d.code === this.selectedDistrictCode);
+      if (!selectedProvinceCode.value || !selectedDistrictCode.value || !selectedWardCode.value || !streetAddress.value.trim()) {
+        errorMessage.value = 'Vui lòng điền đầy đủ thông tin địa chỉ (Tỉnh/Thành phố, Quận/Huyện, Phường/Xã, Số Nhà/Tên Đường).';
+        return;
+      }
+
+      const foundDistrictInSelectedProvince = districts.value.some(d => d.code === selectedDistrictCode.value);
       if (!foundDistrictInSelectedProvince) {
-        this.errorMessage = 'Huyện/Quận đã chọn không hợp lệ cho Tỉnh/Thành phố hiện tại. Vui lòng chọn lại.';
+        errorMessage.value = 'Huyện/Quận đã chọn không hợp lệ cho Tỉnh/Thành phố hiện tại. Vui lòng chọn lại.';
         return;
       }
 
-      const foundWardInSelectedDistrict = this.wards.some(w => w.code === this.selectedWardCode);
+      const foundWardInSelectedDistrict = wards.value.some(w => w.code === selectedWardCode.value);
       if (!foundWardInSelectedDistrict) {
-        this.errorMessage = 'Phường/Xã đã chọn không hợp lệ cho Quận/Huyện hiện tại. Vui lòng chọn lại.';
+        errorMessage.value = 'Phường/Xã đã chọn không hợp lệ cho Quận/Huyện hiện tại. Vui lòng chọn lại.';
         return;
       }
 
-      // Tạo chuỗi địa chỉ đầy đủ từ các trường đã chọn
-      const provinceName = this.provinces.find(p => p.code === this.selectedProvinceCode)?.name_with_type || '';
-      const districtName = this.districts.find(d => d.code === this.selectedDistrictCode)?.name_with_type || '';
-      const wardName = this.wards.find(w => w.code === this.selectedWardCode)?.name_with_type || '';
+      const provinceName = provinces.value.find(p => p.code === selectedProvinceCode.value)?.name_with_type || '';
+      const districtName = districts.value.find(d => d.code === selectedDistrictCode.value)?.name_with_type || '';
+      const wardName = wards.value.find(w => w.code === selectedWardCode.value)?.name_with_type || '';
 
       const fullAddress = [
-        this.streetAddress.trim(),
+        streetAddress.value.trim(),
         wardName,
         districtName,
         provinceName,
@@ -615,18 +592,17 @@ export default {
       }
 
       try {
-        this.isLoadingAddressData = true;
+        isLoadingAddressData.value = true;
         let addressPayload = {
           nguoi_dung_id: userId,
           dia_chi: fullAddress,
-          ho_ten: this.displayedAddress.ho_ten.trim(),
-          sdt: this.displayedAddress.sdt.trim(),
+          ho_ten: displayedAddress.value.ho_ten.trim(),
+          sdt: displayedAddress.value.sdt.trim(),
         };
 
         let response;
-        if (this.currentAddressId) {
-          // Nếu đã có địa chỉ ID, thực hiện PUT (cập nhật)
-          response = await axios.put(`http://localhost:8000/api/dia_chi/${this.currentAddressId}`, addressPayload);
+        if (currentAddressId.value) {
+          response = await axios.put(`http://localhost:8000/api/dia_chi/${currentAddressId.value}`, addressPayload);
           Swal.fire({
             toast: true,
             position: 'top-end',
@@ -637,9 +613,8 @@ export default {
             timerProgressBar: true
           });
         } else {
-          // Nếu chưa có địa chỉ ID, thực hiện POST (thêm mới)
           response = await axios.post('http://localhost:8000/api/dia_chi', addressPayload);
-          this.currentAddressId = response.data.data?.id_dia_chi || response.data.data?.id; // Cập nhật ID địa chỉ mới
+          currentAddressId.value = response.data.data?.id_dia_chi || response.data.data?.id;
           Swal.fire({
             toast: true,
             position: 'top-end',
@@ -650,24 +625,22 @@ export default {
             timerProgressBar: true
           });
         }
-
-        // Cập nhật lại displayedAddress và ẩn form
-        this.displayedAddress = {
+        displayedAddress.value = {
           ho_ten: addressPayload.ho_ten,
           sdt: addressPayload.sdt,
           dia_chi: fullAddress,
         };
-        this.showAddressForm = false;
-        this.errorMessage = '';
+        showAddressForm.value = false;
+        errorMessage.value = '';
       } catch (error) {
         console.error("Lỗi khi cập nhật/thêm địa chỉ:", error.response?.data || error.message);
-        this.errorMessage = error.response?.data?.message || "Cập nhật địa chỉ thất bại. Vui lòng thử lại.";
+        errorMessage.value = error.response?.data?.message || "Cập nhật địa chỉ thất bại. Vui lòng thử lại.";
       } finally {
-        this.isLoadingAddressData = false;
+        isLoadingAddressData.value = false;
       }
-    },
-    async removeProduct(productId) {
-      // Xóa sản phẩm khỏi giỏ hàng
+    };
+
+    const removeProduct = async (productId) => {
       try {
         const result = await Swal.fire({
           title: 'Bạn có chắc chắn muốn xóa sản phẩm này?',
@@ -679,20 +652,15 @@ export default {
           confirmButtonText: 'Có, xóa nó đi!',
           cancelButtonText: 'Hủy bỏ'
         });
-
         if (result.isConfirmed) {
           const user = JSON.parse(localStorage.getItem("user"));
           const userId = user?.nguoi_dung_id || user?.id;
-
           if (!userId) {
             Swal.fire("Lỗi", "Không tìm thấy thông tin người dùng. Vui lòng đăng nhập.", "error");
             return;
           }
-
-          // `productId` ở đây là `bien_the_id` của sản phẩm
-          await axios.delete(`http://localhost:8000/api/cart/${userId}/${productId}`); // Gọi API xóa trên backend
-          this.products = this.products.filter(p => p.id !== productId); // Lọc bỏ sản phẩm đã xóa khỏi mảng products
-
+          await axios.delete(`http://localhost:8000/api/cart/${userId}/${productId}`);
+          products.value = products.value.filter(p => p.id !== productId);
           Swal.fire({
             toast: true,
             position: 'top-end',
@@ -707,10 +675,9 @@ export default {
         console.error("Lỗi khi xóa sản phẩm:", error.response?.data || error.message);
         Swal.fire("Lỗi", "Không thể xóa sản phẩm. Vui lòng thử lại.", "error");
       }
-    },
+    };
 
-    async placeOrder() {
-      // Xử lý đặt hàng
+    const placeOrder = async () => {
       const user = JSON.parse(localStorage.getItem("user"));
       const userId = user?.nguoi_dung_id || user?.id;
 
@@ -718,188 +685,142 @@ export default {
         Swal.fire("Lỗi", "Không tìm thấy người dùng.", "error");
         return;
       }
-
-      // Đảm bảo có địa chỉ trước khi đặt hàng
-      if (!this.displayedAddress.dia_chi || !this.displayedAddress.ho_ten || !this.displayedAddress.sdt) {
+      if (!displayedAddress.value.dia_chi || !displayedAddress.value.ho_ten || !displayedAddress.value.sdt) {
           Swal.fire("Lỗi", "Vui lòng nhập hoặc chọn địa chỉ giao hàng.", "error");
           return;
       }
 
-      const total = this.products.reduce(
-        (sum, item) => sum + item.quantity * item.price,
-        0
-      );
+      // Đảm bảo `total` được tính toán chính xác và là số
+      const total = products.value.reduce( (sum, item) => sum + item.quantity * item.price, 0 );
+      if (isNaN(total)) {
+          Swal.fire("Lỗi", "Tổng tiền không hợp lệ. Vui lòng kiểm tra lại sản phẩm trong giỏ hàng.", "error");
+          return;
+      }
+
+      // Đảm bảo `paymentMethod` và `deliveryMethod` có giá trị
+      const paymentMethodId = paymentMethod.value === 'cod' ? 1 : (paymentMethod.value === 'bank_transfer' ? 2 : null);
+      if (paymentMethodId === null) {
+          Swal.fire("Lỗi", "Vui lòng chọn phương thức thanh toán.", "error");
+          return;
+      }
+      if (!deliveryMethod.value) {
+          Swal.fire("Lỗi", "Vui lòng chọn phương thức giao hàng.", "error");
+          return;
+      }
+      if (isNaN(deliveryFee.value)) {
+          Swal.fire("Lỗi", "Phí vận chuyển không hợp lệ.", "error");
+          return;
+      }
+
+      // Đảm bảo mảng sản phẩm không rỗng và có cấu trúc đúng
+      if (products.value.length === 0) {
+          Swal.fire("Lỗi", "Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm để đặt hàng.", "error");
+          return;
+      }
+      const sanPhamPayload = products.value.map((item) => {
+        // Kiểm tra từng item xem có đủ thông tin không
+        if (!item.id || isNaN(item.quantity) || isNaN(item.price)) {
+            throw new Error(`Sản phẩm trong giỏ hàng thiếu thông tin (ID: ${item.id}, Qty: ${item.quantity}, Price: ${item.price}).`);
+        }
+        return {
+          bien_the_id: item.id,
+          so_luong: item.quantity,
+          don_gia: item.price,
+        };
+      });
 
       let orderData = {
         nguoi_dung_id: userId,
-        tong_tien: total, // Tổng tiền đơn hàng
-        phuong_thuc_thanh_toan_id: this.paymentMethod === 'cod' ? 1 : 2, // Map 'cod' to 1, 'bank_transfer' to 2 (giả định)
-        hinh_thuc_giao_hang: this.deliveryMethod, // Phương thức giao hàng
-        phi_van_chuyen: this.deliveryFee, // Phí vận chuyển
-        san_pham: this.products.map((item) => ({ // Danh sách sản phẩm trong đơn hàng
-          bien_the_id: item.id, // Sử dụng item.id (đã là bien_the_id từ backend)
-          so_luong: item.quantity,
-          don_gia: item.price,
-        })),
+        tong_tien: total,
+        phuong_thuc_thanh_toan_id: paymentMethodId,
+        hinh_thuc_giao_hang: deliveryMethod.value,
+        phi_van_chuyen: deliveryFee.value,
+        san_pham: sanPhamPayload,
       };
 
-      // Thêm thông tin địa chỉ vào payload đặt hàng
-      if (this.currentAddressId) {
-          orderData.dia_chi_id = this.currentAddressId; // Nếu đã có địa chỉ ID, gửi ID đó
-      } else {
-          // Nếu là địa chỉ mới, gửi chi tiết địa chỉ
-          orderData.dia_chi_moi = {
-              ho_ten: this.displayedAddress.ho_ten,
-              sdt: this.displayedAddress.sdt,
-              dia_chi: this.displayedAddress.dia_chi,
-          };
-      }
+      if (currentAddressId.value) { orderData.dia_chi_id = currentAddressId.value; }
+      else { orderData.dia_chi_moi = { ho_ten: displayedAddress.value.ho_ten, sdt: displayedAddress.value.sdt, dia_chi: displayedAddress.value.dia_chi, }; }
 
       try {
         const token = localStorage.getItem("token");
-        await axios.post("http://localhost:8000/api/orders", orderData, {
+        const response = await axios.post("http://localhost:8000/api/orders", orderData, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'success',
-            title: 'Đặt hàng thành công!',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true
-        });
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Đặt hàng thành công!', showConfirmButton: false, timer: 3000, timerProgressBar: true });
+        products.value = []; // Xóa giỏ hàng sau khi đặt hàng
 
-        this.products = []; // Xóa giỏ hàng sau khi đặt hàng thành công
+        const newOrderId = response.data.order_id; // Laravel backend của bạn đang trả về `order_id`
+        if (newOrderId) {
+          localStorage.setItem('last_placed_order_id', newOrderId); // Lưu vào localStorage
+          router.push({
+            name: 'paymentsuccess', // Đảm bảo tên route khớp
+            params: { orderId: newOrderId } // Truyền params để URL trông đẹp
+          });
+        } else {
+          router.push({ name: 'paymentsuccess' }); // Fallback
+        }
       } catch (error) {
         console.error("Lỗi khi đặt hàng:", error);
-        console.log(error.response?.data);
+        console.log("Chi tiết lỗi từ phản hồi:", error.response?.data);
         let errorMsg = "Không thể đặt hàng. Vui lòng thử lại sau.";
         if (error.response && error.response.data && error.response.data.message) {
             errorMsg = error.response.data.message;
+        } else if (error.response && error.response.data && error.response.data.errors) {
+            errorMsg = Object.values(error.response.data.errors).flat().join(' '); // Hiển thị lỗi validation
         }
         Swal.fire("Lỗi", errorMsg, "error");
       }
-    },
-  },
-  async mounted() {
-    const user = JSON.parse(localStorage.getItem("user"));
-    const userId = user?.nguoi_dung_id || user?.id; // Linh hoạt lấy ID người dùng
-    if (!userId) {
-      Swal.fire("Lỗi", "Không tìm thấy thông tin người dùng. Vui lòng đăng nhập.", "error");
-      return;
-    }
-
-    await this.fetchProvinces(); // Tải danh sách tỉnh/thành phố khi component được mount
-
-    this.isLoadingAddressData = true;
-
-    try {
-        // Lấy địa chỉ của người dùng
-        const resAddress = await axios.get(`http://localhost:8000/api/dia_chi/nguoi_dung/${userId}`);
-        const addresses = resAddress.data; // Giả định backend trả về trực tiếp mảng địa chỉ
-
-        let defaultAddress = null;
-
-        if (addresses && Array.isArray(addresses) && addresses.length > 0) {
-            // Lấy địa chỉ đầu tiên hoặc địa chỉ mặc định (nếu có trường 'mac_dinh')
-            // Trong trường hợp này, ta lấy địa chỉ đầu tiên trong mảng
-            defaultAddress = addresses[0];
-        }
-
-        if (defaultAddress) {
-            this.displayedAddress = {
-                ho_ten: defaultAddress.ho_ten || user.ho_ten || "",
-                sdt: defaultAddress.sdt || user.sdt || "",
-                dia_chi: defaultAddress.dia_chi || "",
-            };
-            this.currentAddressId = defaultAddress.id_dia_chi || defaultAddress.id; // Lưu ID địa chỉ hiện tại
-            await this.fillAddressFormFromDisplayed(); // Điền dữ liệu vào form
-            this.showAddressForm = false; // Ẩn form nếu đã có địa chỉ
-        } else {
-            console.log('Người dùng chưa có địa chỉ nào.');
-            this.currentAddressId = null;
-            this.showAddressForm = true; // Hiển thị form để người dùng nhập địa chỉ mới
-            // Reset các trường liên quan đến địa chỉ
-            this.selectedProvinceCode = '';
-            this.selectedDistrictCode = '';
-            this.selectedWardCode = '';
-            this.streetAddress = '';
-            // Gán thông tin họ tên, sdt từ user nếu có, để form có dữ liệu ban đầu
-            this.displayedAddress = { ho_ten: user.ho_ten || "", sdt: user.sdt || "", dia_chi: "" };
-        }
-    } catch (err) {
-        console.error("Lỗi khi lấy địa chỉ người dùng:", err.response?.data || err.message);
-        // Nếu có lỗi, vẫn hiển thị form để người dùng nhập địa chỉ
-        this.displayedAddress = { ho_ten: user.ho_ten || "", sdt: user.sdt || "", dia_chi: "" };
-        this.currentAddressId = null;
-        this.showAddressForm = true;
-        this.errorMessage = "Không thể tải địa chỉ giao hàng. Vui lòng nhập địa chỉ mới.";
-    } finally {
-        this.isLoadingAddressData = false;
-    }
-
-    // Lấy dữ liệu giỏ hàng từ API mới đã gộp
-    axios
-      .get(`http://localhost:8000/api/cart/${userId}`) // Đã đổi endpoint từ gio-hang/nguoi-dung sang cart/{userId}
-      .then((res) => {
-          // API mới trả về object có key 'items'
-          if (res.data && res.data.items) {
-              this.products = res.data.items;
-          } else {
-              this.products = []; // Đảm bảo products là mảng rỗng nếu không có items
+    };
+    
+    onMounted(async () => {
+      const user = JSON.parse(localStorage.getItem("user"));
+      const userId = user?.nguoi_dung_id || user?.id;
+      if (!userId) { Swal.fire("Lỗi", "Không tìm thấy thông tin người dùng. Vui lòng đăng nhập.", "error"); return; }
+      await fetchProvinces();
+      isLoadingAddressData.value = true;
+      try {
+          const resAddress = await axios.get(`http://localhost:8000/api/dia_chi/nguoi_dung/${userId}`);
+          const addresses = resAddress.data;
+          let defaultAddress = null;
+          if (addresses && Array.isArray(addresses) && addresses.length > 0) {
+              defaultAddress = addresses[0];
           }
-      })
-      .catch((err) => {
-        console.error("Lỗi khi tải giỏ hàng:", err);
-        Swal.fire("Lỗi", "Không thể tải giỏ hàng từ hệ thống.", "error");
-      });
-  },
-  watch: {
-    // Watchers để tải danh sách quận/huyện và phường/xã khi tỉnh/thành phố hoặc quận/huyện thay đổi
-    selectedProvinceCode: {
-      handler: async function (newCode, oldCode) {
-        if (newCode !== oldCode) {
-          this.isLoadingAddressData = true;
-          this.errorMessage = '';
-          this.selectedDistrictCode = '';
-          this.selectedWardCode = '';
-          await this.fetchDistricts(newCode);
-          this.isLoadingAddressData = false;
-        }
-      },
-      immediate: false,
-    },
-    selectedDistrictCode: {
-      handler: async function (newCode, oldCode) {
-        if (newCode !== oldCode) {
-          this.isLoadingAddressData = true;
-          this.errorMessage = '';
-          this.selectedWardCode = '';
-          await this.fetchWards(newCode);
-          this.isLoadingAddressData = false;
-        }
-      },
-      immediate: false,
-    },
-    // Watchers để xóa thông báo lỗi khi người dùng bắt đầu nhập lại
-    selectedWardCode() {
-        this.errorMessage = '';
-    },
-    streetAddress() {
-        this.errorMessage = '';
-    }
+          if (defaultAddress) {
+              displayedAddress.value = { ho_ten: defaultAddress.ho_ten || user.ho_ten || "", sdt: defaultAddress.sdt || user.sdt || "", dia_chi: defaultAddress.dia_chi || "", };
+              currentAddressId.value = defaultAddress.id_dia_chi || defaultAddress.id;
+              await fillAddressFormFromDisplayed();
+              showAddressForm.value = false;
+          } else {
+              console.log('Người dùng chưa có địa chỉ nào.');
+              currentAddressId.value = null; showAddressForm.value = true;
+              selectedProvinceCode.value = ''; selectedDistrictCode.value = ''; selectedWardCode.value = ''; streetAddress.value = '';
+              displayedAddress.value = { ho_ten: user.ho_ten || "", sdt: user.sdt || "", dia_chi: "" };
+          }
+      } catch (err) {
+          console.error("Lỗi khi lấy địa chỉ người dùng:", err.response?.data || err.message);
+          displayedAddress.value = { ho_ten: user.ho_ten || "", sdt: user.sdt || "", dia_chi: "" };
+          currentAddressId.value = null; showAddressForm.value = true;
+          errorMessage.value = "Không thể tải địa chỉ giao hàng. Vui lòng nhập địa chỉ mới.";
+      } finally { isLoadingAddressData.value = false; }
+      axios.get(`http://localhost:8000/api/cart/${userId}`).then((res) => {
+          if (res.data && res.data.items) { products.value = res.data.items; } else { products.value = []; }
+      }).catch((err) => { console.error("Lỗi khi tải giỏ hàng:", err); Swal.fire("Lỗi", "Không thể tải giỏ hàng từ hệ thống.", "error"); });
+    });
+
+    watch(selectedProvinceCode, { handler: async function (newCode, oldCode) { if (newCode !== oldCode) { this.isLoadingAddressData = true; this.errorMessage = ''; this.selectedDistrictCode = ''; this.selectedWardCode = ''; await fetchDistricts(newCode); this.isLoadingAddressData = false; } }, immediate: false, });
+    watch(selectedDistrictCode, { handler: async function (newCode, oldCode) { if (newCode !== oldCode) { this.isLoadingAddressData = true; this.errorMessage = ''; this.selectedWardCode = ''; await fetchWards(newCode); this.isLoadingAddressData = false; } }, immediate: false, });
+    watch(selectedWardCode, () => { this.errorMessage = ''; });
+    watch(streetAddress, () => { this.errorMessage = ''; });
+
+    return {
+      products, deliveryMethod, paymentMethod, discountCode, showAddressForm, displayedAddress, provinces, districts, wards, selectedProvinceCode, selectedDistrictCode, selectedWardCode, streetAddress, currentAddressId, isLoadingAddressData, errorMessage, totalItems, subtotal, deliveryFee, totalAmount, formatPrice, increaseQuantity, decreaseQuantity, changeAddress, cancelAddressChange, handleUpdateAddress, removeProduct, placeOrder,
+    };
   }
 };
 </script>
-Cart.vue:773 Object
-:8000/api/orders:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)
-Cart.vue:772 Lỗi khi đặt hàng: AxiosError
-placeOrder @ Cart.vue:772
-Cart.vue:773 Object
 <style scoped>
 /* General styles */
 .cart-page {

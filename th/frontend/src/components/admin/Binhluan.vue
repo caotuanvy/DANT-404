@@ -1,11 +1,9 @@
 <template>
   <section class="content">
-    <!-- Font Awesome CDN for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
     <h2>Danh sách bình luận</h2>
 
-    <!-- Filter Section -->
     <div class="filter-section">
       <div class="filter-group">
         <label for="filterLoai">Loại bình luận:</label>
@@ -27,7 +25,6 @@
       <button @click="applyFilters" class="btn-primary">Lọc</button>
     </div>
 
-    <!-- Loading and Empty State Messages -->
     <div v-if="loading" class="loading-message">Đang tải dữ liệu...</div>
     <table v-if="!loading && binhLuans.length > 0">
       <thead>
@@ -37,12 +34,9 @@
           <th>Người dùng</th>
           <th>Đối tượng</th>
           <th>Ngày bình luận</th>
-          <th class="toggle-cell">Hiển thị</th> <!-- Căn giữa tiêu đề cột Hiển thị -->
-          <th class="text-center">Báo cáo</th> <!-- Căn giữa tiêu đề cột Báo cáo -->
-          <th class="text-center">Lượt thích</th>
+          <th class="toggle-cell">Hiển thị</th> <th class="text-center">Báo cáo</th> <th class="text-center">Lượt thích</th>
           <th class="text-center">Lượt không thích</th>
-          <th class="text-center">Hành động</th> <!-- Căn giữa tiêu đề cột Hành động -->
-        </tr>
+          <th class="text-center">Hành động</th> </tr>
       </thead>
       <tbody>
         <tr v-for="(binhLuan, index) in binhLuans" :key="binhLuan.binh_luan_id">
@@ -62,20 +56,15 @@
             <span v-else>-</span>
           </td>
           <td>{{ binhLuan.ngay_binh_luan ? binhLuan.ngay_binh_luan.substring(0, 10) : '' }}</td>
-          <td class="toggle-cell"> <!-- Thêm class để căn giữa nút toggle -->
-            <span class="switch" @click="toggleTrangThai(binhLuan)">
+          <td class="toggle-cell"> <span class="switch" @click="toggleTrangThai(binhLuan)">
               <span :class="['slider', binhLuan.trang_thai == 1 ? 'on' : 'off']"></span>
             </span>
           </td>
-          <td class="report-status-cell"> <!-- Thêm class để căn giữa icon -->
-            <!-- Hiển thị icon dựa trên trạng thái báo cáo, thêm class màu sắc và kích thước -->
-            <i :class="getBaoCaoIcon(binhLuan.bao_cao)" :title="getBaoCaoStatus(binhLuan.bao_cao)"></i>
-            <!-- Đã bỏ nút "Đặt lại" ở đây -->
-          </td>
+          <td class="report-status-cell"> <i :class="getBaoCaoIcon(binhLuan.bao_cao)" :title="getBaoCaoStatus(binhLuan.bao_cao)"></i>
+            </td>
           <td class="text-center">{{ binhLuan.luot_thich }}</td>
           <td class="text-center">{{ binhLuan.luot_khong_thich }}</td>
           <td class="action-icons-cell">
-            <!-- Các icon hành động để thay đổi trạng thái báo cáo -->
             <i class="fas fa-check-circle action-icon action-icon-normal"
                title="Đặt là Bình thường"
                @click="showConfirmSetBaoCao(binhLuan, 0)"></i>
@@ -92,7 +81,6 @@
     <p v-if="!loading && binhLuans.length === 0">Chưa có bình luận nào.</p>
     <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
-    <!-- Pagination -->
     <div class="pagination" v-if="lastPage > 1">
       <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1" class="btn-pagination">Trước</button>
       <span v-for="page in lastPage" :key="page">
@@ -101,7 +89,6 @@
       <button @click="goToPage(currentPage + 1)" :disabled="currentPage === lastPage" class="btn-pagination">Sau</button>
     </div>
 
-    <!-- Custom Confirmation Modal -->
     <div v-if="showConfirmModal" class="modal-overlay">
       <div class="modal-content">
         <h3>Xác nhận</h3>
@@ -113,7 +100,6 @@
       </div>
     </div>
 
-    <!-- NEW: General Notification Modal -->
     <div v-if="showNotificationModal" class="modal-overlay">
       <div :class="['modal-content', notificationType === 'success' ? 'modal-success' : 'modal-error']">
         <h3>{{ notificationTitle }}</h3>
@@ -124,7 +110,6 @@
       </div>
     </div>
 
-    <!-- Full Content Display Modal -->
     <div v-if="showFullContentModal" class="modal-overlay">
       <div class="modal-content full-content-modal">
         <h3>Nội dung đầy đủ</h3>
@@ -372,16 +357,13 @@ const showConfirmSetBaoCao = async (binhLuan, newStatus) => {
 };
 
 /**
- * @description Sets the 'bao_cao' (report status) of a comment and updates 'trang_thai' accordingly.
+ * @description Sets the 'bao_cao' (report status) of a comment.
  * @param {object} binhLuan - The comment object to update.
  * @param {number} newStatus - The new report status to set (0, 1, or 2).
  */
 const setBaoCao = async (binhLuan, newStatus) => {
   const originalBaoCao = binhLuan.bao_cao; // Store original state for rollback
-  const originalTrangThai = binhLuan.trang_thai; // Store original state for rollback
-
   try {
-    // First, update the bao_cao status
     await axios.put(`http://localhost:8000/api/admin/binhluan/${binhLuan.binh_luan_id}/set-bao-cao`, {
       bao_cao: newStatus
     }, {
@@ -389,31 +371,12 @@ const setBaoCao = async (binhLuan, newStatus) => {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
     });
-    binhLuan.bao_cao = newStatus; // Update locally on successful API call
-
-    // Now, determine the target 'trang_thai' based on the new 'bao_cao' status
-    let targetTrangThai;
-    if (newStatus === 0) { // If setting to 'Bình thường'
-      targetTrangThai = 1; // 'Hiển thị' should be ON
-    } else { // If setting to 'Spam bình luận' or 'Dùng từ ngữ xúc phạm'
-      targetTrangThai = 0; // 'Hiển thị' should be OFF
-    }
-
-    // Check if the current 'trang_thai' is different from the target 'trang_thai'
-    if (binhLuan.trang_thai !== targetTrangThai) {
-      // Call the existing toggleTrangThai function.
-      await toggleTrangThai(binhLuan); // This will make another API call to flip 'trang_thai'
-    } else {
-      // If trang_thai didn't need to be toggled, show success for bao_cao update directly
-      showNotification('Thành công', `Đã cập nhật trạng thái báo cáo thành "${getBaoCaoStatus(newStatus)}".`, 'success'); // NEW: Use showNotification
-    }
-
+    binhLuan.bao_cao = newStatus;
+    showNotification('Thành công', `Đã cập nhật trạng thái báo cáo thành "${getBaoCaoStatus(newStatus)}".`, 'success');
   } catch (error) {
     console.error('Lỗi khi cập nhật báo cáo:', error);
-    showNotification('Lỗi', 'Cập nhật báo cáo thất bại: ' + (error.response?.data?.message || error.message), 'error'); // NEW: Use showNotification
-    // Revert local state if API call fails
+    showNotification('Lỗi', 'Cập nhật báo cáo thất bại: ' + (error.response?.data?.message || error.message), 'error');
     binhLuan.bao_cao = originalBaoCao;
-    binhLuan.trang_thai = originalTrangThai;
   }
 };
 
