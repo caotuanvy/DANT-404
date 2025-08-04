@@ -85,14 +85,13 @@ class BinhLuanController extends Controller
  */
 public function getCommentsForNews($tinTucId, Request $request)
 {
-    // Lấy 3 bình luận 5 sao mới nhất
     $comments = BinhLuan::with('nguoiDung:nguoi_dung_id,ho_ten')
         ->where('tin_tuc_id', $tinTucId)
         ->where('trang_thai', 1)
-        ->where('danh_gia', 5) // Chỉ lấy bình luận 5 sao
+
         ->orderByDesc('ngay_binh_luan')
-        ->limit(3) // Giới hạn 3 bình luận
-        ->select(['binh_luan_id', 'tin_tuc_id', 'nguoi_dung_id', 'noidung', 'ngay_binh_luan', 'luot_thich', 'luot_khong_thich', 'danh_gia'])
+        ->limit(3)
+        ->select(['binh_luan_id', 'tin_tuc_id', 'nguoi_dung_id', 'noidung', 'ngay_binh_luan', 'luot_thich', 'luot_khong_thich', 'danh_gia', 'bao_cao'])
         ->get();
 
     return response()->json($comments);

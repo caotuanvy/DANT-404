@@ -197,6 +197,12 @@
                 <i :class="['fa-regular', 'fa-thumbs-down', { 'fa-solid': comment.disliked, 'text-blue': comment.disliked }]"></i>
                 <span>{{ comment.luot_khong_thich || 0 }}</span>
               </button>
+              <button class="action-button" @click="reportComment(comment, 1)">
+                <i class="fa-solid fa-triangle-exclamation" style="color: #f39c12;"></i> Spam
+              </button>
+              <button class="action-button" @click="reportComment(comment, 2)">
+                <i class="fa-solid fa-user-slash" style="color: #e74c3c;"></i> Lăng mạ
+              </button>
               <button class="action-button"><i class="fa-solid fa-reply"></i> Trả lời</button>
             </div>
           </div>
@@ -252,17 +258,14 @@ const averageRating = ref(0);
 const showRatingModal = ref(false);
 const currentRating = ref(null);
 
-// Thêm biến cho modal thông báo tùy chỉnh
 const showAlertModal = ref(false);
 const alertMessage = ref('');
 
-// Hàm hiển thị modal thông báo
 function openAlertModal(message) {
   alertMessage.value = message;
   showAlertModal.value = true;
 }
 
-// Hàm đóng modal thông báo
 function closeAlertModal() {
   showAlertModal.value = false;
   alertMessage.value = '';
@@ -282,8 +285,8 @@ async function getNewsIdFromSlug(slug) {
         const response = await axios.get(`http://localhost:8000/api/tintuc-cong-khai/slug/${slug}`);
         return response.data.id;
     } catch (error) {
-        console.error("Lỗi khi lấy ID tin tức từ slug:", error);
-        return null;
+      console.error("Lỗi khi lấy ID tin tức từ slug:", error);
+      return null;
     }
 }
 
@@ -357,8 +360,8 @@ async function fetchCommentsByRatingAndSort(sortBy = 'newest') {
 async function fetchComments() {
     const newsId = await getNewsIdFromSlug(route.params.slug);
     if (!newsId) {
-        comments.value = [];
-        return;
+      comments.value = [];
+      return;
     }
     newComment.value.tin_tuc_id = newsId;
 
@@ -446,12 +449,16 @@ async function handleImageFile(event) {
         const imgNode = document.createElement('img');
         imgNode.src = resizedDataUrl;
         imgNode.alt = 'Ảnh bình luận';
+        
+        const lastNode = inputElement.lastChild;
+        if (lastNode && lastNode.nodeName === '#text' && lastNode.textContent.trim() === '') {
+            inputElement.removeChild(lastNode);
+        }
         inputElement.appendChild(imgNode);
-        const brNode = document.createElement('br');
-        inputElement.appendChild(brNode);
+        
         const selection = window.getSelection();
         const range = document.createRange();
-        range.setStartAfter(brNode);
+        range.setStartAfter(imgNode);
         range.collapse(true);
         selection.removeAllRanges();
         selection.addRange(range);
@@ -468,10 +475,10 @@ async function uploadImageToServer(base64Data) {
     formData.append('file', blob, 'image.png');
     const token = localStorage.getItem('token'); 
     const response = await axios.post('http://localhost:8000/api/tinymce/upload-image', formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-            'Authorization': token ? `Bearer ${token}` : '',
-        },
+      headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': token ? `Bearer ${token}` : '',
+      },
     });
     return response.data.location;
 }
@@ -541,6 +548,7 @@ async function submitComment() {
       isSubmitting.value = false;
     }
 }
+
 async function toggleLike(comment) {
     if (comment.liked) {
       return;
@@ -567,6 +575,38 @@ async function toggleDislike(comment) {
       openAlertModal("Đã xảy ra lỗi khi không thích bình luận. Vui lòng thử lại.");
     }
 }
+
+// Hàm đã sửa
+async function setBaoCao(commentId, baoCaoValue) {
+  try {
+    const token = localStorage.getItem('token');
+    await axios.post(`http://localhost:8000/api/binh-luan/${commentId}/bao-cao`, { 
+      bao_cao: baoCaoValue 
+    }, {
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : '',
+      },
+    });
+    openAlertModal(`Bạn đã tố cáo bình luận thành công!`);
+  } catch (error) {
+    console.error("Lỗi khi báo cáo bình luận:", error);
+    openAlertModal("Đã xảy ra lỗi khi báo cáo bình luận. Vui lòng thử lại.");
+  }
+}
+
+// Hàm đã sửa
+function reportComment(comment, type) {
+  if (user && user.nguoi_dung_id) {
+    if (type === 1) {
+      setBaoCao(comment.binh_luan_id, 1);
+    } else if (type === 2) {
+      setBaoCao(comment.binh_luan_id, 2);
+    }
+  } else {
+    openAlertModal("Bạn cần đăng nhập để báo cáo bình luận.");
+  }
+}
+
 function timeAgo(dateString) {
     if (!dateString) return '';
     const now = new Date();
@@ -594,345 +634,347 @@ const getRatingPercentage = (rating) => {
 
 <style scoped>
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background-color: #f0f2f5;
-  margin: 0;
-  padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f0f2f5;
+    margin: 0;
+    padding: 20px;
 }
 
 .comments-section-container {
-  max-width: 1600px;
-  margin: auto;
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+    max-width: 1600px;
+    margin: auto;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
 }
 
 .header-container {
-  background-color: #55a8e0;
-  color: white;
-  padding: 16px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+    background-color: #55a8e0;
+    color: white;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .header-left {
-  display: flex;
-  align-items: center;
-  font-size: 1.2rem;
-  font-weight: 600;
+    display: flex;
+    align-items: center;
+    font-size: 1.2rem;
+    font-weight: 600;
 }
 
 .header-left i {
-  margin-right: 12px;
+    margin-right: 12px;
 }
 
 .sort-buttons {
-  display: flex;
-  gap: 8px;
+    display: flex;
+    gap: 8px;
 }
 
 .sort-button {
-  background-color: transparent;
-  color: rgba(255, 255, 255, 0.7);
-  border: none;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
+    background-color: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
 .sort-button.active {
-  background-color: rgba(255, 255, 255, 0.3);
-  color: white;
-  font-weight: 600;
+    background-color: rgba(255, 255, 255, 0.3);
+    color: white;
+    font-weight: 600;
 }
 
 .main-content {
-  display: flex;
-  flex-direction: column; 
-  padding: 24px;
+    display: flex;
+    flex-direction: column; 
+    padding: 24px;
 }
 
 .ratings-sidebar {
-  width: 100%;
-  background-color: #f7f9fb;
-  border-radius: 8px;
-  padding: 24px;
-  margin-bottom: 24px; 
-  border: 1px solid #e0e6ed;
+    width: 100%;
+    background-color: #f7f9fb;
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 24px; 
+    border: 1px solid #e0e6ed;
 }
 
 .ratings-summary h4 {
-  margin: 0 0 16px 0;
-  font-size: 1.1rem;
-  color: #333;
+    margin: 0 0 16px 0;
+    font-size: 1.1rem;
+    color: #333;
 }
 
 .rating-display {
-  display: flex;
-  align-items: center;
-  margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
 }
 
 .overall-rating {
-  font-size: 3rem;
-  font-weight: 700;
-  color: #ffc107;
-  line-height: 1;
+    font-size: 3rem;
+    font-weight: 700;
+    color: #ffc107;
+    line-height: 1;
 }
 
 .star-rating {
-  margin: 0 8px;
-  display: flex;
-  gap: 2px;
+    margin: 0 8px;
+    display: flex;
+    gap: 2px;
 }
 
 .star-icon {
-  color: #e0e0e0;
-  font-size: 1.2rem;
+    color: #e0e0e0;
+    font-size: 1.2rem;
 }
 
 .star-icon.filled {
-  color: #ffc107;
+    color: #ffc107;
 }
 
 .review-count {
-  font-size: 0.9rem;
-  color: #777;
+    font-size: 0.9rem;
+    color: #777;
 }
 
 .rating-breakdown {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .rating-bar-row {
-  display: flex;
-  align-items: center;
-  font-size: 14px;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
 }
 
 .rating-label {
-  width: 50px;
-  flex-shrink: 0;
-  color: #555;
+    width: 50px;
+    flex-shrink: 0;
+    color: #555;
 }
 
 .rating-bar-container {
-  flex-grow: 1;
-  height: 8px;
-  background-color: #e0e0e0;
-  border-radius: 4px;
-  overflow: hidden;
+    flex-grow: 1;
+    height: 8px;
+    background-color: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
 }
 
 .rating-bar {
-  height: 100%;
-  background-color: #ffc107;
-  transition: width 0.5s ease;
+    height: 100%;
+    background-color: #ffc107;
+    transition: width 0.5s ease;
 }
 .rating-bar:not(.filled) {
     background-color: #e0e0e0;
 }
 
 .rating-number {
-  width: 30px;
-  text-align: right;
-  flex-shrink: 0;
+    width: 30px;
+    text-align: right;
+    flex-shrink: 0;
 }
 
 .view-more {
-  margin-left: 10px;
-  font-size: 14px;
-  color: #55a8e0;
-  text-decoration: none;
+    margin-left: 10px;
+    font-size: 14px;
+    color: #55a8e0;
+    text-decoration: none;
 }
 
 .comments-content {
-  width: 100%;
+    width: 100%;
 }
 
 .comment-form {
-  display: flex;
-  gap: 15px;
-  align-items: flex-start;
-  margin-bottom: 24px;
-  padding: 16px;
-  border: 1px solid #e0e6ed;
-  border-radius: 8px;
+    display: flex;
+    gap: 15px;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    padding: 16px;
+    border: 1px solid #e0e6ed;
+    border-radius: 8px;
 }
 
 .comment-input-area {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  position: relative;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
 }
 
 .comment-input {
-  width: 100%;
-  min-height: 80px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 10px;
-  font-size: 14px;
-  margin-bottom: 10px;
-  outline: none;
-  word-wrap: break-word;
-  cursor: text;
+    width: 100%;
+    min-height: 80px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    font-size: 14px;
+    margin-bottom: 10px;
+    outline: none;
+    word-wrap: break-word;
+    cursor: text;
 }
 .comment-input:empty::before {
-  content: attr(placeholder);
-  color: #a0aec0;
-  pointer-events: none;
+    content: attr(placeholder);
+    color: #a0aec0;
+    pointer-events: none;
 }
 
 .toolbar {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 12px;
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
 }
 
 .toolbar-icon {
-  font-size: 1.2rem;
-  color: #777;
-  cursor: pointer;
+    font-size: 1.2rem;
+    color: #777;
+    cursor: pointer;
 }
 
 .user-rating {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-size: 14px;
 }
 
 .user-rating .star-icon {
-  cursor: pointer;
-  color: #e0e0e0;
+    cursor: pointer;
+    color: #e0e0e0;
 }
 .user-rating .star-icon.filled {
-  color: #ffc107;
+    color: #ffc107;
 }
 
 .submit-button {
-  align-self: flex-end;
-  padding: 8px 20px;
-  border: none;
-  border-radius: 20px;
-  background-color: #e0e0e0;
-  color: #999;
-  font-weight: 600;
-  cursor: not-allowed;
-  transition: all 0.2s;
+    align-self: flex-end;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 20px;
+    background-color: #e0e0e0;
+    color: #999;
+    font-weight: 600;
+    cursor: not-allowed;
+    transition: all 0.2s;
 }
 
 .submit-button.active {
-  background-color: #55a8e0;
-  color: white;
-  cursor: pointer;
+    background-color: #55a8e0;
+    color: white;
+    cursor: pointer;
 }
 
 .comment-list {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
 .comment-item {
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  border: 1px solid #e0e6ed;
-  border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    border: 1px solid #e0e6ed;
+    border-radius: 8px;
 }
 
 .user-info {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: -12px;
 }
 
 .avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
 .user-meta {
-  display: flex;
-  flex-direction: column;
+    display: flex;
+    flex-direction: column;
 }
 
 .username {
-  font-weight: 600;
-  font-size: 15px;
+    font-weight: 600;
+    font-size: 15px;
 }
 
 .timestamp {
-  font-size: 12px;
-  color: #777;
+    font-size: 12px;
+    color: #777;
 }
 
 .user-rating-display {
-  margin-top: 4px;
-  display: flex;
-  gap: 2px;
+    margin-top: 4px;
+    display: flex;
+    gap: 2px;
 }
 
 .comment-body {
-  margin-left: 52px; 
+    margin-left: 52px; 
+    margin-top: 8px; 
+    font-size: 16px;
 }
 
-.comment-body p {
-  margin: 0 0 8px 0;
-  line-height: 1.5;
+.comment-body :deep(p) {
+    margin: 0;
+    line-height: 1.5;
 }
-
 .comment-body :deep(img) {
-  max-width: 100%;
-  border-radius: 4px;
-  margin-top: 8px;
+    max-width: 100%;
+    border-radius: 4px;
+    margin-top: 4px; 
+    display: block;
 }
 .comment-body :deep(a) {
-  color: #4a90e2;
-  text-decoration: underline;
-  word-break: break-all;
+    color: #4a90e2;
+    text-decoration: underline;
+    word-break: break-all;
 }
 
 .comment-actions {
-  display: flex;
-  gap: 16px;
-  margin-top: 12px;
-  margin-left: 52px; 
+    display: flex;
+    gap: 16px;
+    margin-top: 12px;
+    margin-left: 52px; 
 }
 
 .action-button {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background-color: transparent;
-  border: none;
-  color: #777;
-  font-size: 14px;
-  cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: transparent;
+    border: none;
+    color: #777;
+    font-size: 14px;
+    cursor: pointer;
 }
 
 .action-button:hover {
-  color: #55a8e0;
+    color: #55a8e0;
 }
 .text-red {
-  color: #ff4d4f;
+    color: #ff4d4f;
 }
 .text-blue {
-  color: #1890ff;
+    color: #1890ff;
 }
 
 .emoji-picker-container {
@@ -1018,7 +1060,6 @@ body {
     opacity: 0.8;
 }
 
-/* Style cho modal chọn sao và sắp xếp */
 .rating-modal-overlay {
     position: fixed;
     top: 0;
@@ -1120,65 +1161,64 @@ body {
   }
 }
 
-/* Các styles mới cho modal thông báo tùy chỉnh */
 .alert-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
 }
 
 .alert-modal {
-  background-color: #fff;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-  width: 90%;
-  max-width: 350px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  animation: fadeIn 0.3s ease-out;
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 350px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: fadeIn 0.3s ease-out;
 }
 
 .alert-icon {
-  font-size: 3rem;
-  color: #f39c12; /* Màu vàng cảnh báo */
-  margin-bottom: 15px;
+    font-size: 3rem;
+    color: #f39c12; 
+    margin-bottom: 15px;
 }
 
 .alert-message {
-  font-size: 1.1rem;
-  color: #333;
-  font-weight: 500;
-  margin: 0 0 20px 0;
+    font-size: 1.1rem;
+    color: #333;
+    font-weight: 500;
+    margin: 0 0 20px 0;
 }
 
 .alert-button {
-  background-color: #55a8e0;
-  color: white;
-  border: none;
-  border-radius: 25px;
-  padding: 10px 25px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+    background-color: #55a8e0;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    padding: 10px 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
 }
 
 .alert-button:hover {
-  background-color: #4a90e2;
+    background-color: #4a90e2;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
 }
 </style>
