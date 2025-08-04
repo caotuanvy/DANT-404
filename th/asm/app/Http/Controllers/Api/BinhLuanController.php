@@ -83,13 +83,16 @@ class BinhLuanController extends Controller
  * @param  int  $tinTucId
  * @return \Illuminate\Http\JsonResponse
  */
-public function getCommentsForNews($tinTucId)
+public function getCommentsForNews($tinTucId, Request $request)
 {
+    // Lấy 3 bình luận 5 sao mới nhất
     $comments = BinhLuan::with('nguoiDung:nguoi_dung_id,ho_ten')
         ->where('tin_tuc_id', $tinTucId)
         ->where('trang_thai', 1)
+        ->where('danh_gia', 5) // Chỉ lấy bình luận 5 sao
         ->orderByDesc('ngay_binh_luan')
-        ->select(['binh_luan_id', 'tin_tuc_id', 'nguoi_dung_id', 'noidung', 'ngay_binh_luan', 'luot_thich', 'luot_khong_thich']) // Thêm luot_thich
+        ->limit(3) // Giới hạn 3 bình luận
+        ->select(['binh_luan_id', 'tin_tuc_id', 'nguoi_dung_id', 'noidung', 'ngay_binh_luan', 'luot_thich', 'luot_khong_thich', 'danh_gia'])
         ->get();
 
     return response()->json($comments);
@@ -107,82 +110,65 @@ public function addCommentForNews(Request $request)
         $validatedData = $request->validate([
             'tin_tuc_id' => 'required|integer|exists:tintuc,id',
             'nguoi_dung_id' => 'required|integer|exists:nguoi_dung,nguoi_dung_id',
-            // Đã sửa tên trường từ 'image' sang 'file_anh' để khớp với frontend
             'noidung' => 'required_without:file_anh|string|nullable|max:1000',
             'file_anh' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'danh_gia' => 'nullable|integer|min:1|max:5', // Thêm validation cho danh_gia
         ]);
 
-        $noidung_text = $validatedData['noidung'] ?? ''; // Lấy nội dung văn bản
-        $html_content_for_image = ''; // Biến để chứa thẻ <img> nếu có ảnh
+        $noidung_text = $validatedData['noidung'] ?? '';
+        $html_content_for_image = '';
+        $danh_gia = $validatedData['danh_gia'] ?? null; // Lấy giá trị danh_gia
 
-        // Bước 2: Xử lý upload file ảnh (nếu có)
-        // Đã sửa tên trường từ 'image' sang 'file_anh' để khớp với frontend
         if ($request->hasFile('file_anh')) {
             $fileAnh = $request->file('file_anh');
-            // Tạo tên file duy nhất để tránh trùng lặp
             $fileName = time() . '_' . $fileAnh->getClientOriginalName();
-
-            // Lưu file vào storage/app/public/uploads/comment_images
             $path = $fileAnh->storeAs('uploads/comment_images', $fileName, 'public');
-
-            // Lấy đường dẫn công khai để lưu vào database
             $imageUrl = Storage::url($path);
-
-            // Tạo thẻ <img> với đường dẫn ảnh và style cơ bản
             $html_content_for_image = "<p><img src=\"{$imageUrl}\" alt=\"Ảnh bình luận\" style=\"max-width: 100%; height: auto;\"></p>";
         }
 
-        // Bước 3: Kết hợp nội dung văn bản và HTML của ảnh
-        // Nếu có nội dung văn bản, thêm xuống dòng và sau đó là ảnh.
-        // Nếu không có nội dung văn bản, chỉ là ảnh.
         $finalContent = $noidung_text;
         if (!empty($html_content_for_image)) {
             if (!empty($finalContent)) {
-                $finalContent .= "\n" . $html_content_for_image; // Thêm xuống dòng nếu có cả text
+                $finalContent .= "\n" . $html_content_for_image;
             } else {
-                $finalContent = $html_content_for_image; // Chỉ có ảnh
+                $finalContent = $html_content_for_image;
             }
         }
 
-        // Đảm bảo rằng sau khi kết hợp, nội dung không rỗng (chỉ chứa khoảng trắng hoặc không có gì)
-        // strip_tags để loại bỏ HTML và trim để loại bỏ khoảng trắng
-        if (empty(trim(strip_tags($finalContent)))) {
-            return response()->json(['message' => 'Nội dung bình luận không được để trống.'], 422);
+        if (empty(trim(strip_tags($finalContent))) && is_null($danh_gia)) {
+             return response()->json(['message' => 'Nội dung bình luận hoặc đánh giá không được để trống.'], 422);
         }
 
-        // Bước 4: Lưu bình luận vào database
         try {
-            DB::beginTransaction(); // Bắt đầu transaction để đảm bảo tính toàn vẹn dữ liệu
+            DB::beginTransaction();
             $binhLuan = BinhLuan::create([
                 'tin_tuc_id' => $validatedData['tin_tuc_id'],
                 'nguoi_dung_id' => $validatedData['nguoi_dung_id'],
-                'noidung' => $finalContent, // Lưu toàn bộ nội dung HTML vào đây
+                'noidung' => $finalContent,
+                'danh_gia' => $danh_gia, // Thêm giá trị đánh giá vào database
                 'ngay_binh_luan' => now(),
-                'trang_thai' => 1, // Mặc định là hiển thị
-                'bao_cao' => 0, // Mặc định là 0
+                'trang_thai' => 1,
+                'bao_cao' => 0,
             ]);
-            DB::commit(); // Hoàn tất transaction
+            DB::commit();
 
-            // Tải lại mối quan hệ nguoiDung để trả về thông tin người dùng
             $binhLuan->load('nguoiDung:nguoi_dung_id,ho_ten');
 
-            // Bước 5: Trả về kết quả cho frontend
             return response()->json([
                 'message' => 'Bình luận của bạn đã được gửi.',
                 'binh_luan' => $binhLuan
             ], 201);
 
         } catch (\Exception $e) {
-            DB::rollBack(); // Hoàn tác transaction nếu có lỗi
-            // Ghi lỗi chi tiết vào log file của Laravel để debug
+            DB::rollBack();
             \Log::error('Lỗi khi thêm bình luận: ' . $e->getMessage(), [
                 'request_data' => $request->all(),
                 'file_trace' => $e->getFile() . ' on line ' . $e->getLine()
             ]);
-            // Trả về lỗi 500 cho frontend
             return response()->json([
                 'message' => 'Có lỗi xảy ra ở máy chủ khi thêm bình luận. Vui lòng thử lại!',
-                'error' => $e->getMessage() // Chỉ trả về lỗi chi tiết trong môi trường dev
+                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -213,4 +199,85 @@ public function toggleDislike($id)
         'luot_khong_thich' => $binhLuan->luot_khong_thich
     ]);
 }
+
+public function getCommentStatistics($tinTucId)
+    {
+        // Giữ nguyên hàm này, không cần thay đổi
+        $statistics = BinhLuan::select('danh_gia', DB::raw('count(*) as total'))
+            ->where('tin_tuc_id', $tinTucId)
+            ->where('trang_thai', 1)
+            ->whereNotNull('danh_gia')
+            ->groupBy('danh_gia')
+            ->orderBy('danh_gia', 'desc')
+            ->get();
+
+        $formattedStats = [
+            '5' => 0, '4' => 0, '3' => 0, '2' => 0, '1' => 0
+        ];
+        foreach ($statistics as $stat) {
+            $formattedStats[$stat->danh_gia] = $stat->total;
+        }
+
+        $totalReviews = array_sum($formattedStats);
+
+        // Tính toán điểm đánh giá trung bình
+        $weightedSum = 0;
+        foreach ($statistics as $stat) {
+            $weightedSum += $stat->danh_gia * $stat->total;
+        }
+        $averageRating = $totalReviews > 0 ? round($weightedSum / $totalReviews, 1) : 0;
+
+        return response()->json([
+            'total' => $totalReviews,
+            'average' => $averageRating,
+            'stats' => $formattedStats
+        ]);
+    }
+
+public function getCommentsByRating(Request $request, $tinTucId)
+    {
+        $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'page' => 'nullable|integer',
+            'sort_by' => 'nullable|string|in:ngay_binh_luan,luot_thich,luot_khong_thich',
+            'sort_order' => 'nullable|string|in:asc,desc',
+        ]);
+
+        $rating = $request->input('rating');
+        $sortBy = $request->input('sort_by', 'ngay_binh_luan'); // Mặc định: 'ngay_binh_luan'
+        $sortOrder = $request->input('sort_order', 'desc'); // Mặc định: 'desc'
+
+        $comments = BinhLuan::with('nguoiDung:nguoi_dung_id,ho_ten')
+            ->where('tin_tuc_id', $tinTucId)
+            ->where('trang_thai', 1)
+            ->where('danh_gia', $rating)
+            ->orderBy($sortBy, $sortOrder) // Áp dụng sắp xếp động
+            ->paginate(5);
+
+        // API trả về dữ liệu phân trang. Frontend sẽ cần xử lý `current_page`, `last_page`, `data`
+        return response()->json($comments);
+    }
+
+    // Bạn có thể cần một hàm để lấy tất cả bình luận (không cần lọc theo sao)
+    // để dùng cho các nút "Mới nhất", "Phổ biến", "Cũ nhất" trên giao diện chính
+    public function getCommentsByNewsId(Request $request, $tinTucId)
+    {
+        $request->validate([
+            'sort_by' => 'nullable|string|in:ngay_binh_luan,luot_thich,luot_khong_thich',
+            'sort_order' => 'nullable|string|in:asc,desc',
+        ]);
+
+        $sortBy = $request->input('sort_by', 'ngay_binh_luan');
+        $sortOrder = $request->input('sort_order', 'desc');
+
+        $comments = BinhLuan::with('nguoiDung:nguoi_dung_id,ho_ten')
+            ->where('tin_tuc_id', $tinTucId)
+            ->where('trang_thai', 1)
+            ->orderBy($sortBy, $sortOrder)
+            ->paginate(10); // Phân trang cho trang chính
+
+        return response()->json($comments);
+    }
+
+
 }
