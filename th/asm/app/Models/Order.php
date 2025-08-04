@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class Order extends Model
 {
     protected $table = 'don_hang';
+    const CREATED_AT = 'ngay_dat';
+    const UPDATED_AT = 'ngay_sua';
     protected $primaryKey = 'id'; // Khóa chính là 'id'
     public $timestamps = false; // Tắt timestamps Laravel mặc định
 

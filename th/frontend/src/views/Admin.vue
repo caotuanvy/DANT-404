@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-layout">
+  <div class="admin-layout" :class="{ 'sidebar-is-open': isSidebarOpen }">
     <aside class="sidebar">
       <div class="sidebar-header">
         <img :src="logo1" alt="Logo" class="sidebar-logo" />
@@ -14,7 +14,7 @@
 
           <ul class="nav-items" v-if="openSection === section.label">
             <li v-for="item in section.items" :key="item.label">
-              <router-link :to="item.to" class="nav-link">
+              <router-link :to="item.to" class="nav-link" @click="closeSidebarOnNavigate">
                 <i :class="[item.icon, 'nav-icon']"></i>
                 <span>{{ item.label }}</span>
               </router-link>
@@ -23,11 +23,12 @@
         </div>
       </nav>
     </aside>
+<div v-if="isSidebarOpen" class="sidebar-backdrop" @click="toggleSidebar"></div>
 
     <div class="main-content">
       <header class="app-header">
        <div class="header-left">
-          <i class="bi bi-list menu-toggle-icon"></i>
+          <i class="bi bi-list menu-toggle-icon" @click="toggleSidebar"></i>
           <div class="search-container"> <input 
               type="search" 
               class="search-input" 
@@ -142,7 +143,15 @@ const toggleSection = (sectionLabel) => {
     openSection.value = sectionLabel;
   }
 };
+const isSidebarOpen = ref(false);
 
+const toggleSidebar = () => {
+  isSidebarOpen.value = !isSidebarOpen.value;
+};
+
+const closeSidebarOnNavigate = () => {
+  isSidebarOpen.value = false;
+};
 const loadLoggedInAdminInfo = () => {
   const storedUser = localStorage.getItem('user');
   if (storedUser) {

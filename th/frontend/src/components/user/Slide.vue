@@ -74,4 +74,30 @@ onMounted(fetchSlides)
 .slide-image:hover {
   transform: scale(1.01);
 }
+@media (max-width: 768px) {
+  .mySwiper {
+     height: auto !important;
+    aspect-ratio: 21 / 9 !important; 
+  }
+
+  .slide-image {
+    object-fit: cover;
+  }
+
+  :deep(.swiper-button-next),
+  :deep(.swiper-button-prev) {
+    --swiper-navigation-size: 28px;
+    color: #fff;
+    background-color: rgba(0, 0, 0, 0.3);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+  }
+
+  :deep(.swiper-pagination-bullet) {
+    width: 10px;
+    height: 10px;
+  }
+
+}
 </style>

@@ -34,85 +34,85 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-if="loading">
-              <td colspan="9" class="text-center py-8">Đang tải dữ liệu...</td>
-            </tr>
-            <tr v-else-if="filteredProducts.length === 0">
-              <td colspan="9" class="text-center py-8">Không tìm thấy sản phẩm nào.</td>
-            </tr>
-            <tr v-for="product in filteredProducts" :key="product.product_id" class="table-row" :class="{'is-inactive-row': !product.trang_thai}">
-              <td><input type="checkbox"></td>
-              <td>
-                <div class="product-name-cell">
-                    <router-link :to="`/san-pham/${product.slug}`" class="product-name product-name-link">
-                        {{ product.product_name }}
-                    </router-link>
-                    <span class="product-variant-count">{{ product.so_bien_the || 0 }} biến thể</span>
-                </div>
-              </td>
-              <td class="text-center">
-                <div class="image-list-cell">
-                  <img
-                    v-for="(image, i) in product.images"
-                    :key="i"
-                    :src="getImageUrl(image)"
-                    :alt="product.product_name"
-                    class="product-thumbnail"
-                  />
-                </div>
-              </td>
-              <td class="text-center">
-                   <button @click="toggleNoiBat(product)" class="toggle-switch" :class="{ 'is-active': product.noi_bat == 1 }">
-                    <span class="toggle-circle"></span>
-                  </button>
-              </td>
-              <td class="text-center font-medium">
-                <span v-if="product.min_price !== undefined && product.max_price !== undefined && parseFloat(product.min_price) !== parseFloat(product.max_price)">
-                  {{ formatPrice(product.min_price) }} - {{ formatPrice(product.max_price) }}
-                </span>
-                <span v-else-if="product.min_price !== undefined">
-                  {{ formatPrice(product.min_price) }}
-                </span>
-                <span v-else>N/A</span>
-              </td>
-              <td class="text-center">
-                <span v-if="product.danh_muc" class="badge">
-                  {{ product.danh_muc.ten_danh_muc }}
-                </span>
-                 <span v-else class="text-secondary text-sm">N/A</span>
-              </td>
-              <td class="text-center font-medium text-red-600">
-                {{ product.khuyen_mai ? `${parseInt(product.khuyen_mai)}%` : '—' }}
-              </td>
-               <td class="text-center">
-                <span class="status-badge" :class="product.trang_thai ? 'is-active' : 'is-inactive'">
-                  {{ product.trang_thai ? 'Hoạt động' : 'Vô hiệu hóa' }}
-                </span>
-              </td>
-              <td class="text-center">
-                <div class="action-buttons">
-                  <router-link :to="`/admin/products/${product.product_id}/variants`" class="action-icon" title="Quản lý biến thể">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
-                          <path fill-rule="evenodd" d="M3 5.25a.75.75 0 01.75-.75h12.5a.75.75 0 010 1.5H3.75a.75.75 0 01-.75-.75zm0 4a.75.75 0 01.75-.75h12.5a.75.75 0 010 1.5H3.75a.75.75 0 01-.75-.75zm0 4a.75.75 0 01.75-.75h12.5a.75.75 0 010 1.5H3.75a.75.75 0 01-.75-.75z" clip-rule="evenodd" />
-                      </svg>
-                  </router-link>
-                  <router-link :to="`/admin/products/${product.product_id}/edit`" class="action-icon" title="Sửa">
-                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
-                  </router-link>
-                  <button v-if="product.trang_thai" @click="toggleProductStatus(product)" class="action-icon text-danger" title="Vô hiệu hóa">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.367zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd" />
-                    </svg>
-                  </button>
-                  <button v-else @click="toggleProductStatus(product)" class="action-icon text-success" title="Kích hoạt lại">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" >
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                    </svg>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
+  <tr v-if="loading">
+    <td colspan="9" class="text-center py-8">Đang tải dữ liệu...</td>
+  </tr>
+  <tr v-else-if="filteredProducts.length === 0">
+    <td colspan="9" class="text-center py-8">Không tìm thấy sản phẩm nào.</td>
+  </tr>
+  <tr v-for="product in filteredProducts" :key="product.product_id" class="table-row" :class="{'is-inactive-row': !product.trang_thai}">
+    <td data-label="Chọn"><input type="checkbox"></td>
+    <td data-label="Tên sản phẩm" class="product-title-cell">
+      <div class="product-name-cell">
+          <router-link :to="`/san-pham/${product.slug}`" class="product-name product-name-link">
+              {{ product.product_name }}
+          </router-link>
+          <span class="product-variant-count">{{ product.so_bien_the || 0 }} biến thể</span>
+      </div>
+    </td>
+    <td data-label="Hình ảnh">
+      <div class="image-list-cell">
+        <img
+          v-for="(image, i) in product.images"
+          :key="i"
+          :src="getImageUrl(image)"
+          :alt="product.product_name"
+          class="product-thumbnail"
+        />
+      </div>
+    </td>
+    <td data-label="Ghim">
+        <button @click="toggleNoiBat(product)" class="toggle-switch" :class="{ 'is-active': product.noi_bat == 1 }">
+          <span class="toggle-circle"></span>
+        </button>
+    </td>
+    <td data-label="Giá" class="font-medium">
+      <span v-if="product.min_price !== undefined && product.max_price !== undefined && parseFloat(product.min_price) !== parseFloat(product.max_price)">
+        {{ formatPrice(product.min_price) }} - {{ formatPrice(product.max_price) }}
+      </span>
+      <span v-else-if="product.min_price !== undefined">
+        {{ formatPrice(product.min_price) }}
+      </span>
+      <span v-else>N/A</span>
+    </td>
+    <td data-label="Danh mục">
+      <span v-if="product.danh_muc" class="badge">
+        {{ product.danh_muc.ten_danh_muc }}
+      </span>
+        <span v-else class="text-secondary text-sm">N/A</span>
+    </td>
+    <td data-label="Khuyến mãi" class="font-medium text-red-600">
+      {{ product.khuyen_mai ? `${parseInt(product.khuyen_mai)}%` : '—' }}
+    </td>
+    <td data-label="Trạng thái">
+      <span class="status-badge" :class="product.trang_thai ? 'is-active' : 'is-inactive'">
+        {{ product.trang_thai ? 'Hoạt động' : 'Vô hiệu hóa' }}
+      </span>
+    </td>
+    <td data-label="Hành động">
+      <div class="action-buttons">
+        <router-link :to="`/admin/products/${product.product_id}/variants`" class="action-icon" title="Quản lý biến thể">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                <path fill-rule="evenodd" d="M3 5.25a.75.75 0 01.75-.75h12.5a.75.75 0 010 1.5H3.75a.75.75 0 01-.75-.75zm0 4a.75.75 0 01.75-.75h12.5a.75.75 0 010 1.5H3.75a.75.75 0 01-.75-.75zm0 4a.75.75 0 01.75-.75h12.5a.75.75 0 010 1.5H3.75a.75.75 0 01-.75-.75z" clip-rule="evenodd" />
+            </svg>
+        </router-link>
+        <router-link :to="`/admin/products/${product.product_id}/edit`" class="action-icon" title="Sửa">
+           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
+        </router-link>
+        <button v-if="product.trang_thai" @click="toggleProductStatus(product)" class="action-icon text-danger" title="Vô hiệu hóa">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.367zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd" />
+          </svg>
+        </button>
+        <button v-else @click="toggleProductStatus(product)" class="action-icon text-success" title="Kích hoạt lại">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" >
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+        </button>
+      </div>
+    </td>
+  </tr>
+</tbody>
         </table>
       </div>
       <p v-if="!loading && filteredProducts.length === 0" class="no-data-message">Không có sản phẩm nào phù hợp.</p>
@@ -501,5 +501,102 @@ onMounted(() => {
 }
 .action-icon.text-success:hover {
   background-color: var(--color-green);
+}
+@media (max-width: 768px) {
+    /* --- Điều chỉnh Header --- */
+    .page-header {
+        flex-direction: column; /* Xếp chồng tiêu đề và nút */
+        align-items: flex-start; /* Căn lề trái */
+        gap: 1rem;               /* Tạo khoảng cách */
+        margin-bottom: 1.5rem;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+    }
+    .btn-add{
+        width: 100%; /* Nút thêm chiếm toàn bộ chiều rộng */
+        justify-content: center;
+    }
+
+    /* --- Điều chỉnh thanh tìm kiếm --- */
+    .filter-bar {
+        flex-direction: column;
+    }
+
+    .search-box, .search-input {
+        width: 100%;
+        min-width: unset;
+        max-width: unset;
+    }
+
+    /* --- Biến bảng thành dạng Card --- */
+    .table-container {
+        overflow-x: hidden; /* Tắt cuộn ngang */
+    }
+
+    .product-table thead {
+        display: none; /* Ẩn tiêu đề gốc của bảng */
+    }
+
+    .product-table tbody, .product-table tr, .product-table td {
+        display: block; /* Hiển thị các element dưới dạng block */
+        width: 100% !important;
+    }
+
+    .product-table tr {
+        margin-bottom: 1.5rem;
+        border: 1px solid #e5e7eb;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 0;
+    }
+
+    .product-table td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #f3f4f6;
+        text-align: right; /* Căn phải nội dung của ô */
+        position: relative;
+        white-space: normal; /* Cho phép chữ xuống dòng */
+    }
+
+    .product-table td:last-child {
+        border-bottom: none;
+    }
+
+    /* Đây là phần quan trọng để hiển thị lại tiêu đề */
+    .product-table td::before {
+        content: attr(data-label); /* Lấy nội dung từ thuộc tính data-label */
+        position: absolute;
+        left: 1rem;
+        font-weight: 600;
+        color: var(--color-text-primary);
+    }
+    
+    /* --- Tinh chỉnh lại các ô cụ thể cho đẹp hơn --- */
+    .product-table td[data-label="Chọn"],
+    .product-table td[data-label="Ghim"] {
+        /* Cho checkbox và nút ghim nằm giữa */
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .product-table td[data-label="Tên sản phẩm"] {
+        background-color: #f9fafb;
+        font-size: 1.1rem;
+        text-align: left; /* Tên sản phẩm nên căn trái */
+    }
+    
+    .product-table td[data-label="Tên sản phẩm"]::before {
+        display: none; /* Ẩn label "Tên sản phẩm:" đi vì nó đã rõ ràng */
+    }
+    
+    .image-list-cell {
+        justify-content: flex-end; /* Căn phải các hình ảnh */
+    }
+
+    .action-buttons {
+        justify-content: flex-end;
+    }
 }
 </style>

@@ -1,0 +1,162 @@
+/* === TOÀN BỘ CSS RESPONSIVE CHO TRANG ADMIN (Tối ưu cho điện thoại) === */
+@media (max-width: 768px) {
+
+    /* ============================================= */
+    /* === 1. STYLE CHO LAYOUT CHÍNH (MENU, HEADER) === */
+    /* ============================================= */
+    .admin-layout {
+        position: relative;
+        overflow-x: hidden;
+    }
+
+    /* --- Sidebar (Menu bên trái) --- */
+    .sidebar {
+        /* Điều chỉnh chiều rộng cho vừa vặn trên điện thoại */
+        width: 280px; 
+        
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100%;
+        z-index: 1050;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease-in-out;
+        /* Thêm bóng đổ để menu nổi bật hơn */
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Tăng kích thước các mục menu để dễ nhấn hơn */
+    .section-header {
+        padding: 18px 20px; /* Tăng khoảng đệm dọc */
+        font-size: 15px;    /* Tăng cỡ chữ */
+    }
+
+    .nav-link {
+        padding: 15px 20px 15px 30px; /* Tăng khoảng đệm dọc */
+        font-size: 15px;             /* Tăng cỡ chữ */
+    }
+
+    /* Khi layout có class 'sidebar-is-open', trượt sidebar vào */
+    .admin-layout.sidebar-is-open .sidebar {
+        transform: translateX(0);
+    }
+
+    /* --- Lớp nền mờ (Backdrop) --- */
+    .sidebar-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
+    }
+
+    /* --- Nội dung chính và Header --- */
+    .main-content {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .app-header {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 0;
+        padding: 0 1rem;
+    }
+    
+    .menu-toggle-icon {
+        display: block; 
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+    /* --- Tinh chỉnh các mục trên Header --- */
+    .search-container {
+        display: none; 
+    }
+    
+    .version-text {
+        display: none;
+    }
+
+    .user-info .admin-role {
+        display: none;
+    }
+
+    .header-right {
+        gap: 1rem;
+    }
+    
+    /* ================================================== */
+    /* === 2. STYLE CHO NỘI DUNG TRANG (THỐNG KÊ, BẢNG) === */
+    /* ================================================== */
+
+    .page-content,
+    .content {
+        padding: 1rem;
+    }
+    
+    .container-table {
+        padding: 1rem;
+    }
+
+    .section-title {
+        font-size: 1.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .panel-title {
+        font-size: 1.1rem;
+    }
+    
+    .filters-panel,
+    .chart-panel,
+    .detailed-table-panel {
+        padding: 1rem;
+    }
+
+    /* --- Bộ lọc thống kê --- */
+    .filter-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    
+    .filter-item, .btn {
+        width: 100%;
+        margin-top: 0;
+    }
+
+    /* --- Các thẻ thống kê --- */
+    .stats-grid {
+        gap: 1rem;
+    }
+
+    .stat-card {
+        padding: 1rem;
+    }
+
+    .stat-value {
+        font-size: 1.25rem;
+    }
+
+    /* --- Biểu đồ --- */
+    .chart-wrapper {
+        height: 250px;
+    }
+
+    /* --- Bảng dữ liệu --- */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        box-shadow: inset -10px 0 8px -8px rgba(0,0,0,0.1);
+    }
+    
+    .data-table {
+       min-width: 600px; 
+    }
+}
+/* ================================================== */
+/* === 3. STYLE CHO TRANG DANH SÁCH SẢN PHẨM      === */
+/* ================================================== */

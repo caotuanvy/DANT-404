@@ -9,7 +9,7 @@ class SanPhamBienThe extends Model
 {
     protected $table = 'san_pham_bien_the';
 
-    protected $primaryKey = 'bien_the_id';
+      protected $primaryKey = 'bien_the_id';
 
     public $timestamps = false;
 
