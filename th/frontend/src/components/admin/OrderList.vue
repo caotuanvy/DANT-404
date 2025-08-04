@@ -54,22 +54,19 @@
         Tất cả <span class="tab-count">{{ countAll }}</span>
       </button>
       <button :class="{ 'tab-btn': true, 'active': selectedStatusTab === 1 }" @click="setFilterStatus(1)">
-        Mới đặt <span class="tab-count">{{ countNew }}</span>
+        Chờ xác nhận <span class="tab-count">{{ statusCounts[1] }}</span>
       </button>
       <button :class="{ 'tab-btn': true, 'active': selectedStatusTab === 2 }" @click="setFilterStatus(2)">
-        Chờ xác nhận <span class="tab-count">{{ countPending }}</span>
+        Đã xác nhận <span class="tab-count">{{ statusCounts[2] }}</span>
       </button>
       <button :class="{ 'tab-btn': true, 'active': selectedStatusTab === 3 }" @click="setFilterStatus(3)">
-        Đã xác nhận <span class="tab-count">{{ countConfirmed }}</span>
+        Đang giao <span class="tab-count">{{ statusCounts[3] }}</span>
       </button>
       <button :class="{ 'tab-btn': true, 'active': selectedStatusTab === 4 }" @click="setFilterStatus(4)">
-        Đang giao <span class="tab-count">{{ countShipping }}</span>
+        Hoàn thành <span class="tab-count">{{ statusCounts[4] }}</span>
       </button>
       <button :class="{ 'tab-btn': true, 'active': selectedStatusTab === 5 }" @click="setFilterStatus(5)">
-        Hoàn thành <span class="tab-count">{{ countCompleted }}</span>
-      </button>
-      <button :class="{ 'tab-btn': true, 'active': selectedStatusTab === 6 }" @click="setFilterStatus(6)">
-        Đã hủy <span class="tab-count">{{ countCancelled }}</span>
+        Đã hủy <span class="tab-count">{{ statusCounts[5] }}</span>
       </button>
     </div>
 
@@ -171,20 +168,28 @@
       </table>
       <div class="pagination-container">
         <span class="pagination-info">
-          Hiển thị {{ paginatedOrders.length }} trong {{ filteredOrders.length }} kết quả
+          Hiển thị {{ paginatedOrders.length }} trong {{ paginationData.total || 0 }} kết quả
         </span>
         <div class="pagination-controls">
           <button class="btn-page" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">
             &lt; Trước
           </button>
-          <button v-for="page in lastPageFiltered" :key="page" class="btn-page"
-            :class="{ active: page === currentPage }" @click="goToPage(page)">
-            {{ page }}
+          <button
+            v-for="pageNumber in totalPages"
+            :key="pageNumber"
+            class="btn-page"
+            :class="{ active: pageNumber === currentPage }"
+            @click="goToPage(pageNumber)"
+          >
+            {{ pageNumber }}
           </button>
-          <button class="btn-page" :disabled="currentPage === lastPageFiltered" @click="goToPage(currentPage + 1)">
+          <button class="btn-page" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">
             Sau &gt;
           </button>
         </div>
+        <span class="pagination-info" style="margin-left: 16px;">
+          Trang {{ currentPage }} / {{ totalPages }}
+        </span>
       </div>
     </div>
 
@@ -221,121 +226,119 @@
     </div>
   </div>
 </template>
-
 <script>
 import axios from 'axios';
 
 export default {
   data() {
     return {
-      filters: {
+      allOrders: [], // Chứa các đơn hàng của TRANG HIỆN TẠI từ API
+      paginationData: {}, // Lưu toàn bộ đối tượng phân trang từ API (last_page, current_page, total, links...)
+      paymentMethods: [],
+      selectedStatusTab: null, // Trạng thái của tab đang chọn (dùng để gửi lên API và lọc client-side)
+      isAdvancedSearchVisible: false,
+      localFilters: { // Dữ liệu trong input form (advanced search)
         searchQuery: '',
         date: '',
         paymentMethod: '',
-        category: '',
-        priceRange: '',
-        status: null
+        // category: '', // Nếu không dùng, có thể xóa
+        priceRange: ''
       },
-      allOrders: [],
-      paymentMethods: [],
-      selectedStatusTab: null,
-      isAdvancedSearchVisible: false,
-      localFilters: {
-        searchQuery: '', date: '', paymentMethod: '', category: '', priceRange: ''
+      appliedFilters: { // Dữ liệu filter đã được áp dụng (gửi lên API)
+        searchQuery: '',
+        date: '',
+        paymentMethod: '',
+        // category: '',
+        priceRange: ''
       },
-      appliedFilters: {
-        searchQuery: '', date: '', paymentMethod: '', category: '', priceRange: ''
-      },
-      currentPage: 1,
-      perPage: 10,
+      currentPage: 1, // Theo dõi trang hiện tại đang được yêu cầu từ API
+      // perPage: 10, // Không cần nữa vì API đã quyết định per_page
       expandedOrderId: null,
       isStatusModalVisible: false,
       orderToUpdate: null,
       activeActionMenu: null,
       pendingStatusId: null,
       statusSteps: [
-        { id: 1, title: 'Đơn Hàng Đã Đặt', icon: 'icon-receipt' },
-        { id: 2, title: 'Đã Xác Nhận', icon: 'icon-dollar' },
-        { id: 3, title: 'Chờ Lấy Hàng', icon: 'icon-truck' },
+        { id: 2, title: 'Chờ Xác Nhận', icon: 'icon-dollar' },
+        { id: 3, title: 'Đã Xác Nhận', icon: 'icon-truck' },
         { id: 4, title: 'Đang Giao', icon: 'icon-shipping' },
         { id: 5, title: 'Hoàn Thành', icon: 'icon-star' },
+        { id: 6, title: 'Đã hủy', icon: 'icon-cancel' }
       ],
     };
   },
   computed: {
-    countAll() { return this.allOrders.length; },
-    countNew() { return this.allOrders.filter(o => o.trang_thai_don_hang === 1).length; },
-    countPending() { return this.allOrders.filter(o => o.trang_thai_don_hang === 2).length; },
-    countConfirmed() { return this.allOrders.filter(o => o.trang_thai_don_hang === 3).length; },
-    countShipping() { return this.allOrders.filter(o => o.trang_thai_don_hang === 4).length; },
-    countCompleted() { return this.allOrders.filter(o => o.trang_thai_don_hang === 5).length; },
-    countCancelled() { return this.allOrders.filter(o => o.trang_thai_don_hang === 6).length; },
+    // Các hàm đếm tab này sẽ lấy tổng số từ API (paginationData.total) hoặc đếm trên allOrders (của trang hiện tại).
+    // Để có số liệu tổng chính xác cho từng trạng thái, API cần hỗ trợ trả về các tổng đó.
+    countAll() { return this.paginationData.total || 0; },
+    countPending() { return this.paginationData.count_pending || 0; },
+    countConfirmed() { return this.paginationData.count_confirmed || 0; },
+    countShipping() { return this.paginationData.count_shipping || 0; },
+    countCompleted() { return this.paginationData.count_completed || 0; },
+    countCancelled() { return this.paginationData.count_cancelled || 0; },
+
+    // filteredOrders chỉ dùng để hiển thị số lượng nếu muốn, không dùng để phân trang
     filteredOrders() {
-      let filtered = [...this.allOrders];
-      if (this.selectedStatusTab !== null) {
-        filtered = filtered.filter(order => order.trang_thai_don_hang === this.selectedStatusTab);
-      }
-      const query = this.appliedFilters.searchQuery.toLowerCase().trim();
-      if (query) {
-        filtered = filtered.filter(order => {
-          const customerName = order.user?.ho_ten?.toLowerCase() || '';
-          const paymentMethodName = order.payment_method?.ten_pttt?.toLowerCase() || '';
-          const orderStatusText = this.getTrangThai(order.trang_thai_don_hang).toLowerCase();
-          const paymentStatusText = this.getPaymentStatus(order.is_paid, order).toLowerCase();
-          const hasMatchingProduct = order.order_items.some(item =>
-            item.bien_the?.san_pham?.ten_san_pham?.toLowerCase().includes(query)
-          );
-          return (
-            order.id.toString().includes(query) ||
-            customerName.includes(query) ||
-            paymentMethodName.includes(query) ||
-            orderStatusText.includes(query) ||
-            paymentStatusText.includes(query) ||
-            hasMatchingProduct
-          );
-        });
-      }
-      if (this.appliedFilters.date) {
-        filtered = filtered.filter(order => order.ngay_dat.startsWith(this.appliedFilters.date));
-      }
-      if (this.appliedFilters.paymentMethod) {
-        filtered = filtered.filter(order => order.phuong_thuc_thanh_toan_id == this.appliedFilters.paymentMethod);
-      }
-      const priceRange = this.appliedFilters.priceRange.trim();
-      if (priceRange) {
-        const cleanedRange = priceRange.replace(/[^0-9-]/g, '');
-        const parts = cleanedRange.split('-');
-        const minPriceString = parts[0] || '0';
-        const maxPriceString = parts[1] || '';
-        const minPrice = parseInt(minPriceString, 10);
-        const maxPrice = maxPriceString ? parseInt(maxPriceString, 10) : Infinity;
-        if (!isNaN(minPrice)) {
-          filtered = filtered.filter(order => {
-            const totalPrice = order.total_price;
-            const isAfterMin = totalPrice >= minPrice;
-            const isBeforeMax = maxPrice === Infinity ? true : totalPrice <= maxPrice;
-            return isAfterMin && isBeforeMax;
-          });
-        }
-      }
-      return filtered;
+      // Nếu muốn lọc client-side, giữ lại logic cũ ở đây.
+      // Nhưng nếu API đã lọc, chỉ cần trả về allOrders.
+      return this.allOrders;
     },
+
+    // paginatedOrders chỉ là allOrders (API đã phân trang)
     paginatedOrders() {
-      const start = (this.currentPage - 1) * this.perPage;
-      const end = start + this.perPage;
-      return this.filteredOrders.slice(start, end);
+      return this.allOrders;
     },
-    lastPageFiltered() {
-      return Math.max(1, Math.ceil(this.filteredOrders.length / this.perPage));
-    }
+
+    totalPages() {
+      return this.paginationData.last_page || 1;
+    },
+
+    pageNumbers() {
+      return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+    },
+    statusCounts() {
+      // Đếm đúng các trạng thái: 1 (Chờ xác nhận), 2 (Đã xác nhận), 3 (Đang giao), 4 (Hoàn thành), 5 (Đã hủy)
+      return {
+        1: this.paginationData.count_pending !== undefined
+          ? this.paginationData.count_pending
+          : this.allOrders.filter(o => o.trang_thai_don_hang === 1).length,
+        2: this.paginationData.count_confirmed !== undefined
+          ? this.paginationData.count_confirmed
+          : this.allOrders.filter(o => o.trang_thai_don_hang === 2).length,
+        3: this.paginationData.count_shipping !== undefined
+          ? this.paginationData.count_shipping
+          : this.allOrders.filter(o => o.trang_thai_don_hang === 3).length,
+        4: this.paginationData.count_completed !== undefined
+          ? this.paginationData.count_completed
+          : this.allOrders.filter(o => o.trang_thai_don_hang === 4).length,
+        5: this.paginationData.count_cancelled !== undefined
+          ? this.paginationData.count_cancelled
+          : this.allOrders.filter(o => o.trang_thai_don_hang === 5).length,
+      };
+    },
   },
   methods: {
     async fetchOrders() {
       try {
+        const params = {
+            page: this.currentPage,
+            search: this.appliedFilters.searchQuery,
+            date: this.appliedFilters.date,
+            payment_method_id: this.appliedFilters.paymentMethod,
+            status: this.selectedStatusTab
+        };
+        Object.keys(params).forEach(key => {
+            if (params[key] === '' || params[key] === null) {
+                delete params[key];
+            }
+        });
         const res = await axios.get(`http://localhost:8000/api/orders`, {
+          params: params,
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
         this.allOrders = res.data.data;
+        this.paginationData = res.data;
+        this.currentPage = this.paginationData.current_page;
       } catch (err) {
         console.error('Lỗi khi lấy đơn hàng:', err);
       }
@@ -356,7 +359,7 @@ export default {
           { is_paid: 1 },
           { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
         );
-        this.fetchOrders();
+        this.fetchOrders(); // Tải lại dữ liệu sau khi cập nhật
         this.closeStatusModal();
       } catch (err) {
         alert('Xác nhận thanh toán thất bại!');
@@ -366,25 +369,32 @@ export default {
       if (!this.orderToUpdate) return '';
       const current = this.orderToUpdate.trang_thai_don_hang;
       if (step.id === current) return 'Trạng thái hiện tại';
-      if (step.id === current + 1) return 'Chọn để chuyển sang trạng thái này';
+      if (step.id === current + 1 && step.id <= 5) return 'Chọn để chuyển sang trạng thái này'; // Chỉ cho phép tiến lên một bước (tối đa Hoàn thành)
+      if (step.id === 6 && current !== 6) return 'Chọn để hủy đơn hàng này'; // Cho phép hủy từ mọi trạng thái (trừ đã hủy)
       if (step.id < current) return 'Đã hoàn thành';
-      return 'Không thể chọn trực tiếp';
+      return 'Không thể chọn trực tiếp'; // Ngăn chọn các bước nhảy vọt hoặc lùi
     },
     applyFilters() {
       this.appliedFilters = { ...this.localFilters };
-      this.selectedStatusTab = null;
-      this.currentPage = 1;
+      this.selectedStatusTab = null; // Khi dùng advanced search, reset tab trạng thái
+      this.currentPage = 1; // Luôn reset về trang 1 khi áp dụng bộ lọc mới
+      this.fetchOrders(); // Gọi API với các bộ lọc mới
     },
     clearFilters() {
-      this.localFilters = { searchQuery: '', date: '', paymentMethod: '', category: '', priceRange: '' };
-      this.appliedFilters = { searchQuery: '', date: '', paymentMethod: '', category: '', priceRange: '' };
-      this.currentPage = 1;
-      this.selectedStatusTab = null;
-      this.fetchOrders();
+      // Reset localFilters và appliedFilters
+      this.localFilters = { searchQuery: '', date: '', paymentMethod: '', priceRange: '' };
+      this.appliedFilters = { searchQuery: '', date: '', paymentMethod: '', priceRange: '' };
+      this.selectedStatusTab = null; // Reset tab trạng thái
+      this.currentPage = 1; // Reset về trang 1
+      this.fetchOrders(); // Tải lại đơn hàng không có bộ lọc
     },
     setFilterStatus(status) {
-      this.selectedStatusTab = status;
-      this.currentPage = 1;
+      this.selectedStatusTab = status; // Cập nhật trạng thái tab
+      this.currentPage = 1; // Luôn reset về trang 1 khi chọn tab trạng thái
+      // Xóa các bộ lọc nâng cao khi chọn tab trạng thái để tránh xung đột
+      this.localFilters = { searchQuery: '', date: '', paymentMethod: '', priceRange: '' };
+      this.appliedFilters = { searchQuery: '', date: '', paymentMethod: '', priceRange: '' };
+      this.fetchOrders(); // Gọi API với bộ lọc trạng thái mới
     },
     toggleActionMenu(orderId) { this.activeActionMenu = this.activeActionMenu === orderId ? null : orderId; },
     closeActionMenu() { this.activeActionMenu = null; },
@@ -392,29 +402,58 @@ export default {
     handleExpandClick(orderId) { this.toggleExpand(orderId); this.closeActionMenu(); },
     toggleExpand(orderId) { this.expandedOrderId = this.expandedOrderId === orderId ? null : orderId; },
     getUserAvatarUrl(user) {
-      if (user && user.avatar) return user.avatar;
+      if (user && user.anh_dai_dien) return `http://localhost:8000/storage/${user.anh_dai_dien}`; // Giả sử path đúng
       const name = user?.ho_ten || 'Khách Lạ';
       const encodedName = encodeURIComponent(name);
       return `https://ui-avatars.com/api/?name=${encodedName}&background=cfe2ff&color=052c65&font-size=0.5`;
     },
-    formatDate(datetime) { if (!datetime) return ''; const date = new Date(datetime); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${date.toLocaleTimeString('vi-VN')}`; },
+    formatDate(datetime) {
+      if (!datetime) return '';
+      const date = new Date(datetime);
+      // Ensure date is valid before formatting
+      if (isNaN(date.getTime())) {
+          return ''; // Or handle invalid date error appropriately
+      }
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${date.toLocaleTimeString('vi-VN')}`;
+    },
     formatCurrency(amount) {
       const value = Number(amount);
       if (isNaN(value)) return '0 ₫';
       return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
     },
-    getTrangThai(status) { const statuses = { 1: 'Mới đặt', 2: 'Chờ xác nhận', 3: 'Đã xác nhận', 4: 'Đang giao', 5: 'Hoàn thành', 6: 'Đã hủy' }; return statuses[status] || 'Không rõ'; },
-    getStatusClass(status) { const classes = { 1: 'status-new', 2: 'status-pending', 3: 'status-confirmed', 4: 'status-shipping', 5: 'status-completed', 6: 'status-cancelled' }; return classes[status] || 'status-default'; },
+    getTrangThai(status) {
+      const statuses = {
+        1: 'Chờ xác nhận',
+        2: 'Đã xác nhận',
+        3: 'Đang giao',
+        4: 'Hoàn thành',
+        5: 'Đã hủy'
+      };
+      return statuses[status] || 'Không rõ';
+    },
+    getStatusClass(status) {
+      const classes = {
+        1: 'status-pending',
+        2: 'status-confirmed',
+        3: 'status-shipping',
+        4: 'status-completed',
+        5: 'status-cancelled'
+      };
+      return classes[status] || 'status-default';
+    },
     getPaymentStatus(isPaid, order) {
       if (Number(isPaid) === 1) return 'Đã thanh toán';
-      if ([1, 2, 3, 4].includes(order.trang_thai_don_hang)) return 'Chưa thanh toán';
-      if (order.trang_thai_don_hang === 5) return 'Chưa thanh toán';
-      if (order.trang_thai_don_hang === 6) return 'Đã hủy';
+      if (Number(isPaid) === 0 && order.trang_thai_don_hang === 6) return 'Đã hủy'; // Đã hủy và chưa thanh toán
+      if (Number(isPaid) === 0) return 'Chưa thanh toán';
       return 'Chưa rõ';
     },
-    getPaymentStatusClass(isPaid) { if (isPaid === 1 || isPaid === true) return 'status-paid'; if (isPaid === 0 || isPaid === false) return 'status-unpaid'; return 'status-default'; },
+    getPaymentStatusClass(isPaid) {
+      if (isPaid === 1 || isPaid === true) return 'status-paid';
+      if (isPaid === 0 || isPaid === false) return 'status-unpaid';
+      return 'status-default';
+    },
     openStatusModal(order) {
-      this.orderToUpdate = order;
+      this.orderToUpdate = { ...order }; // Tạo bản sao để tránh sửa trực tiếp dữ liệu bảng
       this.pendingStatusId = null;
       this.isStatusModalVisible = true;
     },
@@ -426,17 +465,29 @@ export default {
     getStepClass(step) {
       if (!this.orderToUpdate) return 'pending';
       const currentStatus = this.orderToUpdate.trang_thai_don_hang;
-      if (step.id === this.pendingStatusId) return 'pending-selection';
-      if (step.id < currentStatus) return 'completed';
-      if (step.id === currentStatus) return 'active';
-      if (step.id === currentStatus + 1) return 'next-step';
-      return 'pending';
+      const pending = this.pendingStatusId;
+
+      if (step.id === pending) return 'pending-selection'; // Bước đang được chọn để cập nhật
+      if (step.id < currentStatus) return 'completed'; // Bước đã hoàn thành
+      if (step.id === currentStatus) return 'active'; // Bước hiện tại
+
+      // Các bước tiếp theo hợp lệ để chọn
+      if (step.id === currentStatus + 1 && step.id <= 5) return 'next-step'; // Chỉ cho phép tiến lên một bước (tối đa Hoàn thành)
+      if (step.id === 6 && currentStatus !== 6) return 'next-step is-cancel'; // Hủy có thể chọn từ mọi trạng thái (trừ đã hủy)
+
+      return 'pending'; // Các bước khác chưa tới hoặc không hợp lệ để chọn trực tiếp
     },
     selectNextStatus(step) {
       if (!this.orderToUpdate) return;
       const currentStatus = this.orderToUpdate.trang_thai_don_hang;
-      if (step.id === currentStatus + 1) {
+
+      // Logic cho phép chọn bước tiếp theo (tiến 1 bước hoặc hủy)
+      if (step.id === currentStatus + 1 && step.id <= 5) {
         this.pendingStatusId = step.id;
+      } else if (step.id === 6 && currentStatus !== 6) { // Cho phép hủy từ mọi trạng thái trừ khi đã hủy
+        this.pendingStatusId = step.id;
+      } else {
+        this.pendingStatusId = null; // Không cho phép chọn các bước khác
       }
     },
     commitStatusUpdate() {
@@ -449,11 +500,12 @@ export default {
           { trang_thai_don_hang: String(newStatus) },
           { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
         );
+        // Nếu đơn hàng được chuyển sang "Hoàn thành" (id 5) và chưa thanh toán, thì xác nhận thanh toán
         if (newStatus === 5 && Number(order.is_paid) === 0) {
           await this.confirmPayment(order);
         } else {
           this.closeStatusModal();
-          this.fetchOrders();
+          this.fetchOrders(); // Tải lại dữ liệu để cập nhật trạng thái mới
         }
       } catch (err) {
         console.error('Lỗi khi cập nhật trạng thái:', err);
@@ -461,30 +513,35 @@ export default {
       }
     },
     handleRefresh() {
-      this.localFilters = { searchQuery: '', date: '', paymentMethod: '', category: '', priceRange: '' };
-      this.appliedFilters = { searchQuery: '', date: '', paymentMethod: '', category: '', priceRange: '' };
+      // Reset tất cả các filter và trạng thái UI về mặc định
+      this.localFilters = { searchQuery: '', date: '', paymentMethod: '', priceRange: '' };
+      this.appliedFilters = { searchQuery: '', date: '', paymentMethod: '', priceRange: '' };
       this.selectedStatusTab = null;
-      this.currentPage = 1;
+      this.currentPage = 1; // Reset về trang 1
       this.expandedOrderId = null;
       this.isAdvancedSearchVisible = false;
       this.activeActionMenu = null;
       this.isStatusModalVisible = false;
       this.orderToUpdate = null;
       this.pendingStatusId = null;
-      this.fetchOrders();
+      this.fetchOrders(); // Gọi lại API để tải dữ liệu ban đầu
       this.fetchPaymentMethods();
     },
     goToPage(page) {
-      if (page < 1 || page > this.lastPageFiltered) return;
+      // Chỉ cho phép chuyển trang nếu trang hợp lệ (dựa trên totalPages từ API)
+      if (page < 1 || page > this.totalPages) return;
       this.currentPage = page;
+      this.fetchOrders(); // Gọi API để lấy dữ liệu cho trang mới
     }
   },
   mounted() {
-    this.fetchOrders();
-    this.fetchPaymentMethods();
+    this.fetchOrders(); // Tải đơn hàng khi component được mount
+    this.fetchPaymentMethods(); // Tải phương thức thanh toán
+    // Thêm listener để đóng action menu khi click ra ngoài
     window.addEventListener('click', this.closeActionMenu);
   },
   beforeUnmount() {
+    // Xóa listener khi component bị hủy để tránh rò rỉ bộ nhớ
     window.removeEventListener('click', this.closeActionMenu);
   },
 };

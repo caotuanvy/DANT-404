@@ -10,8 +10,8 @@ import UserOrders from '../components/user/UserOrders.vue';
 import ChangePassword from '../components/user/ChangePassword.vue';
 import Cart from '../components/user/Cart.vue';
 import axios from 'axios';
-import StaticPage from "@/components/user/StaticPage.vue";
-import PaymentSuccess from '../views/PaymentSuccess.vue';
+import StaticPage from "@/components/user/StaticPage.vue";  
+import PaymentSuccess from '@/views/PaymentSuccess.vue'; // Hoặc đường dẫn component của bạn
 
 const routes = [
   { path: '/', component: Home },
@@ -270,6 +270,12 @@ const routes = [
     path: '/product/:id',
     name: 'ProductDetail',
     component: () => import('@/components/user/ProductDetail.vue')
+  },
+    {
+    path: '/paymentsuccess/:orderId',
+    name: 'paymentsuccess',
+    component: PaymentSuccess,
+    props: true
   },
 ];
 
