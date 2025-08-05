@@ -9,8 +9,10 @@ import App from './App.vue';
 import router from './router';
 import axios from 'axios';
 import './assets/styles.css';
+
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import './assets/mobile.css';
 import { createHead } from '@vueuse/head';
 
 axios.defaults.baseURL = 'http://localhost:8000/api';

@@ -120,7 +120,7 @@ class ProductController extends Controller
                     }),
                     'variants' => $product->bienThe->map(function ($variant) {
                         return [
-                            'san_pham_bien_the_id' => $variant->bien_the_id,
+                            'id' => $variant->bien_the_id,
                             'ten_bien_the' => $variant->ten_bien_the,
                             'mau_sac' => $variant->mau_sac,
                             'kich_thuoc' => $variant->kich_thuoc,
@@ -274,7 +274,7 @@ public function update(Request $request, $id)
             'images'                => 'nullable|array',
             'images.*'              => 'image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
             'variants'              => 'sometimes|required|array|min:1',
-            'variants.*.bien_the_id' => 'nullable|integer|exists:san_pham_bien_the,bien_the_id',
+            'variants.*.id' => 'nullable|integer|exists:san_pham_bien_the,bien_the_id',
             'variants.*.ten_bien_the' => 'required|string|max:255',
             'variants.*.gia'            => 'required|numeric|min:0',
             'variants.*.so_luong_ton_kho' => 'required|integer|min:0',
@@ -305,9 +305,9 @@ public function update(Request $request, $id)
                 $submittedVariants = collect($validatedData['variants']);
                 $existingVariantIds = $sanPham->bienThe->pluck('bien_the_id')->toArray();
                 $submittedExistingVariantIds = $submittedVariants
-                                                ->filter(fn($v) => isset($v['bien_the_id']) && !is_null($v['bien_the_id']))
-                                                ->pluck('bien_the_id')
-                                                ->toArray();
+                        ->filter(fn($v) => isset($v['id']) && !is_null($v['id']))
+                        ->pluck('id')
+                        ->toArray();
                 $variantsToDeleteIds = array_diff($existingVariantIds, $submittedExistingVariantIds);
 
                 foreach ($variantsToDeleteIds as $variantIdToDelete) {
@@ -326,15 +326,11 @@ public function update(Request $request, $id)
                 }
 
                 foreach ($submittedVariants as $variantData) {
-                    if (isset($variantData['bien_the_id']) && !is_null($variantData['bien_the_id'])) {
-                        $variant = SanPhamBienThe::find($variantData['bien_the_id']);
-                        if ($variant) {
-                            unset($variantData['bien_the_id']);
-                            $variant->update($variantData);
-                        }
-                    } else {
-                        $sanPham->bienThe()->create($variantData);
-                    }
+                    $variantId = $variantData['id'] ?? null;
+                    $attributesToFind = ['bien_the_id' => $variantId];
+                    unset($variantData['id']);
+                    $valuesToUpdate = $variantData;
+                    $sanPham->bienThe()->updateOrCreate($attributesToFind, $valuesToUpdate);
                 }
             }
 
@@ -847,40 +843,40 @@ public function getDetailsBySlugs(Request $request)
             ) as total_revenue, COUNT(don_hang.id) as total_orders')); // THÊM COUNT(don_hang.id) AS total_orders
 
         // Điều kiện trạng thái: 1 là đã thanh toán
-        $query->where('don_hang.trang_thai', 1); // Đảm bảo khớp với giá trị trong DB của bạn
+         $query->where('don_hang.trang_thai_don_hang', 1); // Đảm bảo khớp với giá trị trong DB của bạn
 
         switch ($type) {
-            case 'week':
-                $query->addSelect(DB::raw('DATE(don_hang.ngay_tao) as date_label'))
-                      ->whereYear('don_hang.ngay_tao', $year)
-                      ->whereRaw('WEEK(don_hang.ngay_tao, 1) = ?', [$week])
-                      ->groupBy('date_label') // THÊM GROUP BY
-                      ->orderBy('date_label', 'ASC');
-                break;
+    case 'week':
+        $query->addSelect(DB::raw('DATE(don_hang.ngay_dat) as date_label'))
+              ->whereYear('don_hang.ngay_dat', $year)
+              ->whereRaw('WEEK(don_hang.ngay_dat, 1) = ?', [$week]) // Sửa lại logic cho đúng week
+              ->groupBy('date_label')
+              ->orderBy('date_label', 'ASC');
+        break;
 
-            case 'month':
-                $query->addSelect(DB::raw('DATE(don_hang.ngay_tao) as date_label'))
-                      ->whereYear('don_hang.ngay_tao', $year)
-                      ->whereMonth('don_hang.ngay_tao', $month)
-                      ->groupBy('date_label') // THÊM GROUP BY
-                      ->orderBy('date_label', 'ASC');
-                break;
+    case 'month':
+        $query->addSelect(DB::raw('DATE(don_hang.ngay_dat) as date_label'))
+              ->whereYear('don_hang.ngay_dat', $year)
+              ->whereMonth('don_hang.ngay_dat', $month)
+              ->groupBy('date_label')
+              ->orderBy('date_label', 'ASC');
+        break;
 
-            case 'year':
-                $query->addSelect(DB::raw('MONTH(don_hang.ngay_tao) as month_label'))
-                      ->whereYear('don_hang.ngay_tao', $year)
-                      ->groupBy('month_label') // THÊM GROUP BY
-                      ->orderBy('month_label', 'ASC');
-                break;
+    case 'year':
+        $query->addSelect(DB::raw('MONTH(don_hang.ngay_dat) as month_label'))
+              ->whereYear('don_hang.ngay_dat', $year)
+              ->groupBy('month_label')
+              ->orderBy('month_label', 'ASC');
+        break;
 
-            default: // Default case (month)
-                $query->addSelect(DB::raw('DATE(don_hang.ngay_tao) as date_label'))
-                      ->whereYear('don_hang.ngay_tao', $year)
-                      ->whereMonth('don_hang.ngay_tao', $month)
-                      ->groupBy('date_label') // THÊM GROUP BY
-                      ->orderBy('date_label', 'ASC');
-                break;
-        }
+    default: // SỬA NỐT CASE DEFAULT
+        $query->addSelect(DB::raw('DATE(don_hang.ngay_dat) as date_label'))
+              ->whereYear('don_hang.ngay_dat', $year)
+              ->whereMonth('don_hang.ngay_dat', $month)
+              ->groupBy('date_label')
+              ->orderBy('date_label', 'ASC');
+        break;
+}
 
         $results = $query->get();
         $formattedData = $this->formatRevenueData($results, $type, $year, $month, $week);
@@ -959,10 +955,10 @@ public function getDetailsBySlugs(Request $request)
     {
         $successfulStatus = 1;
         $totalOverallRevenue = Order::query()
-            ->where('trang_thai', $successfulStatus)
+            ->where('trang_thai_don_hang', $successfulStatus)
             ->sum(DB::raw('(SELECT SUM(ctdh.so_luong * ctdh.don_gia) FROM chi_tiet_don_hang ctdh WHERE ctdh.don_hang_id = don_hang.id) + don_hang.phi_van_chuyen'));
         $totalOrders = Order::query()
-            ->where('trang_thai', $successfulStatus)
+            ->where('trang_thai_don_hang', $successfulStatus)
             ->count();
         $currentDate = new \DateTime();
         $previousMonthDate = (new \DateTime())->modify('-1 month');
@@ -971,24 +967,24 @@ public function getDetailsBySlugs(Request $request)
         $previousYear = $previousMonthDate->format('Y');
         $previousMonth = $previousMonthDate->format('m');
         $currentMonthRevenue = Order::query()
-            ->where('trang_thai', $successfulStatus)
-            ->whereYear('ngay_tao', $currentYear)
-            ->whereMonth('ngay_tao', $currentMonth)
+            ->where('trang_thai_don_hang', $successfulStatus)
+            ->whereYear('ngay_dat', $currentYear)
+            ->whereMonth('ngay_dat', $currentMonth)
             ->sum(DB::raw('(SELECT SUM(ctdh.so_luong * ctdh.don_gia) FROM chi_tiet_don_hang ctdh WHERE ctdh.don_hang_id = don_hang.id) + don_hang.phi_van_chuyen'));
         $previousMonthRevenue = Order::query()
-            ->where('trang_thai', $successfulStatus)
-            ->whereYear('ngay_tao', $previousYear)
-            ->whereMonth('ngay_tao', $previousMonth)
+            ->where('trang_thai_don_hang', $successfulStatus)
+            ->whereYear('ngay_dat', $previousYear)
+            ->whereMonth('ngay_dat', $previousMonth)
             ->sum(DB::raw('(SELECT SUM(ctdh.so_luong * ctdh.don_gia) FROM chi_tiet_don_hang ctdh WHERE ctdh.don_hang_id = don_hang.id) + don_hang.phi_van_chuyen'));
         $currentMonthOrderCount = Order::query()
-            ->where('trang_thai', $successfulStatus)
-            ->whereYear('ngay_tao', $currentYear)
-            ->whereMonth('ngay_tao', $currentMonth)
+            ->where('trang_thai_don_hang', $successfulStatus)
+            ->whereYear('ngay_dat', $currentYear)
+            ->whereMonth('ngay_dat', $currentMonth)
             ->count();
         $previousMonthOrderCount = Order::query()
-            ->where('trang_thai', $successfulStatus)
-            ->whereYear('ngay_tao', $previousYear)
-            ->whereMonth('ngay_tao', $previousMonth)
+            ->where('trang_thai_don_hang', $successfulStatus)
+            ->whereYear('ngay_dat', $previousYear)
+            ->whereMonth('ngay_dat', $previousMonth)
             ->count();
         $avgOrderValue = $totalOrders > 0 ? $totalOverallRevenue / $totalOrders : 0;
         $previousMonthAvgOrderValue = $previousMonthOrderCount > 0 ? $previousMonthRevenue / $previousMonthOrderCount : 0;

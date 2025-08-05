@@ -59,7 +59,7 @@ Route::get('/tintuc/{id}', [TintucController::class, 'show']);
 Route::put('/tintuc/{id}', [TintucController::class, 'update']);
 Route::delete('/tintuc/{id}', [TintucController::class, 'destroy']);
 Route::get('/tintuc-cong-khai', [TintucController::class, 'tintucCongKhai']);
-Route::get('/tintuc-cong-khai/{id}', [TintucController::class, 'chitietCongKhai']);
+Route::get('tintuc-cong-khai/slug/{slug}', [TintucController::class, 'chitietCongKhaiBySlug']);
 Route::get('/tin-noi-bat', [TintucController::class, 'tinNoiBat']);
 Route::get('/xemtintuc-admin/{id}', [TintucController::class, 'xemchitiettintucadmin']);
 Route::get('/tin-lien-quan/{currentNewsId}/{categoryId}', [TintucController::class, 'tinLienQuan']);
@@ -81,6 +81,16 @@ Route::get('/', [BinhLuanController::class, 'index']);
 Route::put('/{id}/toggle', [BinhLuanController::class, 'toggleTrangThai']);
 Route::put('/{id}/reset-bao-cao', [BinhLuanController::class, 'resetBaoCao']); // Reset báo cáo (nếu bạn vẫn dùng)
 Route::put('/{id}/set-bao-cao', [BinhLuanController::class, 'setBaoCao']);
+});
+
+Route::prefix('binh-luan')->group(function () {
+    Route::get('danh-gia/{tinTucId}', [BinhLuanController::class, 'getCommentsByRating']);
+    Route::get('thong-ke/{tinTucId}', [BinhLuanController::class, 'getCommentStatistics']);
+    Route::post('{id}/dislike', [BinhLuanController::class, 'toggleDislike']);
+    Route::post('{id}/like', [BinhLuanController::class, 'toggleLike']);
+    Route::get('tin-tuc/{tinTucId}', [BinhLuanController::class, 'getCommentsForNews']);
+    Route::post('tin-tuc', [BinhLuanController::class, 'addCommentForNews']);
+     Route::post('{id}/bao-cao', [BinhLuanController::class, 'setBaoCao']);
 });
 
 // Dia chi
@@ -114,7 +124,7 @@ Route::patch('/orders/{order}/payment', [OrderController::class, 'confirmPayment
 
 //payment methods
 Route::get('/payment-methods', [PaymentMethodController::class, 'index']);// Slide Show (admin)
-
+Route::get('/static-pages', [IntroduceController::class, 'index']);
 Route::prefix('admin')->group(function () {
 Route::get('slide', [SlideShowController::class, 'index']);
 Route::get('slide/{id}', [SlideShowController::class, 'show']);

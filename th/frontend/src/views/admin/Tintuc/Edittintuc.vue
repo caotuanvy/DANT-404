@@ -72,7 +72,7 @@
               </div>
               <div class="form-group">
                 <label for="ngay_dang" class="form-label">Ngày đăng</label>
-                <input type="date" id="ngay_dang" v-model="ngay_dang" class="form-control" @input="checkSeoCriteria" />
+                <input type="datetime-local" id="ngay_dang" v-model="ngay_dang" class="form-control" @input="checkSeoCriteria" />
               </div>
               <div class="form-group">
                 <label class="form-label">Hình ảnh</label>
@@ -159,7 +159,7 @@ export default {
           'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview', 'anchor',
           'searchreplace', 'visualblocks', 'code', 'fullscreen',
           'insertdatetime', 'media', 'table', 'help', 'wordcount',
-          'emoticons', 'codesample', 'directionality', 'quickbars', 'charmap'
+          'emoticons', 'codesample', 'directionality', 'quickbars', 'charmap', 'imagetools'
         ],
         toolbar:
           'code | newdocument | cut copy | undo redo | searchreplace | ' +
@@ -168,7 +168,7 @@ export default {
           'bullist numlist outdent indent | ' +
           'blockquote | link unlink anchor | ' +
           'image media table | emoticons codesample | fullscreen preview | help',
-        images_upload_url: '/api/tinymce/upload-image', // URL này thường chỉ là đường dẫn tương đối
+        images_upload_url: '/api/tinymce/upload-image',
         images_upload_handler: (blobInfo, progress) => new Promise((resolve, reject) => {
           const formData = new FormData();
           formData.append('file', blobInfo.blob(), blobInfo.filename());
@@ -181,12 +181,11 @@ export default {
             headers['Authorization'] = `Bearer ${token}`;
           }
 
-          // Đảm bảo URL đầy đủ khi gọi Axios
-          axios.post('http://localhost:8000/api/tinymce/upload-image', formData, { // Thêm /api vào đây
-          headers: headers,
-          onUploadProgress: (event) => {
+          axios.post('http://localhost:8000/api/tinymce/upload-image', formData, {
+            headers: headers,
+            onUploadProgress: (event) => {
               progress(event.loaded / event.total * 100);
-          }
+            }
           })
           .then(response => {
             resolve(response.data.location);
@@ -320,7 +319,21 @@ export default {
         this.tieude = data.tieude;
         this.slug = data.slug;
         this.id_danh_muc_tin_tuc = Number(data.id_danh_muc_tin_tuc);
-        this.ngay_dang = data.ngay_dang ? data.ngay_dang.substring(0, 10) : "";
+        // Định dạng lại ngày để phù hợp với input type="datetime-local"
+        if (data.ngay_dang) {
+          const date = new Date(data.ngay_dang);
+          // Adjust to local timezone for correct display in datetime-local input
+          const offset = date.getTimezoneOffset() * 60000;
+          const localDate = new Date(date.getTime() - offset);
+          this.ngay_dang = localDate.toISOString().slice(0, 16);
+        } else {
+          // If no date, set to current date and time
+          const now = new Date();
+          const offset = now.getTimezoneOffset() * 60000;
+          const localIsoString = new Date(now.getTime() - offset).toISOString();
+          this.ngay_dang = localIsoString.slice(0, 16);
+        }
+        
         this.seoTitle = data.tieu_de_seo || "";
         this.seoDescription = data.mo_ta_seo || "";
         this.seoKeywords = data.tu_khoa_seo || "";
@@ -347,14 +360,14 @@ export default {
       if (file) {
         this.file = file;
         this.previewImage = URL.createObjectURL(file);
-        this.hinh_anh = "";
+        this.hinh_anh = ""; // Clear existing image path if a new file is selected
         this.checkSeoCriteria();
       }
     },
     removeImage() {
       this.file = null;
       this.previewImage = "";
-      this.hinh_anh = "";
+      this.hinh_anh = ""; // Clear the bound image path as well
       const input = document.getElementById('hinh_anh');
       if (input) input.value = "";
       this.checkSeoCriteria();
@@ -379,7 +392,7 @@ export default {
         formData.append("tieude", this.tieude);
         formData.append("slug", this.slug);
         formData.append("id_danh_muc_tin_tuc", Number(this.id_danh_muc_tin_tuc));
-        formData.append("ngay_dang", this.ngay_dang);
+        formData.append("ngay_dang", this.ngay_dang); // Gửi cả ngày và giờ
         formData.append("tieu_de_seo", this.seoTitle || "");
         formData.append("mo_ta_seo", this.seoDescription || "");
         formData.append("tu_khoa_seo", this.seoKeywords || "");
@@ -388,6 +401,7 @@ export default {
         if (this.file) {
           formData.append("hinh_anh", this.file);
         } else if (this.originalHinhAnh && this.hinh_anh === "") {
+          // Only send remove_hinh_anh if an original image existed and it was removed
           formData.append("remove_hinh_anh", "true");
         }
 

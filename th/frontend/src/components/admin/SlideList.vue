@@ -832,4 +832,97 @@ img {
   box-shadow: var(--shadow-md);
   z-index: 9999;
 }
+@media (max-width: 768px) {
+    /* --- Bố cục chung & Header --- */
+    .page-container {
+        padding: 1rem;
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+    }
+
+    .page-header .btn {
+        width: 100%;
+    }
+
+    /* --- Form Thêm Mới --- */
+    .form-card {
+        padding: 1rem;
+    }
+    .form-actions {
+        flex-direction: column-reverse; /* Đảo ngược thứ tự nút */
+        gap: 0.5rem;
+    }
+    .form-actions .btn {
+        width: 100%;
+    }
+
+    /* --- Danh sách Slide Items --- */
+    .slide-item {
+        flex-direction: column; /* Xếp các thành phần theo chiều dọc */
+        align-items: flex-start; /* Căn các thành phần về bên trái */
+        gap: 0.75rem;
+        padding: 0.75rem;
+    }
+    
+    .drag-handle {
+        display: none; /* Ẩn icon kéo thả trên mobile */
+    }
+
+    .slide-thumbnail {
+        width: 100%; /* Thumbnail chiếm toàn bộ chiều rộng card */
+        height: auto;
+        aspect-ratio: 16 / 9; /* Giữ tỉ lệ khung hình */
+    }
+
+    .slide-content {
+        width: 100%;
+    }
+    
+    .slide-actions {
+        width: 100%;
+        border-top: 1px solid var(--color-border);
+        padding-top: 0.75rem;
+        justify-content: flex-end; /* Đẩy các nút hành động về bên phải */
+    }
+
+    /* --- Cửa sổ Modal Chỉnh sửa --- */
+    .modal-panel {
+        /* Cho modal chiếm gần hết màn hình */
+        width: 95%;
+        max-width: 95%;
+        max-height: 90vh;
+    }
+
+    .modal-body {
+        /* Quan trọng: Chuyển layout từ 2 cột thành 1 cột */
+        grid-template-columns: 1fr;
+        padding: 1rem;
+        gap: 1.5rem;
+    }
+    
+    .modal-footer {
+        flex-direction: column-reverse; /* Đảo ngược thứ tự nút */
+    }
+    .modal-footer .btn {
+        width: 100%;
+    }
+
+    /* --- Các form nhỏ bên trong modal --- */
+    .form-add-image-inline {
+        /* Sắp xếp lại form thêm ảnh cho gọn */
+        grid-template-columns: 1fr;
+    }
+     .form-add-image-inline .btn {
+        width: 100%;
+    }
+}
+
 </style>
