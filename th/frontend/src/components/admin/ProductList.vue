@@ -358,7 +358,7 @@ onMounted(() => {
   color: var(--color-text-secondary);
   font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.05em;
   font-weight: 600;
 }
 .product-table tbody tr:last-child td {
