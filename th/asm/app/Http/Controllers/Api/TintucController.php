@@ -156,6 +156,26 @@ class TintucController extends Controller
         'luot_xem' => $tintuc->luot_xem,
     ]);
    }
+   public function tangLuotLike($id)
+{
+    // Tìm tin tức theo ID
+    $tintuc = Tintuc::find($id);
+
+    // Kiểm tra xem tin tức có tồn tại không
+    if (!$tintuc) {
+        return response()->json(['message' => 'Không tìm thấy tin tức'], 404);
+    }
+
+    // Tăng lượt like lên 1
+    $tintuc->increment('luot_like');
+    $tintuc->refresh();
+
+    // Trả về số lượt like mới
+    return response()->json([
+        'message' => 'Tăng lượt thích thành công',
+        'luot_like' => $tintuc->luot_like
+    ]);
+}
     // Lấy tin tức nổi bật
    public function tinNoiBat()
     {

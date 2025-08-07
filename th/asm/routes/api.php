@@ -63,6 +63,7 @@ Route::get('tintuc-cong-khai/slug/{slug}', [TintucController::class, 'chitietCon
 Route::get('/tin-noi-bat', [TintucController::class, 'tinNoiBat']);
 Route::get('/xemtintuc-admin/{id}', [TintucController::class, 'xemchitiettintucadmin']);
 Route::get('/tin-lien-quan/{currentNewsId}/{categoryId}', [TintucController::class, 'tinLienQuan']);
+Route::post('/tin-tuc/tang-like/{id}', [TintucController::class, 'tangLuotLike']);
 
 
 // Danh muc tin tuc
