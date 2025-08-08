@@ -234,9 +234,8 @@ Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
 Route::put('/categories/{id}', [CategoryController::class, 'update']);
 
-<<<<<<< HEAD
-=======
-// Route mới đã được chuẩn hóa
+
+
 Route::get('/parent-categories/{id}/products', [ParentCategoryProductController::class, 'getProductsByParentCategory']);
->>>>>>> 5129754d05f86d74ae189900b4248200365e4d8f
+
 
