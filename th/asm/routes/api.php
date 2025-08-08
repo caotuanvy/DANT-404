@@ -24,7 +24,10 @@ use App\Http\Controllers\Api\ChildCategoryController;
 use App\Http\Controllers\Api\BinhLuanController;
 use App\Http\Controllers\Api\PaymentMethodController;
 use App\Http\Controllers\Api\NotificationsController;
-
+use App\Http\Controllers\Api\SocialLinkController;
+Route::get('/social-links/active', [SocialLinkController::class, 'getActiveLinks']);
+Route::patch('/admin/social-links/{id}/status', [SocialLinkController::class, 'updateStatus']);
+Route::apiResource('/admin/social-links', SocialLinkController::class);
 // Public Auth Routes
 Route::post('/auth/google', [GoogleAuthController::class, 'handleGoogleLogin']);
 Route::post('/register', [AuthController::class, 'register']);
@@ -236,4 +239,5 @@ Route::post('/categories/{categoryId}/products', [CategoryProductController::cla
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
 Route::put('/categories/{id}', [CategoryController::class, 'update']);
+
 

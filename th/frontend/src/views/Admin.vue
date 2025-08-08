@@ -250,6 +250,7 @@ const menu = [
   {
     label: 'Quản lý trang tĩnh',
     items: [
+      { to: '/admin/social', label: 'Mạng xã hội', icon: 'bi bi-share' },
       { to: '/admin/slide', label: 'Slide Show', icon: 'bi bi-calendar-week' },
       { to: '/admin/introduce',label : 'Trang Tĩnh', icon: 'bi bi-info-circle' },
     ],
@@ -340,7 +341,7 @@ onMounted(() => {
 
 .admin-layout {
   display: flex;
-  min-height: 100vh;
+  height: auto;
   background-color: #f8f9fa;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
@@ -400,6 +401,7 @@ onMounted(() => {
   padding: 0;
   margin: 0;
   background-color: #fdfdfd;
+  width: 260px !important;
 }
 .nav-link {
   display: flex;

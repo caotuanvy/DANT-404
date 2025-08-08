@@ -210,26 +210,11 @@ onMounted(() => {
 
 <style scoped>
 
-:root {
-  --color-primary: #4FC3F7;
-  --color-primary-hover: #1d4ed8;
-  --color-bg-page: #f3f4f6;
-  --color-bg-card: #ffffff;
-  --color-border: gray;
-  --color-text-primary: #111827;
-  --color-text-secondary: #6b7280;
-  --color-text-tertiary: #9ca3af;
-  --color-green: #16a34a; 
-  --color-red: #dc2626;
-  --color-gray: #4b5563;
-  --radius: 8px;
-  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-}
+
 
 .page-wrapper {
   background-color: var(--color-bg-page);
-  padding: 2rem;
-  min-height: 100vh;
+  margin-left: -0px !important;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 .page-header {
@@ -345,7 +330,8 @@ onMounted(() => {
 .product-table {
   width: 100%;
   border-collapse: collapse;
-  white-space: nowrap;
+ 
+  table-layout: fixed;
 }
 .product-table th, .product-table td {
   padding: 1rem;

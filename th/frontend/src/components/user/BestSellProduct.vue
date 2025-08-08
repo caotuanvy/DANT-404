@@ -29,7 +29,7 @@
         <p v-if="getValidDiscountPercentage(sp.khuyen_mai) > 0" class="original-price">
          {{ formatCurrency(sp.gia) }}đ
         </p>
-        <p class="Product-Mo-ta-seo">{{ sp.Mo_ta_seo }}</p>
+        <p class="Product-Mo-ta-seo" v-html="sp.Mo_ta_seo"></p>
         <div class="price-and-icon">
          <p class="current-price">{{ formatCurrency(calculateDisplayPrice(sp.gia, sp.khuyen_mai)) }}đ</p>
         </div>
@@ -525,5 +525,70 @@ onMounted(async () => {
 .compare-button:disabled {
  background-color: #ccc;
  cursor: not-allowed;
+}
+@media (max-width: 768px) {
+    /* Điều chỉnh lại khối banner chính */
+    .top-products {
+        width: 95%;
+        padding: 20px 0;
+    }
+    .main-best-sell{
+      margin-top: 400px !important;
+    }
+    .title {
+        font-size: 24px; /* Giảm cỡ chữ tiêu đề */
+        margin-left: 15px;
+    }
+
+    /* === THAY ĐỔI CHÍNH: LƯỚI SẢN PHẨM === */
+    .product-grid {
+        /* Chuyển thành 2 cột */
+        grid-template-columns: repeat(2, 1fr);
+        /* Giảm khoảng cách giữa các sản phẩm */
+        gap: 10px;
+        /* Giảm padding hai bên */
+        padding: 0 10px;
+    }
+
+    .product-card {
+        padding: 10px;
+        height: auto; /* Để chiều cao tự động theo nội dung */
+    }
+
+    .product-name {
+        font-size: 14px;
+        min-height: 3em; /* Đảm bảo đủ chỗ cho 2 dòng tên SP */
+    }
+
+    .current-price {
+        font-size: 16px;
+    }
+    
+    .main-prsell {
+        position: static; /* Reset lại position để không bị chồng chéo */
+        margin-top: 10px;
+    }
+
+    /* Điều chỉnh thanh so sánh cho gọn hơn */
+    .comparison-bar {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .comparison-items {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .comparison-item, .comparison-item-placeholder {
+        width: 70px;
+        height: auto;
+        padding-bottom: 5px;
+    }
+
+    .comparison-img {
+        width: 40px;
+        height: 40px;
+    }
 }
 </style>

@@ -65,6 +65,7 @@ const routes = [
   name: 'SanPhamBanChay',
   component: () => import('../components/user/AllBestSellProduct.vue')
   },
+
   {
     path: '/tin-tuc-chi-tiet/:slug',
     name: 'ChiTietTinTucCongKhaiSlug',
@@ -227,6 +228,7 @@ const routes = [
         component: () => import('@/views/admin/danhmuccap2/Adddanhmuccap2.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       },
+
       // ROUTE ĐÃ BỊ TRÙNG LẶP TRƯỚC ĐÓ, ĐÃ XÓA/GOM VÀO 'CategoryChildrenList'
       // {
       //     path: 'categories/:categoryId/children', // URL sẽ là /admin/categories/:id/children
@@ -257,6 +259,12 @@ const routes = [
         path: 'categories/:category_id/products', // Đường dẫn của nó
         name: 'CategoryProducts', // TÊN ROUTE ĐƯỢC DÙNG KHI BẠN MUỐN ĐI TỚI TRANG SẢN PHẨM THEO DANH MỤC
         component: () => import('../views/admin/categories/CategoriesProduct.vue'), // COMPONENT HIỂN THỊ SẢN PHẨM THEO DANH MỤC
+        meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
+        path: 'social',
+        name: 'AdminSocial',
+        component: () => import('../components/admin/SocialList.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       },
     ]
