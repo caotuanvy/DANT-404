@@ -67,9 +67,9 @@
             <span><i class="fa-solid fa-circle"></i> Lượt xem:</span>
             <span>{{ news.luot_xem }}</span>
           </li>
-          <li v-if="news.danh_muc">
+          <li v-if="news.danhMuc">
             <span><i class="fa-solid fa-circle"></i> Danh mục:</span>
-            <span>{{ news.danh_muc.ten_danh_muc }}</span>
+            <span>{{ news.danhMuc.ten_danh_muc }}</span>
           </li>
         </ul>
       </div>

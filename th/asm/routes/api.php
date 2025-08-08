@@ -71,7 +71,8 @@ Route::get('/tin-noi-bat', [TintucController::class, 'tinNoiBat']);
 Route::get('/xemtintuc-admin/{id}', [TintucController::class, 'xemchitiettintucadmin']);
 Route::get('/tin-lien-quan/{currentNewsId}/{categoryId}', [TintucController::class, 'tinLienQuan']);
 Route::post('/tin-tuc/tang-like/{id}', [TintucController::class, 'tangLuotLike']);
-
+Route::get('/tags', [TintucController::class, 'getAllTags']);
+Route::get('/tin-tuc-theo-tag/{tag}', [TintucController::class, 'getNewsByTag']);
 
 // Danh muc tin tuc
 Route::get('/danh-muc-tin-tuc', [DanhMucTtController::class, 'index']);
