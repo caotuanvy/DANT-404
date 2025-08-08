@@ -1,46 +1,82 @@
 <template>
   <div class="news-details-layout">
     <div v-if="loading" class="news-details-container loading-message">
-        <i class="fa-solid fa-spinner fa-spin"></i> Đang tải tin tức...
+      <i class="fa-solid fa-spinner fa-spin"></i> Đang tải tin tức...
     </div>
     <div v-else-if="error" class="news-details-container error-message">
-        <i class="fa-solid fa-exclamation-triangle"></i> Lỗi: {{ error }}
+      <i class="fa-solid fa-exclamation-triangle"></i> Lỗi: {{ error }}
     </div>
     <div v-else-if="!news" class="news-details-container no-data-message">
-        <i class="fa-solid fa-info-circle"></i> Không tìm thấy tin tức này hoặc tin tức không khả dụng.
+      <i class="fa-solid fa-info-circle"></i> Không tìm thấy tin tức này hoặc tin tức không khả dụng.
     </div>
-    <div class="news-details-container" v-else>
-      <div class="news-banner"></div>
-      <h1 class="news-title">
-        <i class="fa-solid fa-bullhorn"></i>
-        {{ news.tieude }}
-      </h1>
-      <div class="news-meta">
-        <span class="meta-date">
-          <i class="fa-regular fa-calendar"></i>
-          {{ formatDate(news.ngay_dang) }}
-        </span>
-        <span class="meta-view">
-          <i class="fa-solid fa-eye"></i>
-          {{ news.luot_xem }} lượt xem
-        </span>
-        <span class="meta-category" v-if="news.danh_muc">
-            <i class="fa-solid fa-tag"></i>
-            {{ news.danh_muc.ten_danh_muc }}
-          </span>
+    <div v-else class="main-content-area">
+      <div class="news-main-section">
+        <div class="news-header">
+          <div class="news-meta-row">
+            <span class="meta-date">
+              <i class="fa-regular fa-calendar-alt"></i>
+              {{ formatDate(news.ngay_dang) }}
+            </span>
+            <span class="meta-view">
+              <i class="fa-solid fa-eye"></i>
+              {{ news.luot_xem }} lượt xem
+            </span>
+          </div>
+          <h1 class="news-title-main">
+            {{ news.tieude }}
+          </h1>
+          <div class="like-button-container">
+            <button @click="handleLike" class="like-button" :class="{ 'liked': hasLiked }">
+              <i :class="hasLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart'"></i> 
+              {{ hasLiked ? 'Đã thích' : 'Yêu thích' }}
+            </button>
+          </div>
+        </div>
+        <img
+          class="news-image-main"
+          :src="news.hinh_anh ? (news.hinh_anh.startsWith('http') ? news.hinh_anh : `http://localhost:8000/storage/${news.hinh_anh}`) : 'https://via.placeholder.com/800x450/f0f0f0/888888?text=Image+Not+Found'"
+          alt="Hình ảnh bài viết"
+          @error="handleImageError"
+        >
+        <div class="news-content-area">
+          <div class="news-intro" v-if="news.noidung_gioi_thieu">
+            <p>{{ news.noidung_gioi_thieu }}</p>
+          </div>
+          <div class="news-content-blocks" v-html="getNoiDungHtml(news.noidung)"></div>
+          <div class="news-keywords" v-if="news.tu_khoa_seo">
+            <p><strong>Từ khóa:</strong> {{ news.tu_khoa_seo }}</p>
+          </div>
+        </div>
       </div>
-      <img
-        class="news-image"
-        :src="news.hinh_anh ? (news.hinh_anh.startsWith('http') ? news.hinh_anh : `http://localhost:8000/storage/${news.hinh_anh}`) : 'https://via.placeholder.com/800x350/f0f0f0/888888?text=Image+Not+Found'"
-        alt="Hình ảnh"
-        @error="handleImageError"
-      >
-      <div class="news-content" v-html="getNoiDungHtml(news.noidung)"></div>
+      <div>
+        <BinhLuanTT />
+      </div>
     </div>
+    
+    <aside class="news-sidebar" v-if="news">
+      <div class="sidebar-section sidebar-info-box">
+        <div class="info-header">
+          <h3><i class="fa-solid fa-bell"></i> Tin bài quản trị</h3>
+        </div>
+        <ul class="info-list">
+          <li>
+            <span><i class="fa-solid fa-circle"></i> Ngày đăng:</span>
+            <span>{{ formatDate(news.ngay_dang) }}</span>
+          </li>
+          <li>
+            <span><i class="fa-solid fa-circle"></i> Lượt xem:</span>
+            <span>{{ news.luot_xem }}</span>
+          </li>
+          <li v-if="news.danh_muc">
+            <span><i class="fa-solid fa-circle"></i> Danh mục:</span>
+            <span>{{ news.danh_muc.ten_danh_muc }}</span>
+          </li>
+        </ul>
+      </div>
 
-    <aside class="news-sidebar">
-      <div class="sidebar-section">
-        <h3><i class="fa-solid fa-fire"></i> Tin liên quan</h3> <div v-if="relatedNews.length > 0" class="related-news-list">
+      <div class="sidebar-section related-news">
+        <h3><i class="fa-solid fa-fire-alt"></i> Tin liên quan</h3>
+        <div v-if="relatedNews.length > 0" class="related-news-list">
           <div
             class="related-news-item"
             v-for="item in relatedNews"
@@ -55,9 +91,6 @@
             >
             <div class="related-news-info">
               <a href="javascript:void(0);" class="related-news-title">{{ item.tieude }}</a>
-              <p class="related-news-desc">
-                {{ getNoiDungSnippet(item.noidung, 70) }}
-              </p>
             </div>
           </div>
         </div>
@@ -65,13 +98,18 @@
           <i class="fa-solid fa-info-circle"></i> Không có tin liên quan nào.
         </div>
       </div>
+
+      <div class="sidebar-section signup-newsletter">
+        <p class="signup-title">Đăng ký nhận tin</p>
+        <p class="signup-description">Nhận thông báo sớm nhất về sản phẩm và chương trình khuyến mại</p>
+        <div class="signup-form">
+          <input type="email" placeholder="Email của bạn">
+          <button type="submit">Đăng ký ngay</button>
+        </div>
+      </div>
     </aside>
   </div>
-  <div>
-    <BinhLuanTT />
-  </div>
 </template>
-
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
@@ -86,6 +124,7 @@ const news = ref(null)
 const relatedNews = ref([])
 const loading = ref(true)
 const error = ref(null)
+const hasLiked = ref(false)
 
 watch(() => route.params.slug, (newSlug, oldSlug) => {
   if (newSlug && newSlug !== oldSlug) {
@@ -102,14 +141,21 @@ async function fetchNewsDetails(slug) {
   news.value = null;
   error.value = null;
   relatedNews.value = [];
+  hasLiked.value = false;
 
   try {
     const newsResponse = await axios.get(`http://localhost:8000/api/tintuc-cong-khai/slug/${slug}`)
     news.value = newsResponse.data;
 
-    // --- Cập nhật SEO sau khi tải tin tức ---
+    // Kiểm tra trạng thái đã thích từ LocalStorage
+    const likedNewsIds = JSON.parse(localStorage.getItem('liked_news') || '[]');
+    if (likedNewsIds.includes(news.value.id)) {
+      hasLiked.value = true;
+    } else {
+      hasLiked.value = false;
+    }
+
     updateMetaTags(news.value);
-    // ----------------------------------------
 
     if (news.value && news.value.id && news.value.id_danh_muc_tin_tuc) {
       await fetchRelatedNews(news.value.id, news.value.id_danh_muc_tin_tuc);
@@ -123,9 +169,7 @@ async function fetchNewsDetails(slug) {
     console.error("Lỗi khi tải chi tiết tin tức:", err);
     error.value = err.response?.data?.message || err.message || "Không thể tải tin tức. Vui lòng thử lại.";
     news.value = null;
-    // --- Xóa hoặc đặt lại các thẻ meta khi có lỗi ---
     updateMetaTags(null);
-    // ------------------------------------------------
   } finally {
     loading.value = false;
   }
@@ -166,12 +210,40 @@ function handleImageError(event) {
   event.target.alt = 'Hình ảnh không khả dụng';
 }
 
-// --- HÀM MỚI ĐỂ CẬP NHẬT CÁC THẺ META SEO ---
+async function handleLike() {
+  if (!news.value) {
+    return;
+  }
+
+  // Lấy danh sách ID đã thích từ LocalStorage
+  const likedNewsIds = JSON.parse(localStorage.getItem('liked_news') || '[]');
+
+  if (hasLiked.value) {
+    console.warn('Bạn đã thích bài viết này rồi trong phiên làm việc này.');
+    // Có thể thêm logic hủy thích ở đây nếu bạn muốn
+    return;
+  }
+
+  try {
+    // Gọi API tăng lượt thích
+    const response = await axios.post(`http://localhost:8000/api/tin-tuc/tang-like/${news.value.id}`);
+    
+    if (response.data) {
+      // Cập nhật trạng thái và lưu vào LocalStorage
+      hasLiked.value = true;
+      likedNewsIds.push(news.value.id);
+      localStorage.setItem('liked_news', JSON.stringify(likedNewsIds));
+      
+      console.log('Bạn đã thích bài viết này thành công!');
+    }
+  } catch (err) {
+    console.error("Lỗi khi tăng lượt thích:", err);
+  }
+}
+
 function updateMetaTags(newsData) {
-  // Đặt tiêu đề trang
   document.title = newsData && newsData.tieu_de_seo ? newsData.tieu_de_seo : (newsData ? newsData.tieude : 'Tin tức chung');
 
-  // Lấy hoặc tạo thẻ meta description
   let descriptionMeta = document.querySelector('meta[name="description"]');
   if (!descriptionMeta) {
     descriptionMeta = document.createElement('meta');
@@ -180,7 +252,6 @@ function updateMetaTags(newsData) {
   }
   descriptionMeta.setAttribute('content', newsData && newsData.mo_ta_seo ? newsData.mo_ta_seo : (newsData ? getNoiDungSnippet(newsData.noidung, 160) : 'Trang chi tiết tin tức.'));
 
-  // Lấy hoặc tạo thẻ meta keywords
   let keywordsMeta = document.querySelector('meta[name="keywords"]');
   if (!keywordsMeta) {
     keywordsMeta = document.createElement('meta');
@@ -189,41 +260,35 @@ function updateMetaTags(newsData) {
   }
   keywordsMeta.setAttribute('content', newsData && newsData.tu_khoa_seo ? newsData.tu_khoa_seo : (newsData ? newsData.tieude : 'tin tức, bài viết, thông tin'));
 
-  // Cập nhật Open Graph (OG) và Twitter Card tags cho chia sẻ trên mạng xã hội
   updateSocialMetaTags(newsData);
 }
 
-// --- HÀM MỚI CHO CÁC THẺ META MẠNG XÃ HỘI (OPEN GRAPH & TWITTER CARD) ---
 function updateSocialMetaTags(newsData) {
-  // Xóa các thẻ OG/Twitter cũ để tránh trùng lặp khi chuyển trang
   const existingOgTags = document.querySelectorAll('[property^="og:"], [name^="twitter:"]');
   existingOgTags.forEach(tag => tag.remove());
 
   if (!newsData) {
-    return; // Không có dữ liệu tin tức, không tạo thẻ OG/Twitter
+    return;
   }
 
-  const baseUrl = 'http://localhost:8000'; // Đặt base URL của ứng dụng Laravel của bạn
-  const currentUrl = window.location.href; // URL hiện tại của trang tin tức
+  const baseUrl = 'http://localhost:8000';
+  const currentUrl = window.location.href;
 
-  // Thẻ Open Graph (Facebook, Zalo, LinkedIn, v.v.)
   const ogTags = [
     { property: 'og:title', content: newsData.tieu_de_seo || newsData.tieude },
     { property: 'og:description', content: newsData.mo_ta_seo || getNoiDungSnippet(newsData.noidung, 160) },
     { property: 'og:type', content: 'article' },
     { property: 'og:url', content: currentUrl },
-    { property: 'og:image', content: newsData.hinh_anh ? (newsData.hinh_anh.startsWith('http') ? newsData.hinh_anh : `${baseUrl}/storage/${newsData.hinh_anh}`) : 'https://via.placeholder.com/1200x630/f0f0f0/888888?text=Image+Not+Found' },
-    { property: 'og:site_name', content: 'Tên Trang Web Của Bạn' }, // Thay bằng tên website của bạn
+    { property: 'og:image', content: newsData.hinh_anh ? (newsData.hinh_anh.startsWith('http') ? news.hinh_anh : `${baseUrl}/storage/${newsData.hinh_anh}`) : 'https://via.placeholder.com/1200x630/f0f0f0/888888?text=Image+Not+Found' },
+    { property: 'og:site_name', content: 'Tên Trang Web Của Bạn' },
     { property: 'og:locale', content: 'vi_VN' }
   ];
 
-  // Thẻ Twitter Card
   const twitterTags = [
     { name: 'twitter:card', content: 'summary_large_image' },
     { name: 'twitter:title', content: newsData.tieu_de_seo || newsData.tieude },
     { name: 'twitter:description', content: newsData.mo_ta_seo || getNoiDungSnippet(newsData.noidung, 160) },
-    { name: 'twitter:image', content: newsData.hinh_anh ? (newsData.hinh_anh.startsWith('http') ? newsData.hinh_anh : `${baseUrl}/storage/${newsData.hinh_anh}`) : 'https://via.placeholder.com/1200x630/f0f0f0/888888?text=Image+Not+Found' },
-    // { name: 'twitter:creator', content: '@tencuaban' }, // Nếu có tài khoản Twitter của bạn
+    { name: 'twitter:image', content: newsData.hinh_anh ? (newsData.hinh_anh.startsWith('http') ? news.hinh_anh : `${baseUrl}/storage/${newsData.hinh_anh}`) : 'https://via.placeholder.com/1200x630/f0f0f0/888888?text=Image+Not+Found' },
   ];
 
   ogTags.forEach(tagData => {
@@ -241,7 +306,6 @@ function updateSocialMetaTags(newsData) {
   });
 }
 
-// --- Các hàm xử lý nội dung EditorJS/HTML ---
 function isJSON(str) {
   if (typeof str === 'object' && str !== null) return true
   try {
@@ -264,9 +328,9 @@ function convertBlocksToHtml(data) {
         const tag = block.data.style === 'ordered' ? 'ol' : 'ul'
         if (!block.data.items || !Array.isArray(block.data.items)) return '';
         return `<${tag}>${block.data.items.map(item => {
-            if (typeof item === 'string') return `<li>${item}</li>`;
-            if (typeof item === 'object' && item !== null && item.content) return `<li>${item.content}</li>`;
-            return '';
+          if (typeof item === 'string') return `<li>${item}</li>`;
+          if (typeof item === 'object' && item !== null && item.content) return `<li>${item.content}</li>`;
+          return '';
         }).join('')}</${tag}>`;
       case 'quote':
         const citation = block.data.caption ? `<footer class="quote-caption">&mdash; ${block.data.caption}</footer>` : '';
@@ -277,7 +341,7 @@ function convertBlocksToHtml(data) {
         const imageUrl = block.data.file?.url || block.data.url;
         const imageCaption = block.data.caption ? `<figcaption class="image-caption">${block.data.caption}</figcaption>` : '';
         if (imageUrl) {
-            return `<figure class="news-image-figure"><img src="${imageUrl}" alt="${block.data.caption || 'Hình ảnh'}" class="news-embedded-image"/>${imageCaption}</figure>`;
+          return `<figure class="news-image-figure"><img src="${imageUrl}" alt="${block.data.caption || 'Hình ảnh'}" class="news-embedded-image"/>${imageCaption}</figure>`;
         }
         return '';
       case 'raw':
@@ -362,232 +426,336 @@ function getNoiDungSnippet(noidung, maxLength = 100) {
 
 <style scoped>
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+/*
+  ========================================================================
+  CÁC KIỂU DÁNG CHÍNH ĐƯỢC CẢI THIỆN
+  ========================================================================
+*/
 .news-details-layout {
   display: flex;
-  gap: 36px;
+  justify-content: center;
+  gap: 24px;
   max-width: 1200px;
-  margin: 40px auto 32px auto;
-  align-items: flex-start;
+  margin: 32px auto;
+  font-family: 'Roboto', sans-serif;
+  padding: 0 15px;
 }
-.news-sidebar {
-  flex: 1.1;
-  min-width: 280px;
-  background: #f7f7f7;
+
+.main-content-area {
+  flex: 1;
+  max-width: 800px;
+  background: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 12px #0001;
-  padding: 24px 18px 18px 18px;
-  position: sticky;
-  top: 32px;
-  height: fit-content;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  padding: 25px;
 }
-.sidebar-section {
-  margin-bottom: 28px;
+
+.news-header {
+  border-bottom: 1px dashed #ddd;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
 }
-.sidebar-section h3 {
-  font-size: 1.08rem;
-  color: #444;
+
+.news-title-main {
+  font-size: 28px;
   font-weight: 700;
-  margin-bottom: 16px;
+  color: #333;
+  line-height: 1.4;
+  margin: 10px 0;
+}
+
+.news-meta-row {
+  font-size: 14px;
+  color: #888;
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 20px;
 }
+
+.news-meta-row i {
+  color: #1a73e8; /* Màu xanh của Google */
+  margin-right: 5px;
+}
+
+/* Kiểu dáng cho nút "Yêu thích" mới */
+.like-button-container {
+  margin-top: 15px;
+}
+
+.like-button {
+  background-color: transparent;
+  border: 1px solid #ff5252;
+  color: #ff5252;
+  padding: 10px 20px;
+  border-radius: 8px; /* Bo tròn góc */
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.like-button:hover {
+  background-color: #ff5252; /* Màu đỏ đậm hơn khi hover */
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.like-button.liked {
+  background-color: #e04040;
+  border-color: #e04040;
+  color: #fff;
+  transform: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.like-button i {
+  font-size: 18px;
+  transition: all 0.2s;
+}
+
+.like-button.liked i {
+  color: #fff;
+  transform: scale(1.1);
+  animation: pulse-effect 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+@keyframes pulse-effect {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1.1); }
+}
+
+.like-count {
+  font-size: 14px;
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.news-image-main {
+  width: 100%;
+  max-height: 450px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-top: 20px;
+  border: 1px solid #eee;
+}
+
+.news-content-area {
+  margin-top: 20px;
+}
+
+.news-intro p {
+  font-size: 16px;
+  font-weight: 500;
+  color: #555;
+  line-height: 1.6;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-left: 4px solid #1a73e8;
+  margin-bottom: 20px;
+  border-radius: 4px;
+}
+
+/*
+  ========================================================================
+  KIỂU DÁNG CỦA SIDEBAR
+  ========================================================================
+*/
+.news-sidebar {
+  flex: 0 0 300px;
+  position: sticky;
+  top: 30px;
+  height: fit-content;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sidebar-section {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  padding: 20px;
+}
+
+.sidebar-section h3 {
+  font-size: 18px;
+  color: #333;
+  font-weight: 700;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #1a73e8;
+  padding-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar-section h3 i {
+  color: #1a73e8;
+}
+
+.info-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.info-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #555;
+}
+
+.info-list li i {
+  font-size: 8px;
+  color: #1a73e8;
+  margin-right: 8px;
+}
+
 .related-news-list {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 15px;
 }
+
 .related-news-item {
   display: flex;
+  align-items: center;
   gap: 12px;
-  align-items: flex-start;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 1px 6px #0001;
-  padding: 10px 10px 10px 10px;
-  transition: box-shadow 0.2s;
   cursor: pointer;
-}
-.related-news-item:hover {
-  box-shadow: 0 4px 16px #1976d211;
-  transform: translateY(-2px);
-}
-.related-news-img {
-  width: 90px;
-  height: 60px;
-  object-fit: cover;
+  transition: transform 0.2s, box-shadow 0.2s;
+  background: #f9f9f9;
+  padding: 8px;
   border-radius: 6px;
-  background: #e3eaf2;
+  border: 1px solid #eee;
+}
+
+.related-news-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+.related-news-img {
+  width: 80px;
+  height: 55px;
+  object-fit: cover;
+  border-radius: 4px;
   flex-shrink: 0;
 }
+
 .related-news-info {
   flex: 1;
-  min-width: 0;
 }
+
 .related-news-title {
-  font-size: 1rem;
+  font-size: 15px;
   font-weight: 600;
-  color: #1976d2;
+  color: #333;
   text-decoration: none;
-  margin-bottom: 4px;
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.related-news-title:hover {
-  color: #0d47a1;
-}
-.related-news-desc {
-  font-size: 0.97rem;
-  color: #444;
-  margin: 0;
-  line-height: 1.5;
-  overflow: hidden;
-  text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-}
-.news-details-container {
-  flex: 2.2;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 24px #0001;
-  padding: 0 0 32px 0;
-  position: relative;
   overflow: hidden;
 }
-.news-banner {
-  height: 48px;
-  background: #e3eaf2;
-  border-radius: 12px 12px 0 0;
-  box-shadow: 0 2px 8px #0001;
+
+.related-news-title:hover {
+  color: #1a73e8;
 }
-.news-title {
-  font-size: 2rem;
+
+.signup-newsletter {
+  background-color: #1a73e8;
+  color: #fff;
+  text-align: center;
+  padding: 25px 20px;
+}
+
+.signup-title {
+  font-size: 20px;
   font-weight: 700;
-  color: #222;
-  margin: 28px 0 12px 0;
-  letter-spacing: 1px;
+  margin-bottom: 5px;
+}
+
+.signup-description {
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.signup-form {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding-left: 36px;
+  flex-direction: column;
+  gap: 10px;
 }
-.news-meta {
-  color: #888;
-  font-size: 15px;
-  margin-bottom: 18px;
-  display: flex;
-  gap: 28px;
-  align-items: center;
-  font-weight: 500;
-  padding-left: 36px;
-}
-.news-meta i {
-  margin-right: 6px;
-}
-.news-image {
-  width: calc(100% - 72px);
-  max-height: 340px;
-  object-fit: cover;
-  border-radius: 8px;
-  margin: 0 36px 22px 36px;
-  border: 1px solid #e3eaf2;
-  background: #f7f7f7;
-  box-shadow: 0 2px 8px #0001;
-  transition: transform 0.3s;
-  display: block;
-}
-.news-image:hover {
-  transform: scale(1.01) rotate(-1deg);
-  box-shadow: 0 8px 24px #0002;
-}
-.news-content {
-  font-size: 1.08rem;
-  color: #222;
-  line-height: 1.8;
-  background: #fff;
-  border-radius: 8px;
-  padding: 28px 36px 18px 36px;
-  box-shadow: 0 2px 8px #0001;
-  margin-top: 10px;
-}
-.news-content h2 {
-  color: #1976d2;
-  margin-top: 16px;
-  font-size: 1.15rem;
-  font-weight: 700;
-  margin-bottom: 10px;
-  letter-spacing: 0.5px;
-}
-.news-content ul {
-  margin: 12px 0 12px 24px;
-  padding-left: 0;
-}
-.news-content ul li {
-  margin-bottom: 7px;
-  position: relative;
-  padding-left: 18px;
-}
-.news-content ul li::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 10px;
-  width: 7px;
-  height: 7px;
-  background: #b0bec5;
-  border-radius: 50%;
-}
-.news-content blockquote {
-  border-left: 4px solid #b0bec5;
-  padding-left: 16px;
-  color: #1976d2;
-  font-style: italic;
-  margin: 18px 0;
-  background: #f7f7f7;
-  border-radius: 6px;
-  font-size: 1.02rem;
-  box-shadow: 0 1px 6px #0001;
-}
-.news-content hr {
+
+.signup-form input {
+  padding: 10px;
+  border-radius: 4px;
   border: none;
-  border-top: 1px dashed #b0bec5;
-  margin: 22px 0;
+  font-size: 14px;
 }
-@media (max-width: 1100px) {
+
+.signup-form button {
+  padding: 10px;
+  background-color: #fbbc05; /* Màu vàng của Google */
+  color: #333;
+  font-weight: 700;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.signup-form button:hover {
+  background-color: #f9ab00;
+}
+
+/*
+  ========================================================================
+  MEDIA QUERIES (RESPONSIVE)
+  ========================================================================
+*/
+@media (max-width: 992px) {
   .news-details-layout {
     flex-direction: column;
-    gap: 0;
+    gap: 20px;
   }
   .news-sidebar {
-    margin-bottom: 24px;
     position: static;
+    flex: 1;
     width: 100%;
   }
-  .news-details-container {
-    width: 100%;
+  .main-content-area {
+    max-width: none;
   }
 }
-@media (max-width: 900px) {
-  .news-details-container {
-    padding: 0 0 14px 0;
+
+@media (max-width: 768px) {
+  .news-details-layout {
+    padding: 0 10px;
   }
-  .news-title,
-  .news-meta,
-  .news-content {
-    padding-left: 6vw;
-    padding-right: 6vw;
+  .news-title-main {
+    font-size: 24px;
   }
-  .news-image {
-    margin-left: 6vw;
-    margin-right: 6vw;
-    width: calc(100% - 12vw);
+  .news-meta-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
   }
-  .news-content {
-    padding: 16px 6vw 10px 6vw;
+  .related-news-item {
+    flex-direction: row;
+    align-items: center;
+  }
+  .related-news-title {
+    font-size: 14px;
   }
 }
 </style>

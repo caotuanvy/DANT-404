@@ -7,6 +7,7 @@ use App\Models\Category; // Model cho danh mục con (ví dụ: bảng 'categori
 use App\Models\DanhMucCha; // Model cho danh mục cha (ví dụ: bảng 'danh_muc_cha')
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str; // Đảm bảo đã import Str nếu bạn dùng nó ở đây
 
 class ChildCategoryController extends Controller
 {
@@ -48,10 +49,17 @@ class ChildCategoryController extends Controller
                     'parent_id' => null, // Giả định DanhMucCha là cấp cao nhất hoặc không có cột parent_id
                 ],
                 'subcategories' => $subcategories->map(function ($subcategory) {
+                    // THAY ĐỔI TẠI ĐÂY: Thêm 'image_url' vào dữ liệu trả về cho frontend
+                    // Giả định 'slug' của Category model chứa tên file ảnh
+                    $imageUrl = $subcategory->slug
+                        ? url("/uploads/categories/{$subcategory->slug}")
+                        : url("/uploads/categories/placeholder.jpg"); // Ảnh mặc định nếu không có slug
+
                     return [
                         'category_id' => $subcategory->category_id, // Đảm bảo đây là primary key của Category
                         'ten_danh_muc' => $subcategory->ten_danh_muc,
                         'slug' => $subcategory->slug,
+                        'image_url' => $imageUrl, // Đã thêm trường này
                         'parent_id' => $subcategory->danh_muc_cha_id, // ID của danh mục cha hiện tại
                         'noi_bat' => $subcategory->noi_bat,
                         'trang_thai' => $subcategory->trang_thai,

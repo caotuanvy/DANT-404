@@ -2,6 +2,7 @@
   <div>
     <ImageSlider />
     <IntroduceView />
+    <Category/>
     <BestSellProduct />
     <EightProductGrid />
     <TintucHome />
@@ -10,6 +11,7 @@
 </template>
 
 <script setup>
+import Category from '@/components/user/Category.vue';
 import BestSellProduct from '@/components/user/BestSellProduct.vue';
 import EightProductGrid from '@/components/user/EightProductGrid.vue';
 import IntroduceView from '@/components/user/IntroduceView.vue';

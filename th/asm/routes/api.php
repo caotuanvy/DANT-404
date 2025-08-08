@@ -24,10 +24,15 @@ use App\Http\Controllers\Api\ChildCategoryController;
 use App\Http\Controllers\Api\BinhLuanController;
 use App\Http\Controllers\Api\PaymentMethodController;
 use App\Http\Controllers\Api\NotificationsController;
+use App\Http\Controllers\Api\ParentCategoryProductController;
 use App\Http\Controllers\Api\SocialLinkController;
 Route::get('/social-links/active', [SocialLinkController::class, 'getActiveLinks']);
 Route::patch('/admin/social-links/{id}/status', [SocialLinkController::class, 'updateStatus']);
 Route::apiResource('/admin/social-links', SocialLinkController::class);
+
+
+
+
 // Public Auth Routes
 Route::post('/auth/google', [GoogleAuthController::class, 'handleGoogleLogin']);
 Route::post('/register', [AuthController::class, 'register']);
@@ -43,12 +48,6 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::get('user/product/details-by-slugs', [ProductController::class, 'getDetailsBySlugs']);
 Route::apiResource('products', ProductController::class);
 Route::put('/products/{id}/toggle-noi-bat', [ProductController::class, 'toggleNoiBat']);
-Route::get('/categories/{id}/products', [CategoryController::class, 'getProductsByCategory']);
-
-// Route::middleware('auth:sanctum')->group(function () {
-//     Route::post('/carts/add', [GioHangController::class, 'themVaoGioHang']);
-    // Route::get('/carts', [GioHangController::class, 'xemGioHang']);
-// });
 
 // Product Image Upload (public add, delete protected)
 Route::post('/products/{product_id}/images', [ProductImageController::class, 'store']);
@@ -71,6 +70,7 @@ Route::get('tintuc-cong-khai/slug/{slug}', [TintucController::class, 'chitietCon
 Route::get('/tin-noi-bat', [TintucController::class, 'tinNoiBat']);
 Route::get('/xemtintuc-admin/{id}', [TintucController::class, 'xemchitiettintucadmin']);
 Route::get('/tin-lien-quan/{currentNewsId}/{categoryId}', [TintucController::class, 'tinLienQuan']);
+Route::post('/tin-tuc/tang-like/{id}', [TintucController::class, 'tangLuotLike']);
 
 
 // Danh muc tin tuc
@@ -85,10 +85,10 @@ Route::get('tintuc-cong-khai/danh-muc/{id}', [DanhMucTtController::class, 'tintu
 
 // Binh luan
 Route::prefix('admin/binhluan')->group(function () {
-    Route::get('/', [BinhLuanController::class, 'index']); // Lấy danh sách
-    Route::put('/{id}/toggle', [BinhLuanController::class, 'toggleTrangThai']); // Ẩn / hiện
-    Route::put('/{id}/reset-bao-cao', [BinhLuanController::class, 'resetBaoCao']); // Reset báo cáo (nếu bạn vẫn dùng)
-    Route::put('/{id}/set-bao-cao', [BinhLuanController::class, 'setBaoCao']);
+Route::get('/', [BinhLuanController::class, 'index']);
+Route::put('/{id}/toggle', [BinhLuanController::class, 'toggleTrangThai']);
+Route::put('/{id}/reset-bao-cao', [BinhLuanController::class, 'resetBaoCao']); // Reset báo cáo (nếu bạn vẫn dùng)
+Route::put('/{id}/set-bao-cao', [BinhLuanController::class, 'setBaoCao']);
 });
 
 Route::prefix('binh-luan')->group(function () {
@@ -110,14 +110,10 @@ Route::get('/dia-chi/mac-dinh/{nguoi_dung_id}', [DiaChiController::class, 'diaCh
 
 // Cart
 Route::middleware('auth:sanctum')->group(function () {
-    // Lấy giỏ hàng của người dùng hiện tại (hoặc theo ID)
-    Route::get('/cart/{nguoiDungId?}', [CartController::class, 'getCart']);
-    // Thêm sản phẩm vào giỏ hàng
-    Route::post('/cart/add', [CartController::class, 'addItem']);
-    // Nếu muốn giữ chức năng xem tất cả giỏ hàng cho admin/debug
-    Route::delete('/cart/{userId}/{sanPhamBienTheId}', [CartController::class, 'deleteItem']);
-
-    Route::get('/carts/all', [CartController::class, 'getAllCartsAndItems']);
+Route::get('/cart/{nguoiDungId?}', [CartController::class, 'getCart']);
+Route::post('/cart/add', [CartController::class, 'addItem']);
+Route::delete('/cart/{userId}/{sanPhamBienTheId}', [CartController::class, 'deleteItem']);
+Route::get('/carts/all', [CartController::class, 'getAllCartsAndItems']);
 });
 Route::get('/cart', [CartController::class, 'index']);
 
@@ -138,82 +134,82 @@ Route::patch('/orders/{order}/payment', [OrderController::class, 'confirmPayment
 Route::get('/payment-methods', [PaymentMethodController::class, 'index']);// Slide Show (admin)
 Route::get('/static-pages', [IntroduceController::class, 'index']);
 Route::prefix('admin')->group(function () {
-    Route::get('slide', [SlideShowController::class, 'index']);
-    Route::get('slide/{id}', [SlideShowController::class, 'show']);
-    Route::post('slide', [SlideShowController::class, 'store']);
-    Route::post('slide/update', [SlideShowController::class, 'update']);
-    Route::post('slide/add-image', [SlideShowController::class, 'addImageToSlide']);
-    Route::post('slide/update-link', [SlideShowController::class, 'updateLink']);
-    Route::post('slide/rename', [SlideShowController::class, 'rename']);
-    Route::post('slide-hienthi', [SlideShowController::class, 'chonSlideHienThi']);
-    Route::get('slide-hienthi', [SlideShowController::class, 'getSlideTrangChu']);
-    Route::post('slide/image/update-image/{id}', [SlideShowController::class, 'updateImage']);
-    Route::put('/variants/{id}', [SanPhamBienTheController::class, 'update']);
+Route::get('slide', [SlideShowController::class, 'index']);
+Route::get('slide/{id}', [SlideShowController::class, 'show']);
+Route::post('slide', [SlideShowController::class, 'store']);
+Route::post('slide/update', [SlideShowController::class, 'update']);
+Route::post('slide/add-image', [SlideShowController::class, 'addImageToSlide']);
+Route::post('slide/update-link', [SlideShowController::class, 'updateLink']);
+Route::post('slide/rename', [SlideShowController::class, 'rename']);
+Route::post('slide-hienthi', [SlideShowController::class, 'chonSlideHienThi']);
+Route::get('slide-hienthi', [SlideShowController::class, 'getSlideTrangChu']);
+Route::post('slide/image/update-image/{id}', [SlideShowController::class, 'updateImage']);
+Route::put('/variants/{id}', [SanPhamBienTheController::class, 'update']);
 
 
-
-    Route::delete('slide/image/{id}', [SlideShowController::class, 'deleteImage']);
-    Route::delete('slide/{id}', [SlideShowController::class, 'destroy']);
-    Route::get('trang-tinh', [IntroduceController::class, 'index']);
-    Route::post('trang-tinh', [IntroduceController::class, 'store']);
-    Route::post('trang-tinh/update', [IntroduceController::class, 'update']);
-    Route::post('trang-tinh/{id}', [IntroduceController::class, 'updateMeta']);
-    Route::delete('trang-tinh/{id}', [IntroduceController::class, 'destroy']);
-    Route::get('trang-tinh/{slug}', [IntroduceController::class, 'show']);
-    Route::get('/products-sell-top', [ProductController::class, 'getTopSelling']);
-    Route::get('products-featured', [ProductController::class, 'getFeatured']);
-    Route::get('/products/detail/{slug}', [ProductController::class, 'showSpDetail']);
-    Route::get('/products-sell-top-all', [ProductController::class, 'allBestSelling']);
+Route::delete('slide/image/{id}', [SlideShowController::class, 'deleteImage']);
+Route::delete('slide/{id}', [SlideShowController::class, 'destroy']);
+Route::get('trang-tinh', [IntroduceController::class, 'index']);
+Route::post('trang-tinh', [IntroduceController::class, 'store']);
+Route::post('trang-tinh/update', [IntroduceController::class, 'update']);
+Route::post('trang-tinh/{id}', [IntroduceController::class, 'updateMeta']);
+Route::delete('trang-tinh/{id}', [IntroduceController::class, 'destroy']);
+Route::get('trang-tinh/{slug}', [IntroduceController::class, 'show']);
+Route::get('/products-sell-top', [ProductController::class, 'getTopSelling']);
+Route::get('products-featured', [ProductController::class, 'getFeatured']);
+Route::get('/products/detail/{slug}', [ProductController::class, 'showSpDetail']);
+// Dòng này đã được sửa:
+Route::get('/products-sell-top-all', [ProductController::class, 'getTopSelling']); // Đã đổi 'allBestSelling' thành 'getTopSelling'
 });
 Route::post('/tinymce/upload-image', [ProductController::class, 'uploadEditorImage']);
 
 // Protected Routes (Yêu cầu xác thực Sanctum)
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
-    Route::post('/save-fcm-token', [NotificationController::class, 'saveFcmToken']);
-    Route::get('/admin/users-for-notification', [NotificationController::class, 'getUsersForNotification']);
-    Route::post('/admin/notifications/send', [NotificationController::class, 'sendNotification']);
+Route::get('/user', function (Request $request) {
+return $request->user();
+});
+Route::post('/save-fcm-token', [NotificationController::class, 'saveFcmToken']);
+Route::get('/admin/users-for-notification', [NotificationController::class, 'getUsersForNotification']);
+Route::post('/admin/notifications/send', [NotificationController::class, 'sendNotification']);
 
-    Route::put('/users/{id}/change-password', [UserController::class, 'changePassword']);
+Route::put('/users/{id}/change-password', [UserController::class, 'changePassword']);
 
-    // Orders
-    Route::get('/user/orders', [OrderController::class, 'userOrders']);
-    Route::get('/user/orders/{id}', [OrderController::class, 'getByUser']);
-    Route::apiResource('orders', OrderController::class)->only(['store']);
-    Route::patch('/orders/{id}/approve', [OrderController::class, 'approve']);
-    Route::patch('/orders/{id}/reject', [OrderController::class, 'reject']);
-    Route::patch('/orders/{id}/hide', [OrderController::class, 'hideOrder']);
-    Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
-    // Thống Kê
-    Route::get('/analytics/revenue', [ProductController::class, 'getRevenueStatistics']);
-    Route::get('/analytics/overall', [ProductController::class, 'getOverallStatistics']);
-    // Users
-    Route::get('/users', [UserController::class, 'index']);
-    Route::delete('/users/{id}', [UserController::class, 'destroy']);
-    Route::put('/users/{id}', [UserController::class, 'update']);
+// Orders
+Route::get('/user/orders', [OrderController::class, 'userOrders']);
+Route::get('/user/orders/{id}', [OrderController::class, 'getByUser']);
+Route::apiResource('orders', OrderController::class)->only(['store']);
+Route::patch('/orders/{id}/approve', [OrderController::class, 'approve']);
+Route::patch('/orders/{id}/reject', [OrderController::class, 'reject']);
+Route::patch('/orders/{id}/hide', [OrderController::class, 'hideOrder']);
+Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
+// Thống Kê
+Route::get('/analytics/revenue', [ProductController::class, 'getRevenueStatistics']);
+Route::get('/analytics/overall', [ProductController::class, 'getOverallStatistics']);
+// Users
+Route::get('/users', [UserController::class, 'index']);
+Route::delete('/users/{id}', [UserController::class, 'destroy']);
+Route::put('/users/{id}', [UserController::class, 'update']);
 
-    // Product Variants
-    Route::get('/products/{id}/variants', [SanPhamBienTheController::class, 'index']);
-    Route::post('/products/{id}/variants', [SanPhamBienTheController::class, 'store']);
-    Route::delete('/variants/{id}', [SanPhamBienTheController::class, 'destroy']);
-    Route::put('/products/{id}/toggle-status', [ProductController::class, 'toggleStatus']);
-    // Product Images (delete only)
-    Route::delete('/product-images/{id}', [ProductImageController::class, 'destroy']);
-    Route::post('/products/generate-seo', [ProductController::class, 'generateSeoContent']);
+// Product Variants
+Route::get('/products/{id}/variants', [SanPhamBienTheController::class, 'index']);
+Route::post('/products/{id}/variants', [SanPhamBienTheController::class, 'store']);
+Route::delete('/variants/{id}', [SanPhamBienTheController::class, 'destroy']);
+Route::put('/products/{id}/toggle-status', [ProductController::class, 'toggleStatus']);
+// Product Images (delete only)
+Route::delete('/product-images/{id}', [ProductImageController::class, 'destroy']);
+Route::post('/products/generate-seo', [ProductController::class, 'generateSeoContent']);
 
-    // ROUTE GỠ BỎ DANH MỤC CON - ĐÃ DI CHUYỂN VÀO ĐÂY
-    // Route này yêu cầu xác thực Sanctum (auth:sanctum)
-    Route::patch('child-categories/{subcategoryId}/detach', [ChildCategoryController::class, 'detachSubcategory']);
+// ROUTE GỠ BỎ DANH MỤC CON - ĐÃ DI CHUYỂN VÀO ĐÂY
+// Route này yêu cầu xác thực Sanctum (auth:sanctum)
+Route::patch('child-categories/{subcategoryId}/detach', [ChildCategoryController::class, 'detachSubcategory']);
 
 
-    // Admin-specific routes (chỉ truy cập nếu có middleware 'admin' VÀ 'auth:sanctum')
-    // Nếu bạn không có middleware 'admin' hoặc không cần nó cho các route này, có thể bỏ group này
-    Route::middleware('admin')->group(function () {
-        // Các route chỉ dành cho admin (ví dụ: quản lý người dùng, cài đặt hệ thống, v.v.)
-        // Nếu không có route nào ở đây, có thể bỏ toàn bộ khối admin middleware này.
-    });
+// Admin-specific routes (chỉ truy cập nếu có middleware 'admin' VÀ 'auth:sanctum')
+// Nếu bạn không có middleware 'admin' hoặc không cần nó cho các route này, có thể bỏ group này
+Route::middleware('admin')->group(function () {
+// Các route chỉ dành cho admin (ví dụ: quản lý người dùng, cài đặt hệ thống, v.v.)
+// Nếu không có route nào ở đây, có thể bỏ toàn bộ khối admin middleware này.
+});
 
 });
 
@@ -231,13 +227,16 @@ Route::get('/parent-categories', [CategoryController::class, 'getParentCategorie
 Route::get('/categories/{id}/products', [CategoryProductController::class, 'getProductsByCategory']);
 
 Route::delete('/categories/{categoryId}/products/{productId}', [CategoryProductController::class, 'removeProductFromCategory']);
-// Route này cũng có thể là Public nếu không cần xác thực để lấy danh mục con
 Route::get('/categories/{categoryId}/children', [ChildCategoryController::class, 'getSubcategories']);
-Route::get('/categories/{categoryId}/products', [CategoryProductController::class, 'getProductsByCategory']);
 Route::get('/categories/{categoryId}/products/{productId}', [CategoryProductController::class, 'getProductByCategory']);
 Route::post('/categories/{categoryId}/products', [CategoryProductController::class, 'addProductToCategory']);
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
 Route::put('/categories/{id}', [CategoryController::class, 'update']);
 
+<<<<<<< HEAD
+=======
+// Route mới đã được chuẩn hóa
+Route::get('/parent-categories/{id}/products', [ParentCategoryProductController::class, 'getProductsByParentCategory']);
+>>>>>>> 5129754d05f86d74ae189900b4248200365e4d8f
 

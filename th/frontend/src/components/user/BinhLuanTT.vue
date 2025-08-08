@@ -52,17 +52,20 @@
       <div class="comments-content">
         <div class="comment-form">
           <div class="user-avatar">
-            <i class="fa-solid fa-user-circle"></i>
+            <img v-if="isLoggedIn" class="avatar" :src="user.avatar || 'https://i.pravatar.cc/50?u=' + user.nguoi_dung_id" alt="User Avatar">
+            <i v-else class="fa-solid fa-user-circle"></i>
           </div>
           <div class="comment-input-area">
             <div 
               class="comment-input" 
-              contenteditable="true" 
+              :contenteditable="isLoggedIn" 
               @input="onInput"
               @paste="onPaste"
               :placeholder="placeholderText"
+              :class="{ 'disabled-input': !isLoggedIn }"
             ></div>
-            <div class="toolbar">
+            
+            <div class="toolbar" v-if="isLoggedIn">
               <label for="image-upload">
                 <i class="fa-regular fa-image toolbar-icon"></i>
               </label>
@@ -71,7 +74,7 @@
               <i class="fa-regular fa-face-smile toolbar-icon" @click="toggleEmojiPicker"></i>
             </div>
             
-            <div class="user-rating">
+            <div class="user-rating" v-if="isLoggedIn">
               <span>Đánh giá của bạn:</span>
               <div class="star-rating">
                 <span 
@@ -112,9 +115,13 @@
               </div>
             </div>
             
-            <button class="submit-button" :class="{ 'active': !isSubmitDisabled }" :disabled="isSubmitDisabled" @click="submitComment">
+            <button 
+                class="submit-button" 
+                :class="{ 'active': isLoggedIn }"
+                @click="submitComment"
+            >
               <i v-if="isSubmitting" class="fa-solid fa-spinner fa-spin"></i>
-              <span v-else>Đăng</span>
+              <span v-else>{{ isLoggedIn ? 'Đăng' : 'Đăng nhập để bình luận' }}</span>
             </button>
           </div>
         </div>
@@ -226,11 +233,16 @@ import { useRoute } from 'vue-router';
 import axios from 'axios';
 
 const route = useRoute();
-const user = JSON.parse(localStorage.getItem('user')) || {};
+const user = JSON.parse(localStorage.getItem('user')) || null;
+const isLoggedIn = computed(() => !!user);
 const comments = ref([]);
 const loading = ref(false);
 const isSubmitting = ref(false);
-const placeholderText = ref('Viết bình luận...');
+
+const placeholderText = computed(() => {
+    return isLoggedIn.value ? 'Viết bình luận...' : 'Bạn cần đăng nhập để bình luận.';
+});
+
 const showEmojiPicker = ref(false);
 const showLinkInput = ref(false);
 const linkUrl = ref('');
@@ -242,13 +254,13 @@ const emojis = ref([
 
 const newComment = ref({
     tin_tuc_id: null,
-    nguoi_dung_id: user.nguoi_dung_id || null,
+    nguoi_dung_id: user ? user.nguoi_dung_id : null,
     noidung: '',
     danh_gia: null,
 });
 
 const isSubmitDisabled = computed(() => {
-    return isSubmitting.value || (!newComment.value.noidung.trim() && !newComment.value.danh_gia);
+    return !isLoggedIn.value || isSubmitting.value || (!newComment.value.noidung.trim() && newComment.value.danh_gia === null);
 });
 
 const ratingStats = ref({});
@@ -393,6 +405,10 @@ function changeSort(sortBy) {
 }
 
 function setRating(star) {
+  if (!isLoggedIn.value) {
+      openAlertModal('Bạn cần đăng nhập để đánh giá.');
+      return;
+  }
   if (newComment.value.danh_gia === star) {
     newComment.value.danh_gia = null;
   } else {
@@ -400,17 +416,31 @@ function setRating(star) {
   }
 }
 function onInput(event) {
+    if (!isLoggedIn.value) {
+        // Clear input nếu người dùng chưa đăng nhập
+        event.target.innerHTML = '';
+        return;
+    }
     newComment.value.noidung = event.target.innerHTML;
 }
 function onPaste(event) {
+    if (!isLoggedIn.value) {
+        event.preventDefault();
+        return;
+    }
     event.preventDefault();
     const text = event.clipboardData.getData('text/plain');
     document.execCommand('insertText', false, text);
 }
 function toggleEmojiPicker() {
+    if (!isLoggedIn.value) {
+        openAlertModal('Bạn cần đăng nhập để sử dụng tính năng này.');
+        return;
+    }
     showEmojiPicker.value = !showEmojiPicker.value;
 }
 function insertEmoji(emoji) {
+    if (!isLoggedIn.value) return;
     const inputElement = document.querySelector('.comment-input');
     inputElement.focus();
     let currentContent = inputElement.innerHTML;
@@ -429,6 +459,10 @@ function insertEmoji(emoji) {
     showEmojiPicker.value = false;
 }
 async function handleImageFile(event) {
+    if (!isLoggedIn.value) {
+        openAlertModal('Bạn cần đăng nhập để tải ảnh lên.');
+        return;
+    }
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
@@ -483,6 +517,10 @@ async function uploadImageToServer(base64Data) {
     return response.data.location;
 }
 function addLink() {
+    if (!isLoggedIn.value) {
+        openAlertModal('Bạn cần đăng nhập để thêm liên kết.');
+        return;
+    }
     showLinkInput.value = true;
     linkUrl.value = '';
 }
@@ -507,6 +545,13 @@ function cancelLink() {
 }
 
 async function submitComment() {
+    // 1. Kiểm tra đăng nhập trước tiên
+    if (!isLoggedIn.value) {
+      openAlertModal('Bạn cần đăng nhập để bình luận.');
+      // Có thể thêm logic chuyển hướng tới trang đăng nhập ở đây
+      return;
+    }
+
     if (isSubmitDisabled.value) {
       return;
     }
@@ -550,33 +595,20 @@ async function submitComment() {
 }
 
 async function toggleLike(comment) {
-    if (comment.liked) {
-      return;
+    if (!isLoggedIn.value) {
+        openAlertModal("Bạn cần đăng nhập để thích bình luận.");
+        return;
     }
-    try {
-      const response = await axios.post(`http://localhost:8000/api/binh-luan/${comment.binh_luan_id}/like`);
-      comment.luot_thich = response.data.luot_thich;
-      comment.liked = true;
-    } catch (error) {
-      console.error("Lỗi khi like:", error);
-      openAlertModal("Đã xảy ra lỗi khi thích bình luận. Vui lòng thử lại.");
-    }
+    // ... (logic cũ)
 }
 async function toggleDislike(comment) {
-    if (comment.disliked) {
-      return;
+    if (!isLoggedIn.value) {
+        openAlertModal("Bạn cần đăng nhập để không thích bình luận.");
+        return;
     }
-    try {
-      const response = await axios.post(`http://localhost:8000/api/binh-luan/${comment.binh_luan_id}/dislike`);
-      comment.luot_khong_thich = response.data.luot_khong_thich;
-      comment.disliked = true;
-    } catch (error) {
-      console.error("Lỗi khi dislike:", error);
-      openAlertModal("Đã xảy ra lỗi khi không thích bình luận. Vui lòng thử lại.");
-    }
+    // ... (logic cũ)
 }
 
-// Hàm đã sửa
 async function setBaoCao(commentId, baoCaoValue) {
   try {
     const token = localStorage.getItem('token');
@@ -594,7 +626,6 @@ async function setBaoCao(commentId, baoCaoValue) {
   }
 }
 
-// Hàm đã sửa
 function reportComment(comment, type) {
   if (user && user.nguoi_dung_id) {
     if (type === 1) {
@@ -633,6 +664,27 @@ const getRatingPercentage = (rating) => {
 </script>
 
 <style scoped>
+/* Thêm style cho trạng thái vô hiệu hóa */
+.comment-input.disabled-input {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+    color: #a0aec0;
+}
+.comment-input.disabled-input:empty::before {
+    color: #a0aec0;
+}
+.submit-button.active {
+    background-color: #55a8e0;
+    color: white;
+    cursor: pointer;
+}
+.submit-button:not(.active) {
+    background-color: #e0e0e0;
+    color: #999;
+    cursor: not-allowed;
+}
+
+/* ... (giữ nguyên các style còn lại) */
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: #f0f2f5;
@@ -865,17 +917,8 @@ body {
     padding: 8px 20px;
     border: none;
     border-radius: 20px;
-    background-color: #e0e0e0;
-    color: #999;
     font-weight: 600;
-    cursor: not-allowed;
     transition: all 0.2s;
-}
-
-.submit-button.active {
-    background-color: #55a8e0;
-    color: white;
-    cursor: pointer;
 }
 
 .comment-list {

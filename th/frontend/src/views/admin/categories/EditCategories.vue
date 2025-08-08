@@ -114,41 +114,45 @@ export default {
       }
     },
     async updateCategory() {
-      try {
-        const token = localStorage.getItem("token");
-        const formData = new FormData();
-        formData.append("ten_danh_muc", this.category_name);
-        formData.append("mo_ta", this.description);
-        // THAY ĐỔI: Tên trường gửi đi từ parent_id thành danh_muc_cha_id
-        formData.append("danh_muc_cha_id", this.danh_muc_cha_id);
+  try {
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+    formData.append("ten_danh_muc", this.category_name);
+    formData.append("mo_ta", this.description);
+    formData.append("danh_muc_cha_id", this.danh_muc_cha_id);
+    formData.append("_method", "PUT");
 
-        // RẤT QUAN TRỌNG CHO PHƯƠNG THỨC PUT VỚI FORM-DATA
-        // Thêm trường _method=PUT để Laravel nhận diện đây là PUT request khi dùng FormData
-        formData.append("_method", "PUT");
+    if (this.imageFile) {
+      formData.append("image", this.imageFile);
+    }
 
-        if (this.imageFile) {
-          formData.append("image", this.imageFile);
-        }
-
-        const res = await axios.post( // Vẫn dùng axios.post và thêm _method=PUT
-          `http://localhost:8000/api/categories/${this.$route.params.id}`, // Bỏ `?_method=PUT` ở đây, vì đã thêm vào formData
-          formData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
-        if (res.status === 200) {
-          alert("Cập nhật danh mục thành công!");
-          this.$router.push("/admin/category");
-        }
-      } catch (error) {
-        console.error("Lỗi khi cập nhật danh mục:", error);
-        alert("Có lỗi xảy ra khi cập nhật.");
+    const res = await axios.post(
+      `http://localhost:8000/api/categories/${this.$route.params.id}`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
       }
-    },
+    );
+    if (res.status === 200) {
+      alert("Cập nhật danh mục thành công!");
+      // Thay đổi đường dẫn chuyển hướng tại đây:
+      // Sử dụng danh_muc_cha_id để chuyển hướng về trang danh mục con của danh mục cha
+      if (this.danh_muc_cha_id) {
+        this.$router.push(`/admin/categories/${this.danh_muc_cha_id}/children`);
+      } else {
+        // Trường hợp danh mục không có danh mục cha (là danh mục cấp cao nhất)
+        // Bạn có thể chọn chuyển hướng về trang danh sách danh mục chính
+        this.$router.push("/admin/categories");
+      }
+    }
+  } catch (error) {
+    console.error("Lỗi khi cập nhật danh mục:", error);
+    alert("Có lỗi xảy ra khi cập nhật.");
+  }
+},
   },
 };
 </script>
