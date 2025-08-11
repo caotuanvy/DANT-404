@@ -119,7 +119,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
-
+import Swal from 'sweetalert2';
 const links = ref([]);
 const errorMessage = ref('');
 const loading = ref(true);
@@ -199,8 +199,9 @@ const saveLink = async () => {
     currentLink.value.Icon = selectedSocial.value.icon;
   }
   const dataToSend = { ...currentLink.value, is_active: currentLink.value.is_active ? 1 : 0 };
-  
+
   try {
+    const action = isEditing.value ? 'Cập nhật' : 'Thêm mới';
     if (isEditing.value) {
       await axios.put(`${API_BASE_URL}/${currentLink.value.Mang_Xa_Hoi_id}`, dataToSend, getAuthHeaders());
     } else {
@@ -208,22 +209,76 @@ const saveLink = async () => {
     }
     await getLinks();
     cancelForm();
+
+    // Thông báo thành công
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: `${action} thành công!`,
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true
+    });
+
   } catch (error) {
     console.error('Lỗi khi lưu:', error.response?.data || error.message);
-    alert('Thao tác thất bại! Vui lòng kiểm tra lại dữ liệu.');
+    // Thông báo lỗi
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'error',
+      title: 'Thao tác thất bại! Vui lòng kiểm tra lại.',
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true
+    });
   }
 };
 
 
-const deleteLink = async (id) => {
-  if (!confirm('Bạn có chắc chắn muốn xóa liên kết này?')) return;
-  try {
-    await axios.delete(`${API_BASE_URL}/${id}`, getAuthHeaders());
-    await getLinks();
-  } catch (error) {
-    console.error('Lỗi khi xóa:', error);
-    alert('Xóa thất bại!');
-  }
+const deleteLink = (id) => {
+  Swal.fire({
+    title: 'Bạn có chắc chắn không?',
+    text: "Bạn sẽ không thể hoàn tác hành động này!",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Đồng ý, xóa nó!',
+    cancelButtonText: 'Hủy'
+  }).then(async (result) => {
+    if (result.isConfirmed) {
+      try {
+        await axios.delete(`${API_BASE_URL}/${id}`, getAuthHeaders());
+        await getLinks();
+      
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'Đã xóa liên kết thành công!',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true
+        });
+
+      } catch (error) {
+        console.error('Lỗi khi xóa:', error);
+        
+
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'error',
+          title: 'Xóa thất bại!',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true
+        });
+      }
+    }
+  });
 };
 
 const toggleStatus = async (link) => {

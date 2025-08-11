@@ -124,7 +124,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
-
+import Swal from 'sweetalert2';
 const products = ref([]);
 const errorMessage = ref('');
 const loading = ref(false);
@@ -170,7 +170,12 @@ const toggleNoiBat = async (product) => {
     product.noi_bat = newStatus;
   } catch (error) {
     console.error('Lỗi khi cập nhật trạng thái nổi bật:', error);
-    alert('Cập nhật trạng thái nổi bật thất bại!');
+     Swal.fire({
+        icon: 'error',
+        title: 'Thao tác thất bại',
+        text: 'Đã có lỗi xảy ra, vui lòng thử lại.',
+        confirmButtonColor: '#d33'
+    });
   }
 };
 
@@ -184,10 +189,23 @@ const toggleProductStatus = async (product) => {
 
     product.trang_thai = !product.trang_thai;
     
-    alert(`Đã ${action} sản phẩm thành công!`);
+    Swal.fire({
+    toast: true,
+    position: 'top-end',
+    icon: 'success',
+    title: `Đã ${action} sản phẩm thành công!`,
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true
+  });
   } catch (error) {
     console.error(`Lỗi khi ${action} sản phẩm:`, error);
-    alert(`Thao tác thất bại!`);
+    Swal.fire({
+        icon: 'error',
+        title: 'Thao tác thất bại',
+        text: 'Đã có lỗi xảy ra, vui lòng thử lại.',
+        confirmButtonColor: '#d33'
+    });
   }
 };
 

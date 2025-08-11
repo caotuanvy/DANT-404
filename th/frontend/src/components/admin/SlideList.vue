@@ -292,30 +292,44 @@ const handleFileChange = async e => {
     }
 };
 
-const deleteImage = async (imageId, slideId) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa ảnh này?')) return;
-    try {
+const deleteImage = (imageId, slideId) => {
+  Swal.fire({
+    title: 'Xóa ảnh này?',
+    text: "Hành động này sẽ xóa ảnh vĩnh viễn và không thể hoàn tác!",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33', // Màu đỏ cho nút xóa
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Vâng, xóa đi!',
+    cancelButtonText: 'Hủy'
+  }).then(async (result) => {
+    if (result.isConfirmed) {
+      // ---- Bắt đầu logic xóa ----
+      try {
         await axios.delete(`http://localhost:8000/api/admin/slide/image/${imageId}`);
         
         const res = await axios.get(`http://localhost:8000/api/admin/slide/${slideId}`);
         
         if (res.data) {
-            // [FIX] Dùng Object.assign để giải quyết lỗi trắng trang
-            Object.assign(editableSlide.value, res.data);
+          Object.assign(editableSlide.value, res.data);
         } else {
-            closeModal();
+          closeModal();
         }
 
         imageCacheKey.value = Date.now();
         fetchSlides();
         showToast('Xóa ảnh thành công');
-    } catch (error) {
+
+      } catch (error) {
         console.error("Lỗi khi xóa ảnh:", error);
         showToast("Xóa ảnh thất bại.", 'error');
         if (error.response && error.response.status === 404) {
           closeModal();
         }
+      }
+      
     }
+  });
 };
 
 const updateLink = async (image) => {

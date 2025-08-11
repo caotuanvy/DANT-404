@@ -293,7 +293,7 @@ import { ref, reactive, onMounted, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import Editor from '@tinymce/tinymce-vue';
-
+import Swal from 'sweetalert2';
 // --- STATE MANAGEMENT ---
 const route = useRoute();
 const router = useRouter();
@@ -421,10 +421,23 @@ const removeExistingImage = async (imageId, index) => {
     try {
         await axios.delete(`product-images/${imageId}`);
         existingImages.value.splice(index, 1);
-        alert('Xóa ảnh thành công!');
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Đã thêm ảnh thành công!',
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: true
+            });
     } catch (error) {
         console.error("Lỗi khi xóa ảnh:", error);
-        alert('Xóa ảnh thất bại.');
+        Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: 'Thao tác của bạn đã thất bại. Vui lòng thử lại.',
+        confirmButtonColor: '#d33' 
+        });
     }
 };
 
@@ -458,8 +471,18 @@ const updateProduct = async () => {
             headers: { 'Content-Type': 'multipart/form-data' },
              
         });
-        alert('Cập nhật sản phẩm thành công!');
-        router.push('/admin/products');
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Đã cập nhật sản phẩm thành công!',
+            showConfirmButton: false,
+            timer: 2000, 
+            timerProgressBar: true
+            }).then(() => {
+            router.push('/admin/products');
+            });
+        
     } catch (error) {
         if (error.response && error.response.status === 422) {
             errors.value = error.response.data.errors;
@@ -474,7 +497,11 @@ const updateProduct = async () => {
 
 const generateSeoContent = async () => {
     if (!product.ten_san_pham) {
-        alert('Vui lòng nhập Tên sản phẩm trước.');
+        Swal.fire({
+        icon: 'error',
+        title: 'Bạn chua nhập tên sản phẩm',
+        text: errorMessage, 
+    });
         return;
     }
     isGeneratingSeo.value = true;
@@ -500,7 +527,15 @@ const generateSeoContent = async () => {
         if (response.data.seo_keywords) product.Tu_khoa = response.data.seo_keywords;
         if (response.data.product_description_long) product.mo_ta = response.data.product_description_long;
         
-        alert('Tạo nội dung AI thành công!');
+        Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'Đã tạo nội dung thành công!',
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true
+        });
 
     } catch (error) {
         if (error.response && error.response.status === 401) {
