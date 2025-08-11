@@ -144,6 +144,11 @@ const routes = [
         meta: { requiresAuth: true, role: 'admin' }
       },
       {
+        path: 'binhluan',
+        component: () => import('../components/admin/Binhluan.vue'),
+        meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
         path: 'tintucold',
         component: () => import('../components/admin/Tintuc.vue'),
         meta: { requiresAuth: true, role: 'admin' }

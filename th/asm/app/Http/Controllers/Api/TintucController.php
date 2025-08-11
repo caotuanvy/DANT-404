@@ -383,5 +383,47 @@ class TintucController extends Controller
     }
    }
 
+    public function getAllTags()
+    {
+        // Lấy tất cả các tin tức
+        $news = Tintuc::all();
+
+        // Khởi tạo một mảng để chứa tất cả các tag
+        $allTags = [];
+
+        // Lặp qua từng tin tức và tách các tag
+        foreach ($news as $item) {
+            if ($item->tu_khoa_seo) {
+                // Tách chuỗi từ khóa bằng dấu phẩy và thêm vào mảng
+                $tags = explode(',', $item->tu_khoa_seo);
+                foreach ($tags as $tag) {
+                    $allTags[] = trim($tag); // Cắt bỏ khoảng trắng dư thừa
+                }
+            }
+        }
+
+        // Lọc để chỉ lấy các tag duy nhất và sắp xếp chúng
+        $uniqueTags = array_unique($allTags);
+        sort($uniqueTags);
+
+        return response()->json(array_values($uniqueTags));
+    }
+
+    /**
+     * Lấy danh sách tin tức dựa trên một từ khóa cụ thể.
+     *
+     * @param string $tag
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getNewsByTag($tag)
+    {
+        // Lọc tin tức mà cột `tu_khoa_seo` chứa từ khóa được truyền vào
+        $news = Tintuc::where('tu_khoa_seo', 'like', '%' . $tag . '%')
+                      ->get();
+
+        return response()->json($news);
+    }
+    
+
 
 }
