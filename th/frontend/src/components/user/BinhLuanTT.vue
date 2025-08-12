@@ -24,29 +24,6 @@
         </div>
       </div>
     </div>
-
-    <div class="ratings-sidebar">
-      <div class="ratings-summary">
-        <h4>Đánh giá tổng quan</h4>
-        <div class="rating-display">
-          <span class="overall-rating">{{ averageRating }}</span>
-          <div class="star-rating">
-            <span v-for="star in 5" :key="star" class="star-icon" :class="{ 'filled': star <= averageRating }">★</span>
-          </div>
-          <span class="review-count">({{ totalReviews }} lượt đánh giá)</span>
-        </div>
-      </div>
-      <div class="rating-breakdown">
-        <div v-for="rating in 5" :key="rating" class="rating-bar-row">
-          <span class="rating-label">{{ rating }} sao</span>
-          <div class="rating-bar-container">
-            <div class="rating-bar" :class="{ 'filled': ratingStats[rating] > 0 }" :style="{ width: getRatingPercentage(rating) }"></div>
-          </div>
-          <span class="rating-number">{{ ratingStats[rating] || 0 }}</span>
-          <a v-if="ratingStats[rating] > 0" href="#" class="view-more" @click.prevent="openRatingModal(rating)">Xem thêm</a>
-        </div>
-      </div>
-    </div>
     
     <div class="main-content">
       <div class="comments-content">
@@ -210,7 +187,6 @@
               <button class="action-button" @click="reportComment(comment, 2)">
                 <i class="fa-solid fa-user-slash" style="color: #e74c3c;"></i> Lăng mạ
               </button>
-              <button class="action-button"><i class="fa-solid fa-reply"></i> Trả lời</button>
             </div>
           </div>
         </div>
@@ -599,14 +575,33 @@ async function toggleLike(comment) {
         openAlertModal("Bạn cần đăng nhập để thích bình luận.");
         return;
     }
-    // ... (logic cũ)
+    if (comment.liked) return; // Đã thích rồi thì không cho thích lại
+
+    try {
+        const response = await axios.post(`http://localhost:8000/api/binh-luan/${comment.binh_luan_id}/like`);
+        comment.luot_thich = response.data.luot_thich;
+        comment.liked = true;
+        comment.disliked = false; // Nếu đã thích thì bỏ trạng thái không thích
+    } catch (error) {
+        openAlertModal("Có lỗi khi thích bình luận.");
+    }
 }
+
 async function toggleDislike(comment) {
     if (!isLoggedIn.value) {
         openAlertModal("Bạn cần đăng nhập để không thích bình luận.");
         return;
     }
-    // ... (logic cũ)
+    if (comment.disliked) return; // Đã không thích rồi thì không cho không thích lại
+
+    try {
+        const response = await axios.post(`http://localhost:8000/api/binh-luan/${comment.binh_luan_id}/dislike`);
+        comment.luot_khong_thich = response.data.luot_khong_thich;
+        comment.disliked = true;
+        comment.liked = false; // Nếu đã không thích thì bỏ trạng thái thích
+    } catch (error) {
+        openAlertModal("Có lỗi khi không thích bình luận.");
+    }
 }
 
 async function setBaoCao(commentId, baoCaoValue) {

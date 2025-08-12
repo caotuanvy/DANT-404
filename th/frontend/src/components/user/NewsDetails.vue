@@ -98,15 +98,6 @@
           <i class="fa-solid fa-info-circle"></i> Không có tin liên quan nào.
         </div>
       </div>
-
-      <div class="sidebar-section signup-newsletter">
-        <p class="signup-title">Đăng ký nhận tin</p>
-        <p class="signup-description">Nhận thông báo sớm nhất về sản phẩm và chương trình khuyến mại</p>
-        <div class="signup-form">
-          <input type="email" placeholder="Email của bạn">
-          <button type="submit">Đăng ký ngay</button>
-        </div>
-      </div>
     </aside>
   </div>
 </template>
