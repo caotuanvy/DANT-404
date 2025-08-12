@@ -85,18 +85,24 @@ class BinhLuanController extends Controller
  */
 public function getCommentsForNews($tinTucId, Request $request)
 {
+    // Số lượng bình luận mỗi trang, mặc định là 4
+    $perPage = $request->input('per_page', 4);
+
+    // Lấy tham số sắp xếp từ request, mặc định là 'ngay_binh_luan'
+    $sortBy = $request->input('sort_by', 'ngay_binh_luan');
+    // Lấy thứ tự sắp xếp từ request, mặc định là 'desc' (giảm dần)
+    $sortOrder = $request->input('sort_order', 'desc');
+
     $comments = BinhLuan::with('nguoiDung:nguoi_dung_id,ho_ten')
         ->where('tin_tuc_id', $tinTucId)
         ->where('trang_thai', 1)
-
-        ->orderByDesc('ngay_binh_luan')
-        ->limit(3)
+        // Sử dụng biến $sortBy và $sortOrder để sắp xếp động
+        ->orderBy($sortBy, $sortOrder)
         ->select(['binh_luan_id', 'tin_tuc_id', 'nguoi_dung_id', 'noidung', 'ngay_binh_luan', 'luot_thich', 'luot_khong_thich', 'danh_gia', 'bao_cao'])
-        ->get();
+        ->paginate($perPage);
 
     return response()->json($comments);
 }
-
 /**
  * Thêm một bình luận mới cho tin tức.
  *

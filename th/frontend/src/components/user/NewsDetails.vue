@@ -67,6 +67,10 @@
             <span><i class="fa-solid fa-circle"></i> Lượt xem:</span>
             <span>{{ news.luot_xem }}</span>
           </li>
+          <li>
+            <span><i class="fa-solid fa-circle"></i> Lượt thích:</span>
+            <span>{{ news.luot_like }}</span>
+          </li>
           <li v-if="news.danhMuc">
             <span><i class="fa-solid fa-circle"></i> Danh mục:</span>
             <span>{{ news.danhMuc.ten_danh_muc }}</span>
@@ -183,17 +187,14 @@ function goToNewsDetail(newsSlug) {
 function formatDate(dateString) {
   if (!dateString) return '';
   const date = new Date(dateString);
-  if (isNaN(date.getTime())) {
-    const [year, month, day] = dateString.split('-');
-    if (year && month && day) {
-      const newDate = new Date(year, month - 1, day);
-      if (!isNaN(newDate.getTime())) {
-        dateString = newDate.toISOString();
-      }
-    }
-  }
-  const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-  return new Date(dateString).toLocaleDateString('vi-VN', options);
+  
+  const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+  const timeOptions = { hour: '2-digit', minute: '2-digit' };
+
+  const formattedDate = date.toLocaleDateString('vi-VN', dateOptions);
+  const formattedTime = date.toLocaleTimeString('vi-VN', timeOptions);
+
+  return `${formattedDate} ${formattedTime}`;
 }
 
 function handleImageError(event) {
@@ -224,6 +225,8 @@ async function handleLike() {
       hasLiked.value = true;
       likedNewsIds.push(news.value.id);
       localStorage.setItem('liked_news', JSON.stringify(likedNewsIds));
+
+       news.value.luot_like = response.data.luot_like; // Cập nhật số lượt thích hiển thị
       
       console.log('Bạn đã thích bài viết này thành công!');
     }
