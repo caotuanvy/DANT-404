@@ -214,4 +214,23 @@ class CategoryController extends Controller
             return response()->json(['message' => 'Đã xảy ra lỗi khi lấy sản phẩm theo danh mục.', 'error' => $e->getMessage()], 500);
         }
     }
+    public function getList(Request $request)
+    {
+        // Sử dụng Model Category đã được cấu hình đúng
+        $categories = Category::query()
+            // Chỉ lấy những danh mục đang hoạt động
+            ->where('trang_thai', 1)
+
+            // Chỉ lấy 2 cột cần thiết để tối ưu tốc độ
+            ->select('category_id', 'ten_danh_muc')
+
+            // Sắp xếp theo tên cho dễ tìm
+            ->orderBy('ten_danh_muc', 'asc')
+
+            // Lấy kết quả
+            ->get();
+
+        // Trả về dữ liệu dưới dạng JSON cho Vue component
+        return response()->json($categories);
+    }
 }

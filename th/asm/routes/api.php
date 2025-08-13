@@ -26,6 +26,8 @@ use App\Http\Controllers\Api\PaymentMethodController;
 use App\Http\Controllers\Api\NotificationsController;
 use App\Http\Controllers\Api\ParentCategoryProductController;
 use App\Http\Controllers\Api\SocialLinkController;
+use App\Http\Controllers\Api\GiamGiaController;
+use App\Http\Controllers\Api\CouponController;
 Route::get('/social-links/active', [SocialLinkController::class, 'getActiveLinks']);
 Route::patch('/admin/social-links/{id}/status', [SocialLinkController::class, 'updateStatus']);
 Route::apiResource('/admin/social-links', SocialLinkController::class);
@@ -130,6 +132,7 @@ Route::post('/Notifications/read-all', [NotificationsController::class, 'markAll
 // Don hang
 Route::get('/orders', [OrderController::class, 'index']);
 Route::patch('/orders/{order}/payment', [OrderController::class, 'confirmPayment']);
+Route::get('/orders/status-counts', [OrderController::class, 'getStatusCounts'])->middleware('auth:sanctum');
 
 //payment methods
 Route::get('/payment-methods', [PaymentMethodController::class, 'index']);// Slide Show (admin)
@@ -183,6 +186,8 @@ Route::patch('/orders/{id}/approve', [OrderController::class, 'approve']);
 Route::patch('/orders/{id}/reject', [OrderController::class, 'reject']);
 Route::patch('/orders/{id}/hide', [OrderController::class, 'hideOrder']);
 Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
+Route::post('/orders/store', [OrderController::class, 'store']);
+
 // Thống Kê
 Route::get('/analytics/revenue', [ProductController::class, 'getRevenueStatistics']);
 Route::get('/analytics/overall', [ProductController::class, 'getOverallStatistics']);
@@ -204,7 +209,31 @@ Route::post('/products/generate-seo', [ProductController::class, 'generateSeoCon
 // Route này yêu cầu xác thực Sanctum (auth:sanctum)
 Route::patch('child-categories/{subcategoryId}/detach', [ChildCategoryController::class, 'detachSubcategory']);
 
+//giam gia
+    Route::controller(CouponController::class)->group(function () {
+        Route::post('/coupon/apply', 'apply');
+        Route::get('/my-coupons', 'myCoupons');
+    });
+    Route::prefix('admin')->group(function () {
 
+        // --- QUẢN LÝ MÃ GIẢM GIÁ (COUPON/VOUCHER) ---
+        Route::controller(GiamGiaController::class)->group(function () {
+            // CRUD cơ bản
+        Route::apiResource('giam-gia', GiamGiaController::class)->except(['destroy']);
+        Route::patch('giam-gia/{giamGia}/toggle-status', [GiamGiaController::class, 'toggleStatus']);
+        Route::post('giam-gia/{giamGia}/send-to-users', [GiamGiaController::class, 'sendToUsers']);
+        Route::post('giam-gia/{giamGia}/send-to-all', [GiamGiaController::class, 'sendToAllUsers']);
+        Route::get('/users/search', [GiamGiaController::class, 'searchUsers']);
+        Route::get('/my-coupons', [App\Http\Controllers\Api\CouponController::class, 'myCoupons']);
+        Route::post('/coupon/apply', [App\Http\Controllers\Api\CouponController::class, 'apply']);
+
+        });
+
+        // API phụ trợ cho trang quản lý giảm giá
+        Route::get('/users/search', [GiamGiaController::class, 'searchUsers']); // [BỔ SUNG]
+        Route::get('/products-list', [ProductController::class, 'getList']);
+        Route::get('/categories-list', [CategoryController::class, 'getList']);
+});
 // Admin-specific routes (chỉ truy cập nếu có middleware 'admin' VÀ 'auth:sanctum')
 // Nếu bạn không có middleware 'admin' hoặc không cần nó cho các route này, có thể bỏ group này
 Route::middleware('admin')->group(function () {

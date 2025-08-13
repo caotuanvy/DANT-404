@@ -12,8 +12,7 @@ import Cart from '../components/user/Cart.vue';
 import axios from 'axios';
 import StaticPage from "@/components/user/StaticPage.vue";  
 import PaymentSuccess from '@/views/PaymentSuccess.vue'; // Hoặc đường dẫn component của bạn
-
-const routes = [
+import GiamGiaManager from '@/components/admin/GiamGiaManager.vue';const routes = [
   { path: '/', component: Home },
   { path: '/cart', component: Cart, meta: { requiresAuth: true } },
   { path: '/infor', component: Infor },
@@ -244,16 +243,6 @@ const routes = [
         meta: { requiresAuth: true, role: 'admin' }
       },
 
-
-      // ROUTE ĐÃ BỊ TRÙNG LẶP TRƯỚC ĐÓ, ĐÃ XÓA/GOM VÀO 'CategoryChildrenList'
-      // {
-      //     path: 'categories/:categoryId/children', // URL sẽ là /admin/categories/:id/children
-      //     name: 'ChildCategories', // Tên route mà bạn dùng trong router-link
-      //     component: () => import('@/views/admin/danhmuccap2/ChildCategories.vue'), // *PHẢI LÀ COMPONENT MỚI ChildCategoryList.vue*
-      //     meta: { requiresAuth: true, role: 'admin' }
-      // },
-
-      // Đã loại bỏ route trùng lặp và giữ lại route đúng
       {
         path: 'categories/:categoryId/children',
         name: 'ChildCategories',
@@ -291,6 +280,11 @@ const routes = [
         component: () => import('../components/admin/SocialList.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       },
+       {
+        path: 'coupons', // Sẽ khớp với URL /admin/coupons
+        name: 'AdminCoupons',
+        component: GiamGiaManager // Component sẽ được hiển thị
+      }
     ]
   },
   {
@@ -309,6 +303,7 @@ const routes = [
     component: PaymentSuccess,
     props: true
   },
+
 ];
 
 const router = createRouter({

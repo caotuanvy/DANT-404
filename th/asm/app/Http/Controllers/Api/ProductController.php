@@ -1009,4 +1009,13 @@ public function getDetailsBySlugs(Request $request)
             'currentMonthRevenueGrowth' => $calculateGrowth($currentMonthRevenue, $previousMonthRevenue),
         ]);
     }
+    public function getList(Request $request)
+{
+    // Chỉ lấy các trường cần thiết để giảm tải
+    $products = SanPham::where('trang_thai', 1)
+                ->select('san_pham_id', 'ten_san_pham')
+                ->orderBy('ten_san_pham')
+                ->get();
+    return response()->json($products);
+}
 }
