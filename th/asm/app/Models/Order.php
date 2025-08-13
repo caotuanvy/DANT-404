@@ -24,7 +24,9 @@ class Order extends Model
         'is_paid',              // <-- Đã thêm vào fillable (quan trọng!)
         'ngay_dat',             // <-- Đã thêm vào fillable (quan trọng!)
         'ngay_tao',             // Giữ lại theo các file cũ nếu có trong DB
-        'ngay_sua',             // Giữ lại theo các file cũ nếu có trong DB
+        'ngay_sua',
+            'so_tien_giam',
+       // Giữ lại theo các file cũ nếu có trong DB
     ];
 
 

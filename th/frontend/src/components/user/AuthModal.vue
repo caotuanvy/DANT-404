@@ -57,7 +57,6 @@ watch(() => props.show, (newVal) => {
         resetAllFormsAndState(); // Đổi tên hàm để rõ ràng hơn
     }
 });
-
 // Hàm mới: reset tất cả form và trạng thái, đưa về view mặc định
 const resetAllFormsAndState = () => {
     loginForm.email = '';
@@ -80,7 +79,7 @@ const resetAllFormsAndState = () => {
     resetPasswordForm.new_password = '';
     resetPasswordForm.new_password_confirmation = '';
     resetPasswordError.value = '';
-
+    isSubmitting.value = false;
     currentView.value = 'login'; // Đảm bảo view trở về login khi đóng hoặc reset
 };
 
@@ -176,10 +175,7 @@ const handleLogin = async () => {
             // router.push('/tai-khoan-vo-hieu-hoa'); 
             return; // Dừng hàm, không tiến hành lưu token và chuyển hướng
         }
-        // --- KẾT THÚC PHẦN THÊM MỚI/CẬP NHẬT ---
-
-
-        // ✅ Nếu thành công và tài khoản không bị vô hiệu hóa, lưu token và chuyển tiếp
+        
         closeModal();
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
@@ -589,8 +585,6 @@ const handleFacebookLogin = async () => {
     try {
         const FB = await waitForFacebookSdk();
 
-        console.log('Facebook SDK đã sẵn sàng, tiến hành login…');
-
         const fbResponse = await new Promise((resolve, reject) => {
             FB.login(
                 (res) => {
@@ -605,9 +599,8 @@ const handleFacebookLogin = async () => {
         });
 
         const accessToken = fbResponse.authResponse.accessToken;
-        console.log('Access Token Facebook:', accessToken);
 
-        const { data } = await axios.post('/api/auth/facebook', {
+        const { data } = await axios.post('/auth/facebook', {
             access_token: accessToken,
         });
 

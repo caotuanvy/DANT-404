@@ -25,6 +25,7 @@ class User extends Authenticatable
         'anh_dai_dien',
         'vai_tro_id',
         'trang_thai',
+        'facebook_id',
         'slug',
         'ngay_tao',
         'ngay_sua',
@@ -81,6 +82,9 @@ public function diaChiMacDinh()
 {
     return $this->hasOne(DiaChi::class, 'nguoi_dung_id', 'nguoi_dung_id')->latestOfMany('id_dia_chi');
 }
-
+public function vouchers()
+    {
+        return $this->belongsToMany(GiamGia::class, 'nguoi_dung_giam_gia', 'nguoi_dung_id', 'giam_gia_id');
+    }
 
 }

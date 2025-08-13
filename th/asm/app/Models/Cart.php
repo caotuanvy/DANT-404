@@ -36,4 +36,9 @@ class Cart extends Model
     {
         return $this->hasMany(CartItem::class, 'gio_hang_id', 'gio_hang_id'); // Sử dụng CartItem::class sau khi gộp
     }
+    public function cartItems()
+{
+    // Sửa 'cart_id' thành tên cột đúng trong CSDL của bạn
+    return $this->hasMany(CartItem::class, 'gio_hang_id', 'id');
+}
 }

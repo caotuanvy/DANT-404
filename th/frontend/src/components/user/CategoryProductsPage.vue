@@ -1,7 +1,7 @@
 <template>
   <div class="page-wrapper">
     <header class="page-header">
-      <h1 v-if="category" class="page-title">Sản phẩm của danh mục {{ category.ten_danh_muc }}</h1>
+      <h1 v-if="category" class="page-title"> {{ category.ten_danh_muc }}</h1>
       <h1 v-else-if="!loading" class="page-title">Sản phẩm</h1>
       <div v-if="maxProductPrice && minProductPrice" class="price-info">
         <p>Giá thấp nhất: <span class="price-value">{{ formatPrice(minProductPrice) }}</span></p>

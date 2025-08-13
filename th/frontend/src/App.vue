@@ -15,34 +15,34 @@
             <span>Việt Nam</span>
             <i class="fas fa-caret-down"></i>
           </div>
-          
-                    <template v-if="isLoggedIn">
-                        <div class="user-menu-wrapper">
-                            <div class="user-info" @click="toggleUserMenu">
-                                <i class="fas fa-user"></i>
-                                <span>Xin chào, <strong>{{ userName }}</strong>!</span>
-                                <i class="fas fa-caret-down"></i>
-                            </div>
-                            <div class="user-dropdown-menu" v-if="showUserMenu">
-                                <ul>
-                                    <li @click="navigateToUserInfo">Thông tin tài khoản</li>
-                                    <li v-if="userRoleId === 1" @click="navigateToAdmin">Quản lý</li>
-                                    <li @click="handleLogout">Đăng xuất</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </template>
-                    <template v-else>
-                        <div class="user-info" @click="showLoginModal = true">
-                            <i class="fas fa-user"></i> Đăng nhập
-                        </div>
-                    </template>
+
+          <template v-if="isLoggedIn">
+            <div class="user-menu-wrapper">
+              <div class="user-info" @click="toggleUserMenu">
+                <img :src="userAvatar" alt="Avatar" class="user-avatar" />
+                <span>Xin chào, <strong>{{ userName }}</strong>!</span>
+                <i class="fas fa-caret-down"></i>
+              </div>
+              <div class="user-dropdown-menu" v-if="showUserMenu">
+                <ul>
+                  <li @click="navigateToUserInfo">Thông tin tài khoản</li>
+                  <li v-if="userRoleId === 1" @click="navigateToAdmin">Quản lý</li>
+                  <li @click="handleLogout">Đăng xuất</li>
+                </ul>
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <div class="user-info" @click="showLoginModal = true">
+              <i class="fas fa-user"></i> Đăng nhập
+            </div>
+          </template>
 
           <div class="cart-info">
-  <router-link to="/cart">
-    <i class="fas fa-shopping-cart"></i> Giỏ hàng (0)
-  </router-link>
-</div>
+            <router-link to="/cart">
+              <i class="fas fa-shopping-cart"></i> Giỏ hàng (0)
+            </router-link>
+          </div>
           <div class="notification"><i class="fas fa-bell"></i> Thông báo</div>
         </div>
       </div>
@@ -50,19 +50,34 @@
 
     <nav class="main-nav" v-if="!isAdminRoute">
       <div class="container">
-        <ul>
-          <li>
-            <a href="/Danh-muc-san-pham"><i class="fas fa-bars"></i> Danh mục sản phẩm</a>
-          </li>
-          <li><a href="/">Trang Chủ</a></li>
-          <li><router-link to="/gioi-thieu">Giới Thiệu</router-link></li>
-          <li><a href="/tin-tuc">Tin Tức</a></li>
-          <li><a href="#">Liên Hệ</a></li>
-          <li v-for="page in staticPages.slice(0, 1)" :key="page.id">
-          <router-link :to="`/${page.Ten_trang}`">
-            {{ page.Tieu_de_trang }}
+        <div class="nav-mobile-header">
+          <i class="fas fa-bars menu-toggle" @click="toggleMobileMenu"></i>
+          <router-link to="/">
+            <img src="/favicon.png" alt="Logo" class="logo-mobile" />
           </router-link>
-        </li>
+        </div>
+
+        <ul :class="{ 'mobile-menu-active': showMobileMenu }">
+          <li class="menu-item menu-close">
+            <i class="fas fa-times menu-close-icon" @click="toggleMobileMenu"></i>
+          </li>
+          <li class="menu-item">
+            <router-link to="/Danh-muc-san-pham" @click="toggleMobileMenu">Danh Mục Sản Phẩm</router-link>
+          </li>
+          <li class="menu-item">
+            <router-link to="/" @click="toggleMobileMenu">Trang Chủ</router-link>
+          </li>
+          <li class="menu-item">
+            <router-link to="/lien-he" @click="toggleMobileMenu">Liên Hệ</router-link>
+          </li>
+          <li class="menu-item">
+            <router-link to="/tin-tuc" @click="toggleMobileMenu">Tin Tức</router-link>
+          </li>
+          <li class="menu-item" v-for="page in staticPages.slice(0, 2)" :key="page.id">
+            <router-link :to="`/${page.Ten_trang}`" @click="toggleMobileMenu">
+              {{ page.Tieu_de_trang }}
+            </router-link>
+          </li>
         </ul>
         <div class="contact-info">
           <div class="contact-info-chil">
@@ -137,20 +152,44 @@ import { ref, computed, onMounted, watch, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import AuthModal from "./components/user/AuthModal.vue";
 import Swal from "sweetalert2";
-import axios from "axios"; // Bổ sung axios để gọi API
+import axios from "axios";
 
 const router = useRouter();
 
 const showLoginModal = ref(false);
 const isLoggedIn = ref(false);
 const userName = ref("");
+const userAvatar = ref("");
 const userRoleId = ref(null);
 const showUserMenu = ref(false);
-const staticPages = ref([]); // <== THÊM
+const staticPages = ref([]);
+const showMobileMenu = ref(false);
 
 const isAdminRoute = computed(() => {
   return router.currentRoute.value.path.startsWith("/admin");
 });
+
+const toggleMobileMenu = () => {
+  showMobileMenu.value = !showMobileMenu.value;
+};
+
+// Hàm mới để đóng menu khi click ra ngoài
+const closeMobileMenuOnClickOutside = (event) => {
+  if (showMobileMenu.value) {
+    const mobileMenuElement = document.querySelector('.main-nav ul');
+    const menuToggleButton = document.querySelector('.menu-toggle');
+
+    // Kiểm tra xem vị trí click có nằm ngoài menu và nút mở menu không
+    if (
+      mobileMenuElement &&
+      !mobileMenuElement.contains(event.target) &&
+      menuToggleButton &&
+      !menuToggleButton.contains(event.target)
+    ) {
+      showMobileMenu.value = false;
+    }
+  }
+};
 
 const checkLoginStatus = () => {
   const user = localStorage.getItem("user");
@@ -162,6 +201,16 @@ const checkLoginStatus = () => {
       if (parsedUser && parsedUser.ho_ten) {
         isLoggedIn.value = true;
         userName.value = parsedUser.ho_ten;
+
+        let defaultAvatarUrl = '';
+        if (parsedUser.ho_ten) {
+            const firstLetter = parsedUser.ho_ten.charAt(0).toUpperCase();
+            defaultAvatarUrl = `https://placehold.co/40x40/33ccff/FFFFFF?text=${firstLetter}`;
+        } else {
+            defaultAvatarUrl = `https://placehold.co/40x40/33ccff/FFFFFF?text=AV`;
+        }
+
+        userAvatar.value = parsedUser.anh_dai_dien || defaultAvatarUrl;
         userRoleId.value = parseInt(roleId);
       }
     } catch (e) {
@@ -170,11 +219,13 @@ const checkLoginStatus = () => {
       localStorage.removeItem("vai_tro_id");
       isLoggedIn.value = false;
       userName.value = "";
+      userAvatar.value = '';
       userRoleId.value = null;
     }
   } else {
     isLoggedIn.value = false;
     userName.value = "";
+    userAvatar.value = '';
     userRoleId.value = null;
   }
 };
@@ -196,6 +247,7 @@ const handleLogout = () => {
 
       isLoggedIn.value = false;
       userName.value = "";
+      userAvatar.value = '';
       userRoleId.value = null;
       showUserMenu.value = false;
 
@@ -235,7 +287,6 @@ const closeUserMenuOnClickOutside = (event) => {
   }
 };
 
-// ✅ Hàm mới: gọi API lấy danh sách trang tĩnh
 const fetchStaticPages = async () => {
   try {
     const response = await axios.get("http://localhost:8000/api/static-pages");
@@ -247,12 +298,16 @@ const fetchStaticPages = async () => {
 
 onMounted(() => {
   checkLoginStatus();
-  fetchStaticPages(); // ✅ gọi API khi mount
+  fetchStaticPages();
   document.addEventListener("click", closeUserMenuOnClickOutside);
+  // Thêm event listener cho menu di động
+  document.addEventListener('click', closeMobileMenuOnClickOutside);
 });
 
 onUnmounted(() => {
   document.removeEventListener("click", closeUserMenuOnClickOutside);
+  // Gỡ bỏ event listener khi component bị hủy
+  document.removeEventListener('click', closeMobileMenuOnClickOutside);
 });
 
 watch(showLoginModal, (newVal) => {
@@ -260,7 +315,6 @@ watch(showLoginModal, (newVal) => {
     checkLoginStatus();
   }
 });
-
 </script>
 <style>
 /* Global styles (cơ bản) */
@@ -273,11 +327,10 @@ body {
 
 .container {
   width: 100%;
+  max-width: 1200px;
   padding-right: 12px;
   padding-left: 12px;
-  margin-right: 100px;
-  /* margin-left: 100px; */
-  /* max-width: 1500px;  */
+  margin: 0 auto;
 }
 
 /* --- Top Bar (Header chính) --- */
@@ -292,7 +345,6 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 20px;
-  /* Khoảng cách giữa các phần tử chính trong top-bar */
 }
 
 .top-bar .logo-search {
@@ -300,7 +352,6 @@ body {
   align-items: center;
   gap: 12px;
   flex-grow: 1;
-  /* Cho phép nó mở rộng để chiếm không gian */
   margin-right: 20px;
 }
 
@@ -310,22 +361,17 @@ body {
 
 .top-bar .logo-404 {
   height: 50px;
-  /* Kích thước logo */
   width: auto;
   flex-shrink: 0;
-  /* Ngăn logo bị co lại */
 }
 
 .top-bar .search-box {
   display: flex;
   width: 100%;
   max-width: 600px;
-  /* Chiều rộng tối đa cho thanh tìm kiếm */
   border-radius: 20px;
-  /* Bo tròn góc */
   overflow: hidden;
   border: 1px solid #33ccff;
-  /* Viền xanh */
 }
 
 .top-bar .search-box input {
@@ -358,7 +404,6 @@ body {
   display: flex;
   align-items: center;
   gap: 20px;
-  /* Khoảng cách giữa các icon/thông tin người dùng */
   flex-shrink: 0;
 }
 
@@ -373,7 +418,6 @@ body {
   font-size: 14px;
   cursor: pointer;
   white-space: nowrap;
-  /* Ngăn chữ bị xuống dòng */
   transition: color 0.2s ease;
 }
 
@@ -382,32 +426,31 @@ body {
 .top-bar .notification:hover,
 .top-bar .country-selector:hover {
   color: #33ccff;
-  /* Đổi màu khi hover */
 }
+
 .top-bar .cart-info {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    color: #555; /* Màu mặc định cho toàn bộ khối cart-info */
-    font-size: 14px;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #555;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.2s ease;
 }
 
-/* Đảm bảo link bên trong cart-info không bị gạch chân và có màu kế thừa */
 .top-bar .cart-info a {
-    text-decoration: none; /* Bỏ gạch chân link */
-    color: inherit; /* Kế thừa màu từ parent (.cart-info) */
-    display: flex; /* Để icon và text trên cùng một hàng và căn giữa */
-    align-items: center;
-    gap: 5px; /* Giữ khoảng cách giữa icon và text */
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-/* Khi hover lên toàn bộ khối cart-info, đổi màu cho nó và các phần tử con kế thừa */
 .top-bar .cart-info:hover {
-    color: #33ccff; /* Đổi màu khi hover */
+  color: #33ccff;
 }
+
 .top-bar .country-selector img.flag {
   width: 30px;
   height: 20px;
@@ -435,9 +478,9 @@ body {
   margin: 0;
   display: flex;
   gap: 20px;
-  /* Khoảng cách giữa các mục menu */
 }
 
+/* Hiệu ứng hover cho các menu item */
 .main-nav ul li a {
   color: white;
   text-decoration: none;
@@ -446,12 +489,24 @@ body {
   display: flex;
   align-items: center;
   gap: 5px;
-  /* Khoảng cách giữa icon và chữ */
 }
 
 .main-nav ul li a:hover {
-  color: #e9ecef;
-  /* Đổi màu khi hover */
+  color: white; /* Màu xanh lá cây khi hover */
+}
+
+/* Các quy tắc mới để vô hiệu hóa hover cho trang hiện tại */
+.main-nav ul li a.router-link-active,
+.main-nav ul li a.router-link-exact-active {
+  color: white; /* Luôn hiển thị màu xanh lá cây cho trang hiện tại */
+  font-weight: bold; /* Thêm hiệu ứng nổi bật */
+  cursor: default; /* Thay đổi con trỏ chuột để người dùng biết không thể nhấp */
+}
+
+/* Vô hiệu hóa hiệu ứng hover trên liên kết của trang hiện tại */
+.main-nav ul li a.router-link-active:hover,
+.main-nav ul li a.router-link-exact-active:hover {
+  color: white; /* Giữ nguyên màu, không thay đổi khi hover */
 }
 
 .main-nav .contact-info {
@@ -469,12 +524,8 @@ body {
   margin: auto;
 }
 
-/* --- Footer (CSS ví dụ cho footer, bạn có thể điều chỉnh) --- */
+/* --- Footer --- */
 .footer {
-    background-color: #343a40;
-    color: #f8f9fa;
-    padding: 40px 0;
-    
   background-color: #343a40;
   color: #f8f9fa;
   padding: 40px 0;
@@ -485,13 +536,11 @@ body {
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
-  /* Cho phép các phần tử xuống dòng trên màn hình nhỏ */
   gap: 30px;
 }
 
 .footer-section {
   flex: 1 1 250px;
-  /* Mỗi phần chiếm ít nhất 250px, có thể co giãn */
   min-width: 250px;
 }
 
@@ -543,7 +592,7 @@ body {
   line-height: 1.6;
 }
 
-/* --- Responsive adjustments for Header/Nav (ví dụ) --- */
+/* --- Responsive adjustments --- */
 @media (max-width: 992px) {
   .top-bar .logo-search {
     flex-direction: column;
@@ -554,25 +603,108 @@ body {
 
   .top-bar .search-box {
     max-width: none;
-    /* Cho phép tìm kiếm chiếm toàn bộ chiều rộng có sẵn */
   }
 
   .main-nav .container {
     flex-direction: column;
-    gap: 15px;
+    align-items: flex-start;
+    gap: 0;
   }
 
   .main-nav ul {
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-direction: column;
+    width: 250px;
+    max-height: auto;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1000;
+    background-color: #33ccff;
+    padding: 60px 20px 20px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .main-nav ul.mobile-menu-active {
+    transform: translateX(0);
+  }
+  
+  .main-nav ul li a {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    width: 100%;
+    display: block;
+  }
+
+  .main-nav ul li:last-child a {
+    border-bottom: none;
+  }
+
+  .main-nav .menu-toggle {
+    display: block;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+  }
+
+  .main-nav .nav-mobile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 5px 0;
+  }
+
+  .main-nav .logo-mobile {
+    display: block;
+    height: 40px;
+    margin-left: 10px;
   }
 
   .main-nav .contact-info {
     display: none;
-    /* Có thể ẩn thông tin liên hệ trên màn hình nhỏ */
+  }
+  
+  /* Style cho nút đóng menu */
+  .menu-close {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+    position: absolute;
+    top: 15px;
+    right: 15px;
+  }
+  
+  .menu-close-icon {
+    font-size: 24px;
+    color: white;
+    cursor: pointer;
+    padding: 5px;
   }
 }
 
+@media (min-width: 993px) {
+  .main-nav .menu-toggle {
+    display: none;
+  }
+
+  .main-nav .logo-mobile {
+    display: none;
+  }
+  
+  .main-nav .nav-mobile-header {
+    display: none;
+  }
+
+  /* Ẩn nút đóng trên màn hình desktop */
+  .menu-close {
+    display: none;
+  }
+}
+
+/* Các thay đổi để khắc phục lỗi tràn trên màn hình nhỏ */
 @media (max-width: 768px) {
   .top-bar .container {
     flex-wrap: wrap;
@@ -589,17 +721,52 @@ body {
 
   .top-bar .header-right {
     width: 100%;
-    justify-content: center;
-    gap: 15px;
+    justify-content: space-around;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .top-bar .cart-info span,
+  .top-bar .notification span {
+    display: none;
+  }
+  
+  .top-bar .cart-info a,
+  .top-bar .notification {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .top-bar .user-info {
+    font-size: 12px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    padding: 0 5px;
+  }
+
+  .user-info strong {
+    display: none;
+  }
+
+  .header-right .user-avatar {
+    width: 30px;
+    height: 30px;
+    margin-right: 5px;
   }
 
   .top-bar .country-selector {
     display: none;
   }
+
+  .top-bar .search-box {
+    margin-top: 10px;
+  }
 }
 
 .header-right .user-info {
-  /* Để giữ khoảng cách và căn chỉnh */
   display: flex;
   align-items: center;
   gap: 5px;
@@ -616,35 +783,26 @@ body {
 
 .user-info strong {
   color: #007bff;
-  /* Màu sắc nổi bật cho tên người dùng */
   font-weight: bold;
 }
 
 .user-menu-wrapper {
   position: relative;
-  /* Quan trọng để menu con định vị tương đối */
   display: flex;
   align-items: center;
-  /* Giữ các phần tử của wrapper trên cùng một hàng */
 }
 
 .user-dropdown-menu {
   position: absolute;
   top: 100%;
-  /* Đặt menu ngay bên dưới user-info */
   right: 0;
-  /* Căn phải với user-info */
   background-color: white;
   border: 1px solid #ddd;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   min-width: 150px;
   z-index: 100;
-  /* Đảm bảo menu hiển thị trên các nội dung khác */
   overflow: hidden;
-  /* Để bo góc của ul */
-  /* padding: 8px 0; */
-  /* Đệm trên dưới cho các item menu */
 }
 
 .user-dropdown-menu ul {
@@ -660,7 +818,6 @@ body {
   font-size: 14px;
   transition: background-color 0.2s ease, color 0.2s ease;
   white-space: nowrap;
-  /* Ngăn chữ bị xuống dòng */
 }
 
 .user-dropdown-menu ul li:hover {
@@ -668,7 +825,6 @@ body {
   color: #33ccff;
 }
 
-/* Điều chỉnh lại icon mũi tên trong user-info để nó xoay khi menu mở */
 .user-info .fa-caret-down {
   margin-left: 5px;
   transition: transform 0.2s ease;
@@ -676,15 +832,13 @@ body {
 
 .user-info.active .fa-caret-down {
   transform: rotate(180deg);
-  /* Xoay mũi tên khi menu mở */
 }
 
-/* Các điều chỉnh khác cho user-info khi đăng nhập */
 .header-right .user-info span strong {
   color: #007bff;
-  /* Màu sắc nổi bật cho tên người dùng */
   font-weight: bold;
 }
+
 .layout-wrapper {
   display: flex;
   flex-direction: column;
@@ -693,5 +847,14 @@ body {
 
 .page-content {
   flex: 1;
+}
+
+.header-right .user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 5px;
+  border: 2px solid #ddd;
 }
 </style>

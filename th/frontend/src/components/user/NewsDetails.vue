@@ -67,6 +67,10 @@
             <span><i class="fa-solid fa-circle"></i> Lượt xem:</span>
             <span>{{ news.luot_xem }}</span>
           </li>
+          <li>
+            <span><i class="fa-solid fa-circle"></i> Lượt thích:</span>
+            <span>{{ news.luot_like }}</span>
+          </li>
           <li v-if="news.danhMuc">
             <span><i class="fa-solid fa-circle"></i> Danh mục:</span>
             <span>{{ news.danhMuc.ten_danh_muc }}</span>
@@ -75,22 +79,28 @@
       </div>
 
       <div class="sidebar-section related-news">
-        <h3><i class="fa-solid fa-fire-alt"></i> Tin liên quan</h3>
+        <h3><i class="fa-solid fa-fire-alt"></i> TIN LIÊN QUAN</h3>
         <div v-if="relatedNews.length > 0" class="related-news-list">
           <div
-            class="related-news-item"
+            class="vohop-popular-post"
             v-for="item in relatedNews"
             :key="item.id"
             @click="goToNewsDetail(item.slug)"
           >
-            <img
-              class="related-news-img"
-              :src="item.hinh_anh ? (item.hinh_anh.startsWith('http') ? item.hinh_anh : `http://localhost:8000/storage/${item.hinh_anh}`) : 'https://via.placeholder.com/90x60/e0e0e0/555555?text=No+Image'"
-              :alt="item.tieude"
-              @error="handleImageError"
-            >
-            <div class="related-news-info">
-              <a href="javascript:void(0);" class="related-news-title">{{ item.tieude }}</a>
+            <div class="vohop-post-image">
+              <img
+                :src="item.hinh_anh ? (item.hinh_anh.startsWith('http') ? item.hinh_anh : `http://localhost:8000/storage/${item.hinh_anh}`) : 'https://via.placeholder.com/60x60'"
+                alt=""
+                @error="handleImageError"
+              />
+            </div>
+            <div class="vohop-post-details">
+              <span class="vohop-popular-post-title">{{ item.tieude }}</span>
+              <div class="vohop-post-meta">
+                <span><i class="fa-regular fa-calendar"></i> {{ formatDateOnly(item.ngay_dang) }}</span>
+                <span><i class="fa-solid fa-eye"></i> {{ item.luot_xem || 0 }}</span>
+                <span><i class="fa-solid fa-thumbs-up"></i> {{ item.luot_like || 0 }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -180,20 +190,28 @@ function goToNewsDetail(newsSlug) {
   router.push({ name: 'ChiTietTinTucCongKhaiSlug', params: { slug: newsSlug } });
 }
 
+function formatDateOnly(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+
+  // Cấu hình chỉ để hiển thị ngày, tháng, năm
+  const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+  
+  // Trả về ngày đã định dạng
+  return date.toLocaleDateString('vi-VN', options);
+}
+
 function formatDate(dateString) {
   if (!dateString) return '';
   const date = new Date(dateString);
-  if (isNaN(date.getTime())) {
-    const [year, month, day] = dateString.split('-');
-    if (year && month && day) {
-      const newDate = new Date(year, month - 1, day);
-      if (!isNaN(newDate.getTime())) {
-        dateString = newDate.toISOString();
-      }
-    }
-  }
-  const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-  return new Date(dateString).toLocaleDateString('vi-VN', options);
+  
+  const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+  const timeOptions = { hour: '2-digit', minute: '2-digit' };
+
+  const formattedDate = date.toLocaleDateString('vi-VN', dateOptions);
+  const formattedTime = date.toLocaleTimeString('vi-VN', timeOptions);
+
+  return `${formattedDate} ${formattedTime}`;
 }
 
 function handleImageError(event) {
@@ -224,6 +242,8 @@ async function handleLike() {
       hasLiked.value = true;
       likedNewsIds.push(news.value.id);
       localStorage.setItem('liked_news', JSON.stringify(likedNewsIds));
+
+       news.value.luot_like = response.data.luot_like; // Cập nhật số lượt thích hiển thị
       
       console.log('Bạn đã thích bài viết này thành công!');
     }
@@ -613,11 +633,6 @@ function getNoiDungSnippet(noidung, maxLength = 100) {
   margin-right: 8px;
 }
 
-.related-news-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
 
 .related-news-item {
   display: flex;
@@ -748,5 +763,97 @@ function getNoiDungSnippet(noidung, maxLength = 100) {
   .related-news-title {
     font-size: 14px;
   }
+}
+
+.vohop-popular-post {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    cursor: pointer;
+    margin-bottom: 10px; /* Thêm khoảng cách giữa các tin */
+    background: #f9f9f9; /* Thêm màu nền cho mỗi item */
+    border: 1px solid #eee;
+}
+
+.vohop-popular-post:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #e2f5ff;
+}
+
+.vohop-post-image img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.vohop-post-details {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex-grow: 1;
+}
+
+.vohop-popular-post-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 5px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Giới hạn 2 dòng tiêu đề */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.vohop-popular-post:hover .vohop-popular-post-title {
+    color: #007bff;
+}
+
+.vohop-post-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    color: #6c757d;
+    white-space: nowrap;
+}
+
+.vohop-post-meta span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.vohop-post-meta i {
+    color: #0d6efd;
+}
+
+/* Đảm bảo style tiêu đề sidebar giống nhau */
+.sidebar-section h3 {
+    font-size: 18px;
+    color: #333;
+    font-weight: 700;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #1a73e8;
+    padding-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sidebar-section h3 i {
+    color: #1a73e8;
+}
+
+.no-related-news {
+    text-align: center;
+    color: #888;
+    padding: 20px;
+    font-style: italic;
 }
 </style>

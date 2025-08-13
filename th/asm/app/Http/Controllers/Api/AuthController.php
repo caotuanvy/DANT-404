@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 
 
 class AuthController extends Controller
@@ -106,7 +107,8 @@ class AuthController extends Controller
                 'sdt' => $user->sdt,
                 'vai_tro_id' => $user->vai_tro_id,
                 'is_active' => $user->is_active,
-                'trang_thai' => $user->trang_thai, // Đảm bảo trả về trường này
+                'anh_dai_dien' => $user->anh_dai_dien,
+                'trang_thai' => $user->trang_thai, 
             ],
             'token' => $token,
         ]);
@@ -279,5 +281,141 @@ class AuthController extends Controller
         Mail::to($user->email)->send(new KichHoatTaiKhoan($user, $activationLink));
 
         return response()->json(['message' => 'Email kích hoạt đã được gửi lại.'], 200);
+    }
+    public function facebookLogin(Request $request)
+    {
+        // 1. Validate request
+        $request->validate([
+            'access_token' => 'required|string',
+        ]);
+
+        $accessToken = $request->access_token;
+        $facebookUser = null;
+
+        // 2. Gửi yêu cầu đến Facebook Graph API để lấy thông tin người dùng
+        try {
+            // CẬP NHẬT: Thêm trường 'picture.width(200).height(200)' để lấy ảnh đại diện
+            $response = Http::get("https://graph.facebook.com/v19.0/me", [
+                'fields' => 'id,name,email,picture.width(200).height(200)',
+                'access_token' => $accessToken,
+            ]);
+            
+            // Log response từ Facebook để debug chi tiết
+            Log::info('Facebook API Response Status: ' . $response->status());
+            Log::info('Facebook API Response Body: ' . $response->body());
+
+            // Xử lý lỗi nếu không thể lấy thông tin
+            if ($response->failed()) {
+                Log::error('Facebook API Error: ' . $response->body());
+                return response()->json([
+                    'message' => 'Không thể lấy thông tin từ Facebook. Vui lòng thử lại.',
+                    'errors' => $response->json(),
+                ], 400);
+            }
+
+            $facebookUser = $response->json();
+            
+            // Log thông tin để debug
+            Log::info('Facebook User Data: ' . json_encode($facebookUser));
+            
+        } catch (\Exception $e) {
+            Log::error('Error fetching Facebook user: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Có lỗi xảy ra khi kết nối với Facebook.',
+            ], 500);
+        }
+
+        // --- BẮT ĐẦU KHỐI LỆNH CẦN KIỂM TRA LỖI NỘI BỘ MẠNH HƠN ---
+        try {
+            // Lấy URL ảnh đại diện, kiểm tra tồn tại để tránh lỗi
+            $profilePictureUrl = $facebookUser['picture']['data']['url'] ?? null;
+            
+            // CẬP NHẬT: Tìm người dùng bằng facebook_id hoặc email
+            $user = User::where('facebook_id', $facebookUser['id'])->first();
+
+            if (!$user) {
+                // Nếu không tìm thấy bằng facebook_id, tìm bằng email
+                if (isset($facebookUser['email'])) {
+                    $user = User::where('email', $facebookUser['email'])->first();
+                }
+
+                // Nếu vẫn không tìm thấy, tạo người dùng mới
+                if (!$user) {
+                    Log::info('Attempting to create new user with data: ' . json_encode([
+                        'ho_ten' => $facebookUser['name'],
+                        'email' => $facebookUser['email'] ?? null, // Có thể không có email
+                        'facebook_id' => $facebookUser['id'],
+                        'anh_dai_dien' => $profilePictureUrl,
+                    ]));
+
+                    $user = User::create([
+                        'ho_ten' => $facebookUser['name'],
+                        'email' => $facebookUser['email'] ?? null,
+                        'facebook_id' => $facebookUser['id'],
+                        'mat_khau' => Hash::make(Str::random(24)),
+                        'anh_dai_dien' => $profilePictureUrl,
+                        'vai_tro_id' => 0, 
+                        'trang_thai' => 0,
+                        'is_active' => 1,
+                        'ngay_tao' => now(),
+                    ]);
+                    
+                    Log::info('New user created via Facebook: ' . $user->id);
+                } else {
+                    // CẬP NHẬT: Đã tìm thấy người dùng bằng email, liên kết tài khoản Facebook
+                    $updateData = [
+                        'facebook_id' => $facebookUser['id'],
+                        'ho_ten' => $facebookUser['name'],
+                        'trang_thai' => 0,
+                        'is_active' => 1,
+                    ];
+                    // Chỉ cập nhật ảnh đại diện nếu nó chưa tồn tại
+                    if (is_null($user->anh_dai_dien)) {
+                        $updateData['anh_dai_dien'] = $profilePictureUrl;
+                    }
+                    $user->update($updateData);
+                    Log::info('Existing user linked with Facebook: ' . $user->id);
+                }
+            } else {
+                // Người dùng đã tồn tại bằng facebook_id, chỉ cần cập nhật thông tin
+                $updateData = [
+                    'ho_ten' => $facebookUser['name'],
+                    'trang_thai' => 0,
+                    'is_active' => 1,
+                ];
+                // Chỉ cập nhật ảnh đại diện nếu nó chưa tồn tại
+                if (is_null($user->anh_dai_dien)) {
+                    $updateData['anh_dai_dien'] = $profilePictureUrl;
+                }
+                $user->update($updateData);
+                Log::info('Existing user updated via Facebook: ' . $user->id);
+            }
+            
+            // 4. Kiểm tra trạng thái tài khoản trước khi đăng nhập
+            if ($user->trang_thai === 1) {
+                return response()->json([
+                    'message' => 'Tài khoản của bạn đã bị vô hiệu hóa.',
+                    'status' => 'disabled',
+                ], 403);
+            }
+
+            // 5. Tạo token truy cập
+            $user->tokens()->delete(); 
+            $token = $user->createToken('facebook-login-token')->plainTextToken;
+
+            // 6. Trả về thông tin người dùng và token
+            return response()->json([
+                'message' => 'Đăng nhập bằng Facebook thành công.',
+                'user' => $user,
+                'token' => $token,
+            ], 200);
+        } catch (\Exception $e) {
+            // Ghi lại lỗi chi tiết vào log
+            Log::error('Database or Logic Error in facebookLogin: ' . $e->getMessage() . '. On file: ' . $e->getFile() . ' on line: ' . $e->getLine());
+            return response()->json([
+                'message' => 'Có lỗi xảy ra khi xử lý thông tin người dùng. Vui lòng kiểm tra log backend.',
+            ], 500);
+        }
+        // --- KẾT THÚC KHỐI LỆNH CẦN KIỂM TRA LỖI NỘI BỘ MẠNH HƠN ---
     }
 }

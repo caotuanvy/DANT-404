@@ -7,14 +7,14 @@
       </div>
       <div class="header-right">
         <div class="sort-buttons">
-          <button 
-            class="sort-button" 
+          <button
+            class="sort-button"
             :class="{ 'active': currentSort === 'newest' }"
             @click="changeSort('newest')"
           >
             Mới nhất
           </button>
-          <button 
+          <button
             class="sort-button"
             :class="{ 'active': currentSort === 'popular' }"
             @click="changeSort('popular')"
@@ -33,9 +33,9 @@
             <i v-else class="fa-solid fa-user-circle"></i>
           </div>
           <div class="comment-input-area">
-            <div 
-              class="comment-input" 
-              :contenteditable="isLoggedIn" 
+            <div
+              class="comment-input"
+              :contenteditable="isLoggedIn"
               @input="onInput"
               @paste="onPaste"
               :placeholder="placeholderText"
@@ -51,21 +51,6 @@
               <i class="fa-regular fa-face-smile toolbar-icon" @click="toggleEmojiPicker"></i>
             </div>
             
-            <div class="user-rating" v-if="isLoggedIn">
-              <span>Đánh giá của bạn:</span>
-              <div class="star-rating">
-                <span 
-                  v-for="star in 5" 
-                  :key="star" 
-                  class="star-icon"
-                  :class="{ 'filled': star <= newComment.danh_gia }"
-                  @click="setRating(star)"
-                >
-                  ★
-                </span>
-              </div>
-            </div>
-
             <div v-if="showEmojiPicker" class="emoji-picker-container">
               <span
                 v-for="emoji in emojis"
@@ -79,10 +64,10 @@
             <div v-if="showLinkInput" class="link-modal-overlay">
               <div class="link-modal">
                 <p>Nhập URL liên kết:</p>
-                <input 
-                  type="text" 
-                  v-model="linkUrl" 
-                  placeholder="https://example.com" 
+                <input
+                  type="text"
+                  v-model="linkUrl"
+                  placeholder="https://example.com"
                   @keyup.enter="insertLinkFromInput"
                 />
                 <div class="modal-actions">
@@ -92,8 +77,8 @@
               </div>
             </div>
             
-            <button 
-                class="submit-button" 
+            <button
+                class="submit-button"
                 :class="{ 'active': isLoggedIn }"
                 @click="submitComment"
             >
@@ -102,65 +87,21 @@
             </button>
           </div>
         </div>
-        
-        <div v-if="showRatingModal" class="rating-modal-overlay" @click.self="closeRatingModal">
-          <div class="rating-modal">
-            <div class="modal-header">
-              <h4>Lọc bình luận</h4>
-              <i class="fa-solid fa-xmark close-button" @click="closeRatingModal"></i>
-            </div>
-            <div class="modal-options">
-              <div class="sort-options-section">
-                <p class="section-title">Sắp xếp theo:</p>
-                <div class="sort-options-group">
-                  <div class="sort-option" @click="fetchCommentsByRatingAndSort('newest')">Mới nhất</div>
-                  <div class="sort-option" @click="fetchCommentsByRatingAndSort('oldest')">Cũ nhất</div>
-                  <div class="sort-option" @click="fetchCommentsByRatingAndSort('popular')">Phổ biến</div>
-                  <div class="sort-option" @click="fetchCommentsByRatingAndSort('disliked')">Không thích</div>
-                </div>
-              </div>
-              
-              <div class="rating-options-section">
-                <p class="section-title">Điểm xếp hạng:</p>
-                <div class="rating-options-group">
-                  <div 
-                    v-for="star in 5" 
-                    :key="star" 
-                    class="rating-option"
-                    :class="{ 'active-rating': currentRating === star }"
-                    @click="setRatingForModal(star)"
-                  >
-                    <span class="rating-label">{{ star }} sao</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <div v-if="loading" class="info-message loading">
           <i class="fa-solid fa-spinner fa-spin"></i> Đang tải bình luận...
         </div>
-        <div v-else-if="comments.length === 0" class="info-message no-comments">
+        <div v-else-if="comments.data && comments.data.length === 0" class="info-message no-comments">
           <i class="fa-regular fa-comment-dots"></i> Chưa có bình luận nào.
         </div>
+        
         <div v-else class="comment-list">
-          <div v-for="comment in comments" :key="comment.id" class="comment-item">
+          <div v-for="comment in comments.data" :key="comment.binh_luan_id" class="comment-item">
             <div class="user-info">
               <img class="avatar" :src="comment.nguoi_dung.avatar || 'https://i.pravatar.cc/50?u=' + comment.nguoi_dung.nguoi_dung_id" alt="User Avatar">
               <div class="user-meta">
                 <span class="username">{{ comment.nguoi_dung.ho_ten || 'Người dùng' }}</span>
                 <span class="timestamp">{{ timeAgo(comment.ngay_binh_luan) }}</span>
-                <div v-if="comment.danh_gia" class="user-rating-display">
-                  <span 
-                    v-for="star in 5" 
-                    :key="star"
-                    class="star-icon"
-                    :class="{ 'filled': star <= comment.danh_gia }"
-                  >
-                    ★
-                  </span>
-                </div>
               </div>
             </div>
             <div class="comment-body" v-html="comment.noidung"></div>
@@ -189,6 +130,12 @@
               </button>
             </div>
           </div>
+          
+          <div v-if="comments.total > comments.data.length" class="view-more-container">
+            <button @click="loadMoreComments" class="view-more-button">
+              Xem thêm bình luận
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -211,9 +158,10 @@ import axios from 'axios';
 const route = useRoute();
 const user = JSON.parse(localStorage.getItem('user')) || null;
 const isLoggedIn = computed(() => !!user);
-const comments = ref([]);
+const comments = ref({ data: [], total: 0, current_page: 1 });
 const loading = ref(false);
 const isSubmitting = ref(false);
+const showAllComments = ref(false);
 
 const placeholderText = computed(() => {
     return isLoggedIn.value ? 'Viết bình luận...' : 'Bạn cần đăng nhập để bình luận.';
@@ -224,27 +172,19 @@ const showLinkInput = ref(false);
 const linkUrl = ref('');
 const currentSort = ref('newest'); 
 const emojis = ref([
-  '😀', '😂', '😅', '😇', '🥰', '😊', '😋', '😎', '🤩', '🥳',
-  '😭', '😱', '😡', '👍', '👎', '❤️', '💔', '💯', '🔥', '🎉'
+    '😀', '😂', '😅', '😇', '🥰', '😊', '😋', '😎', '🤩', '🥳',
+    '😭', '😱', '😡', '👍', '👎', '❤️', '💔', '💯', '🔥', '🎉'
 ]);
 
 const newComment = ref({
     tin_tuc_id: null,
     nguoi_dung_id: user ? user.nguoi_dung_id : null,
     noidung: '',
-    danh_gia: null,
 });
 
 const isSubmitDisabled = computed(() => {
-    return !isLoggedIn.value || isSubmitting.value || (!newComment.value.noidung.trim() && newComment.value.danh_gia === null);
+    return !isLoggedIn.value || isSubmitting.value || !newComment.value.noidung.trim();
 });
-
-const ratingStats = ref({});
-const totalReviews = ref(0);
-const averageRating = ref(0);
-
-const showRatingModal = ref(false);
-const currentRating = ref(null);
 
 const showAlertModal = ref(false);
 const alertMessage = ref('');
@@ -259,12 +199,10 @@ function closeAlertModal() {
   alertMessage.value = '';
 }
 
-
 watch(() => route.params.slug, (newSlug) => {
     if (newSlug) {
       newComment.value.tin_tuc_id = null;
       fetchComments();
-      fetchRatingStatistics();
     }
 }, { immediate: true });
 
@@ -278,77 +216,10 @@ async function getNewsIdFromSlug(slug) {
     }
 }
 
-async function fetchRatingStatistics() {
-    try {
-        const newsId = await getNewsIdFromSlug(route.params.slug);
-        const response = await axios.get(`http://localhost:8000/api/binh-luan/thong-ke/${newsId}`);
-        ratingStats.value = response.data.stats;
-        totalReviews.value = response.data.total;
-        averageRating.value = response.data.average;
-    } catch (error) {
-        console.error("Lỗi khi tải thống kê đánh giá:", error);
-    }
-}
-
-function openRatingModal(rating) {
-    currentRating.value = rating;
-    showRatingModal.value = true;
-}
-
-function closeRatingModal() {
-    showRatingModal.value = false;
-    currentRating.value = null; 
-}
-
-function setRatingForModal(rating) {
-    currentRating.value = rating;
-    fetchCommentsByRatingAndSort();
-}
-
-async function fetchCommentsByRatingAndSort(sortBy = 'newest') {
-    loading.value = true;
-    try {
-        const newsId = await getNewsIdFromSlug(route.params.slug);
-        let url = `http://localhost:8000/api/binh-luan/danh-gia/${newsId}`;
-
-        const params = {};
-        if (currentRating.value) {
-          params.rating = currentRating.value;
-        }
-        
-        switch (sortBy) {
-          case 'newest':
-            params.sort_by = 'ngay_binh_luan';
-            params.sort_order = 'desc';
-            break;
-          case 'oldest':
-            params.sort_by = 'ngay_binh_luan';
-            params.sort_order = 'asc';
-            break;
-          case 'popular':
-            params.sort_by = 'luot_thich';
-            params.sort_order = 'desc';
-            break;
-          case 'disliked':
-            params.sort_by = 'luot_khong_thich';
-            params.sort_order = 'desc';
-            break;
-        }
-
-        const response = await axios.get(url, { params });
-        comments.value = response.data.data;
-        closeRatingModal();
-    } catch (error) {
-        console.error("Lỗi khi xem thêm bình luận theo sao:", error);
-    } finally {
-        loading.value = false;
-    }
-}
-
 async function fetchComments() {
     const newsId = await getNewsIdFromSlug(route.params.slug);
     if (!newsId) {
-      comments.value = [];
+      comments.value = { data: [], total: 0, current_page: 1 };
       return;
     }
     newComment.value.tin_tuc_id = newsId;
@@ -356,22 +227,47 @@ async function fetchComments() {
     loading.value = true;
     try {
       let url = `http://localhost:8000/api/binh-luan/tin-tuc/${newsId}`;
+      let params = { per_page: 4 };
+
       if (currentSort.value === 'popular') {
-        url += '?sort_by=luot_thich&sort_order=desc';
+        params.sort_by = 'luot_thich';
+        params.sort_order = 'desc';
       } else { // default to newest
-        url += '?sort_by=ngay_binh_luan&sort_order=desc';
+        params.sort_by = 'ngay_binh_luan';
+        params.sort_order = 'desc';
       }
 
-      const response = await axios.get(url);
+      const response = await axios.get(url, { params });
+      
       comments.value = response.data;
-      comments.value.forEach(comment => {
+      
+      comments.value.data.forEach(comment => {
           comment.liked = false;
           comment.disliked = false;
       });
+      showAllComments.value = false;
     } catch (error) {
         console.error("Lỗi khi tải bình luận:", error);
     } finally {
         loading.value = false;
+    }
+}
+
+async function loadMoreComments() {
+    if (comments.value.current_page < comments.value.last_page) {
+      const newsId = newComment.value.tin_tuc_id;
+      const nextPage = comments.value.current_page + 1;
+      let url = `http://localhost:8000/api/binh-luan/tin-tuc/${newsId}?page=${nextPage}`;
+      if (currentSort.value === 'popular') {
+        url += '&sort_by=luot_thich&sort_order=desc';
+      } else {
+        url += '&sort_by=ngay_binh_luan&sort_order=desc';
+      }
+      
+      const response = await axios.get(url);
+      comments.value.data = comments.value.data.concat(response.data.data);
+      comments.value.current_page = response.data.current_page;
+      comments.value.last_page = response.data.last_page;
     }
 }
 
@@ -380,24 +276,15 @@ function changeSort(sortBy) {
     fetchComments();
 }
 
-function setRating(star) {
-  if (!isLoggedIn.value) {
-      openAlertModal('Bạn cần đăng nhập để đánh giá.');
-      return;
-  }
-  if (newComment.value.danh_gia === star) {
-    newComment.value.danh_gia = null;
-  } else {
-    newComment.value.danh_gia = star;
-  }
-}
 function onInput(event) {
     if (!isLoggedIn.value) {
-        // Clear input nếu người dùng chưa đăng nhập
         event.target.innerHTML = '';
         return;
     }
-    newComment.value.noidung = event.target.innerHTML;
+    let content = event.target.innerHTML
+        .replace(/^(<br\s*\/?>)+/gi, '')
+        .replace(/(<br\s*\/?>)+$/gi, '');
+    newComment.value.noidung = content;
 }
 function onPaste(event) {
     if (!isLoggedIn.value) {
@@ -521,20 +408,13 @@ function cancelLink() {
 }
 
 async function submitComment() {
-    // 1. Kiểm tra đăng nhập trước tiên
     if (!isLoggedIn.value) {
       openAlertModal('Bạn cần đăng nhập để bình luận.');
-      // Có thể thêm logic chuyển hướng tới trang đăng nhập ở đây
       return;
     }
 
     if (isSubmitDisabled.value) {
       return;
-    }
-
-    if (newComment.value.danh_gia === null) {
-        openAlertModal('Bạn quên đánh giá sao rồi!');
-        return;
     }
 
     isSubmitting.value = true;
@@ -552,14 +432,10 @@ async function submitComment() {
           tin_tuc_id: newComment.value.tin_tuc_id,
           nguoi_dung_id: newComment.value.nguoi_dung_id,
           noidung: inputElement.innerHTML,
-          danh_gia: newComment.value.danh_gia,
       });
       
       fetchComments();
-      fetchRatingStatistics();
-
       newComment.value.noidung = '';
-      newComment.value.danh_gia = null;
       inputElement.innerHTML = '';
       inputElement.blur();
     } catch (error) {
@@ -575,13 +451,13 @@ async function toggleLike(comment) {
         openAlertModal("Bạn cần đăng nhập để thích bình luận.");
         return;
     }
-    if (comment.liked) return; // Đã thích rồi thì không cho thích lại
+    if (comment.liked) return;
 
     try {
         const response = await axios.post(`http://localhost:8000/api/binh-luan/${comment.binh_luan_id}/like`);
         comment.luot_thich = response.data.luot_thich;
         comment.liked = true;
-        comment.disliked = false; // Nếu đã thích thì bỏ trạng thái không thích
+        comment.disliked = false;
     } catch (error) {
         openAlertModal("Có lỗi khi thích bình luận.");
     }
@@ -592,13 +468,13 @@ async function toggleDislike(comment) {
         openAlertModal("Bạn cần đăng nhập để không thích bình luận.");
         return;
     }
-    if (comment.disliked) return; // Đã không thích rồi thì không cho không thích lại
+    if (comment.disliked) return;
 
     try {
         const response = await axios.post(`http://localhost:8000/api/binh-luan/${comment.binh_luan_id}/dislike`);
         comment.luot_khong_thich = response.data.luot_khong_thich;
         comment.disliked = true;
-        comment.liked = false; // Nếu đã không thích thì bỏ trạng thái thích
+        comment.liked = false;
     } catch (error) {
         openAlertModal("Có lỗi khi không thích bình luận.");
     }
@@ -607,8 +483,8 @@ async function toggleDislike(comment) {
 async function setBaoCao(commentId, baoCaoValue) {
   try {
     const token = localStorage.getItem('token');
-    await axios.post(`http://localhost:8000/api/binh-luan/${commentId}/bao-cao`, { 
-      bao_cao: baoCaoValue 
+    await axios.post(`http://localhost:8000/api/binh-luan/${commentId}/bao-cao`, {
+      bao_cao: baoCaoValue
     }, {
       headers: {
         'Authorization': token ? `Bearer ${token}` : '',
@@ -650,23 +526,23 @@ function timeAgo(dateString) {
     if (interval > 1) { return `${Math.floor(interval)} phút trước`; }
     return 'vài giây trước';
 }
-
-const getRatingPercentage = (rating) => {
-    if (totalReviews.value === 0) return '0%';
-    const count = ratingStats.value[rating] || 0;
-    return `${(count / totalReviews.value) * 100}%`;
-};
 </script>
 
 <style scoped>
-/* Thêm style cho trạng thái vô hiệu hóa */
+/*
+  Lưu ý: Bạn có thể xóa toàn bộ các style liên quan đến rating
+  như .ratings-sidebar, .rating-display, .star-rating, .rating-bar-row, v.v.
+  để dọn dẹp code CSS.
+*/
 .comment-input.disabled-input {
     background-color: #f5f5f5;
     cursor: not-allowed;
     color: #a0aec0;
 }
 .comment-input.disabled-input:empty::before {
+    content: attr(placeholder);
     color: #a0aec0;
+    pointer-events: none;
 }
 .submit-button.active {
     background-color: #55a8e0;
@@ -678,15 +554,12 @@ const getRatingPercentage = (rating) => {
     color: #999;
     cursor: not-allowed;
 }
-
-/* ... (giữ nguyên các style còn lại) */
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: #f0f2f5;
     margin: 0;
     padding: 20px;
 }
-
 .comments-section-container {
     max-width: 1600px;
     margin: auto;
@@ -695,7 +568,6 @@ body {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     overflow: hidden;
 }
-
 .header-container {
     background-color: #55a8e0;
     color: white;
@@ -704,23 +576,19 @@ body {
     justify-content: space-between;
     align-items: center;
 }
-
 .header-left {
     display: flex;
     align-items: center;
     font-size: 1.2rem;
     font-weight: 600;
 }
-
 .header-left i {
     margin-right: 12px;
 }
-
 .sort-buttons {
     display: flex;
     gap: 8px;
 }
-
 .sort-button {
     background-color: transparent;
     color: rgba(255, 255, 255, 0.7);
@@ -731,85 +599,71 @@ body {
     cursor: pointer;
     transition: all 0.2s;
 }
-
 .sort-button.active {
     background-color: rgba(255, 255, 255, 0.3);
     color: white;
     font-weight: 600;
 }
-
 .main-content {
     display: flex;
-    flex-direction: column; 
+    flex-direction: column;
     padding: 24px;
 }
-
 .ratings-sidebar {
     width: 100%;
     background-color: #f7f9fb;
     border-radius: 8px;
     padding: 24px;
-    margin-bottom: 24px; 
+    margin-bottom: 24px;
     border: 1px solid #e0e6ed;
 }
-
 .ratings-summary h4 {
     margin: 0 0 16px 0;
     font-size: 1.1rem;
     color: #333;
 }
-
 .rating-display {
     display: flex;
     align-items: center;
     margin-bottom: 20px;
 }
-
 .overall-rating {
     font-size: 3rem;
     font-weight: 700;
     color: #ffc107;
     line-height: 1;
 }
-
 .star-rating {
     margin: 0 8px;
     display: flex;
     gap: 2px;
 }
-
 .star-icon {
     color: #e0e0e0;
     font-size: 1.2rem;
 }
-
 .star-icon.filled {
     color: #ffc107;
 }
-
 .review-count {
     font-size: 0.9rem;
     color: #777;
 }
-
 .rating-breakdown {
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
-
 .rating-bar-row {
     display: flex;
     align-items: center;
     font-size: 14px;
 }
-
 .rating-label {
     width: 50px;
     flex-shrink: 0;
     color: #555;
 }
-
 .rating-bar-container {
     flex-grow: 1;
     height: 8px;
@@ -817,7 +671,6 @@ body {
     border-radius: 4px;
     overflow: hidden;
 }
-
 .rating-bar {
     height: 100%;
     background-color: #ffc107;
@@ -826,24 +679,20 @@ body {
 .rating-bar:not(.filled) {
     background-color: #e0e0e0;
 }
-
 .rating-number {
     width: 30px;
     text-align: right;
     flex-shrink: 0;
 }
-
 .view-more {
     margin-left: 10px;
     font-size: 14px;
     color: #55a8e0;
     text-decoration: none;
 }
-
 .comments-content {
     width: 100%;
 }
-
 .comment-form {
     display: flex;
     gap: 15px;
@@ -853,14 +702,12 @@ body {
     border: 1px solid #e0e6ed;
     border-radius: 8px;
 }
-
 .comment-input-area {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
     position: relative;
 }
-
 .comment-input {
     width: 100%;
     min-height: 80px;
@@ -878,19 +725,16 @@ body {
     color: #a0aec0;
     pointer-events: none;
 }
-
 .toolbar {
     display: flex;
     gap: 12px;
     margin-bottom: 12px;
 }
-
 .toolbar-icon {
     font-size: 1.2rem;
     color: #777;
     cursor: pointer;
 }
-
 .user-rating {
     display: flex;
     align-items: center;
@@ -898,7 +742,6 @@ body {
     margin-bottom: 12px;
     font-size: 14px;
 }
-
 .user-rating .star-icon {
     cursor: pointer;
     color: #e0e0e0;
@@ -906,7 +749,6 @@ body {
 .user-rating .star-icon.filled {
     color: #ffc107;
 }
-
 .submit-button {
     align-self: flex-end;
     padding: 8px 20px;
@@ -915,13 +757,11 @@ body {
     font-weight: 600;
     transition: all 0.2s;
 }
-
 .comment-list {
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
-
 .comment-item {
     display: flex;
     flex-direction: column;
@@ -929,48 +769,40 @@ body {
     border: 1px solid #e0e6ed;
     border-radius: 8px;
 }
-
 .user-info {
     display: flex;
     align-items: flex-start;
     gap: 12px;
     margin-bottom: -12px;
 }
-
 .avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
     object-fit: cover;
 }
-
 .user-meta {
     display: flex;
     flex-direction: column;
 }
-
 .username {
     font-weight: 600;
     font-size: 15px;
 }
-
 .timestamp {
     font-size: 12px;
     color: #777;
 }
-
 .user-rating-display {
     margin-top: 4px;
     display: flex;
     gap: 2px;
 }
-
 .comment-body {
-    margin-left: 52px; 
-    margin-top: 8px; 
+    margin-left: 52px;
+    margin-top: 8px;
     font-size: 16px;
 }
-
 .comment-body :deep(p) {
     margin: 0;
     line-height: 1.5;
@@ -978,7 +810,7 @@ body {
 .comment-body :deep(img) {
     max-width: 100%;
     border-radius: 4px;
-    margin-top: 4px; 
+    margin-top: 4px;
     display: block;
 }
 .comment-body :deep(a) {
@@ -986,14 +818,12 @@ body {
     text-decoration: underline;
     word-break: break-all;
 }
-
 .comment-actions {
     display: flex;
     gap: 16px;
     margin-top: 12px;
-    margin-left: 52px; 
+    margin-left: 52px;
 }
-
 .action-button {
     display: flex;
     align-items: center;
@@ -1004,7 +834,6 @@ body {
     font-size: 14px;
     cursor: pointer;
 }
-
 .action-button:hover {
     color: #55a8e0;
 }
@@ -1014,7 +843,6 @@ body {
 .text-blue {
     color: #1890ff;
 }
-
 .emoji-picker-container {
     display: flex;
     flex-wrap: wrap;
@@ -1035,7 +863,6 @@ body {
 .emoji-item:hover {
     transform: scale(1.2);
 }
-
 .link-modal-overlay {
     position: fixed;
     top: 0;
@@ -1097,7 +924,6 @@ body {
 .modal-button:hover {
     opacity: 0.8;
 }
-
 .rating-modal-overlay {
     position: fixed;
     top: 0;
@@ -1110,7 +936,6 @@ body {
     justify-content: center;
     z-index: 1000;
 }
-
 .rating-modal {
     background-color: #ffffff;
     border-radius: 12px;
@@ -1120,7 +945,6 @@ body {
     padding: 24px;
     animation: fadeInScale 0.2s ease-out;
 }
-
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -1129,43 +953,36 @@ body {
   padding-bottom: 12px;
   margin-bottom: 12px;
 }
-
 .modal-header h4 {
   margin: 0;
   font-size: 1.1rem;
   font-weight: 600;
 }
-
 .close-button {
   font-size: 1.5rem;
   color: #777;
   cursor: pointer;
   transition: color 0.2s;
 }
-
 .close-button:hover {
   color: #333;
 }
-
 .modal-options {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
-
 .section-title {
   font-weight: 600;
   color: #555;
   margin-bottom: 10px;
   font-size: 1rem;
 }
-
 .sort-options-group, .rating-options-group {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
-
 .sort-option, .rating-option {
   padding: 10px 16px;
   border: 1px solid #e0e6ed;
@@ -1175,19 +992,16 @@ body {
   color: #555;
   transition: all 0.2s;
 }
-
 .sort-option:hover, .rating-option:hover {
   background-color: #f0f4f8;
   border-color: #4a90e2;
   color: #4a90e2;
 }
-
 .rating-option.active-rating {
   background-color: #4a90e2;
   color: white;
   border-color: #4a90e2;
 }
-
 @keyframes fadeInScale {
   from {
     opacity: 0;
@@ -1198,7 +1012,6 @@ body {
     transform: scale(1);
   }
 }
-
 .alert-modal-overlay {
     position: fixed;
     top: 0;
@@ -1211,7 +1024,6 @@ body {
     justify-content: center;
     z-index: 2000;
 }
-
 .alert-modal {
     background-color: #fff;
     padding: 30px;
@@ -1225,20 +1037,17 @@ body {
     align-items: center;
     animation: fadeIn 0.3s ease-out;
 }
-
 .alert-icon {
     font-size: 3rem;
-    color: #f39c12; 
+    color: #f39c12;
     margin-bottom: 15px;
 }
-
 .alert-message {
     font-size: 1.1rem;
     color: #333;
     font-weight: 500;
     margin: 0 0 20px 0;
 }
-
 .alert-button {
     background-color: #55a8e0;
     color: white;
@@ -1250,13 +1059,29 @@ body {
     cursor: pointer;
     transition: background-color 0.2s ease;
 }
-
 .alert-button:hover {
     background-color: #4a90e2;
 }
-
 @keyframes fadeIn {
     from { opacity: 0; transform: scale(0.95); }
     to { opacity: 1; transform: scale(1); }
+}
+.view-more-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+.view-more-button {
+  background-color: #f0f4f8;
+  color: #55a8e0;
+  border: 1px solid #e0e6ed;
+  padding: 10px 24px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.view-more-button:hover {
+  background-color: #e0e6ed;
 }
 </style>
