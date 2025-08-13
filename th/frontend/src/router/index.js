@@ -31,7 +31,7 @@ const routes = [
   {
   path: '/:slug',
   name: 'StaticPage',
-  component: () => import('../components/user/ISV.vue') 
+  component: () => import('../components/user/StaticPage.vue') 
 },
   {
     path: '/Danh-muc-san-pham',

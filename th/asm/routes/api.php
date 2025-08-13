@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\NotificationsController;
 
 // Public Auth Routes
 Route::post('/auth/google', [GoogleAuthController::class, 'handleGoogleLogin']);
+Route::post('/auth/facebook', [AuthController::class, 'facebookLogin']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/kich-hoat/{token}', [AuthController::class, 'activate']);
@@ -183,6 +184,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/orders/{id}/reject', [OrderController::class, 'reject']);
     Route::patch('/orders/{id}/hide', [OrderController::class, 'hideOrder']);
     Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
+    Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
     // Thống Kê
     Route::get('/analytics/revenue', [ProductController::class, 'getRevenueStatistics']);
     Route::get('/analytics/overall', [ProductController::class, 'getOverallStatistics']);
@@ -190,6 +192,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users', [UserController::class, 'index']);
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
     Route::put('/users/{id}', [UserController::class, 'update']);
+    Route::post('/users/{id}/avatar', [UserController::class, 'updateAvatar']);
 
     // Product Variants
     Route::get('/products/{id}/variants', [SanPhamBienTheController::class, 'index']);

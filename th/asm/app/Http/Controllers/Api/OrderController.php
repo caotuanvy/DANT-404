@@ -22,31 +22,17 @@ use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
-    // Phương thức Index: Được dùng cho trang ADMIN hoặc để lấy danh sách CÓ GIỚI HẠN cho người dùng.
-    // Nếu dùng cho admin, nó thường có phân trang.
-    // Nếu dùng để lấy đơn hàng gần nhất cho user, nó có limit và orderBy.
-    public function index(Request $request){
-        // **QUAN TRỌNG: Thêm eager loading cho tất cả các mối quan hệ cần thiết**
-        // Điều này đảm bảo khi API trả về danh sách orders, mỗi order đều có đầy đủ thông tin lồng nhau
-        // để `PaymentSuccess.vue` có thể ánh xạ.
+    public function index(Request $request)
+    {
+
         $query = Order::whereNull('ngay_xoa')
             ->with([
                 'user', // Load thông tin người dùng
                 'paymentMethod', // Load thông tin phương thức thanh toán
                 'diachi', // Load thông tin địa chỉ
-                'orderItems.bien_the.sanPham', // Load sản phẩm cha từ biến thể
                 'orderItems.bien_the.sanPham.hinhAnhSanPham', // Load hình ảnh sản phẩm từ sản phẩm cha
                 // Hoặc 'orderItems.bien_the.hinhAnhDaiDien' nếu bạn có mối quan hệ đó
             ]);
-
-        // --- Logic lọc và phân trang/giới hạn ---
-        // Đây là điểm mà bạn cần quyết định cách sử dụng API này:
-        // A. Dùng cho ADMIN (mặc định phân trang, nhiều bộ lọc):
-        // B. Dùng cho NGƯỜI DÙNG THÔNG THƯỜNG (lấy các đơn hàng gần nhất):
-        // C. KẾT HỢP (dùng query param để phân biệt)
-
-        // Tôi sẽ để logic hiện tại của bạn cho `index` (có vẻ đang dùng cho admin hoặc chung)
-        // và giả định rằng nó trả về đủ dữ liệu cho `PaymentSuccess.vue` để tìm kiếm.
 
         if ($request->has('status') && $request->status) {
             $query->where('trang_thai_don_hang', $request->status);
@@ -84,28 +70,96 @@ class OrderController extends Controller
             }
         }
 
-        // Nếu đây là API chung, hãy thêm logic để giới hạn cho người dùng thường
-        // hoặc cho phép phân trang cho admin.
-        // Ví dụ: Lấy 20 đơn hàng gần nhất nếu không có tham số phân trang
         $perPage = $request->input('per_page', 10); // Mặc định 10 nếu không có
         if ($request->has('get_latest_for_user') && $request->get_latest_for_user) {
-             // Logic để chỉ lấy N đơn hàng gần nhất cho một user cụ thể
-             $userId = Auth::id(); // Lấy ID của người dùng hiện tại
-             if ($userId) {
-                 $query->where('nguoi_dung_id', $userId);
-             }
-             $orders = $query->orderBy('ngay_dat', 'desc')
-                             ->limit(20) // Giới hạn 20 đơn hàng gần nhất
-                             ->get();
-             return response()->json(['data' => $orders]); // Trả về dạng data: [...]
+            // Logic để chỉ lấy N đơn hàng gần nhất cho một user cụ thể
+            $userId = Auth::id(); // Lấy ID của người dùng hiện tại
+if ($userId) {
+                $query->where('nguoi_dung_id', $userId);
+            }
+            $orders = $query->orderBy('ngay_dat', 'desc')
+                                 ->limit(20) // Giới hạn 20 đơn hàng gần nhất
+                                 ->get();
+            return response()->json(['data' => $orders]); // Trả về dạng data: [...]
         } else {
-             // Mặc định cho admin hoặc các trường hợp khác, sử dụng phân trang đầy đủ
-             $orders = $query->orderBy('ngay_dat', 'desc')->paginate($perPage);
-             return response()->json($orders); // Laravel paginate() trả về cấu trúc đầy đủ
+            // Mặc định cho admin hoặc các trường hợp khác, sử dụng phân trang đầy đủ
+            $orders = $query->orderBy('ngay_dat', 'desc')->paginate($perPage);
+            return response()->json($orders); // Laravel paginate() trả về cấu trúc đầy đủ
         }
     }
 
-    // ... (các phương thức hideOrder, updateStatus, userOrders, confirmPayment của bạn)
+    public function hideOrder($id)
+    {
+        try {
+            $order = Order::findOrFail($id);
+            $order->ngay_xoa = now();
+            $order->save();
+            return response()->json(['message' => 'Đã ẩn đơn hàng thành công'], 200);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi ẩn đơn hàng ' . $id . ': ' . $e->getMessage());
+            return response()->json(['message' => 'Không thể ẩn đơn hàng. Vui lòng thử lại.'], 500);
+        }
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'trang_thai_don_hang' => 'required|integer|min:1|max:5', // <-- Validate là số nguyên từ 1-5
+        ]);
+
+        try {
+            $order = Order::findOrFail($id);
+            $order->trang_thai_don_hang = $request->input('trang_thai_don_hang');
+            $order->save();
+            return response()->json($order, 200);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi cập nhật trạng thái đơn hàng ' . $id . ': ' . $e->getMessage());
+            return response()->json(['message' => 'Không thể cập nhật trạng thái. Vui lòng thử lại.'], 500);
+        }
+    }
+
+    public function userOrders(Request $request)
+    {
+        $userId = Auth::id();
+        if (!$userId) {
+            return response()->json(['message' => 'Bạn cần đăng nhập để xem lịch sử đơn hàng.'], 401);
+        }
+
+        $query = Order::where('nguoi_dung_id', $userId)
+            ->with('paymentMethod', 'diachi', 'orderItems.bien_the.sanPham.hinhAnhSanPham'); // Thêm eager loading
+
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('id', 'like', "%$search%")
+                    ->orWhereHas('orderItems.bien_the.sanPham', function ($q3) use ($search) {
+                        $q3->where('ten_san_pham', 'like', "%$search%");
+                    });
+            });
+        }
+
+        $orders = $query->orderBy('ngay_dat', 'desc')->get();
+        return response()->json($orders, 200);
+    }
+
+    public function confirmPayment(Request $request, Order $order)
+    {
+        try {
+            if ($order->is_paid == 1) {
+return response()->json(['message' => 'Đơn hàng này đã được xác nhận thanh toán trước đó.'], 400);
+            }
+            $order->is_paid = 1;
+            $order->save();
+
+            return response()->json([
+                'message' => 'Xác nhận thanh toán thành công',
+                'order' => $order
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi xác nhận thanh toán đơn hàng ' . $order->id . ': ' . $e->getMessage());
+            return response()->json(['message' => 'Không thể xác nhận thanh toán. Vui lòng thử lại.'], 500);
+        }
+    }
 
     public function store(Request $request)
     {
@@ -153,7 +207,7 @@ class OrderController extends Controller
             } elseif (isset($validatedData['dia_chi_moi'])) {
                 $newAddress = DiaChi::create([
                     'nguoi_dung_id' => $userId,
-                    'ho_ten' => $validatedData['dia_chi_moi']['ho_ten'],
+'ho_ten' => $validatedData['dia_chi_moi']['ho_ten'],
                     'sdt' => $validatedData['dia_chi_moi']['sdt'],
                     'dia_chi' => $validatedData['dia_chi_moi']['dia_chi'],
                 ]);
@@ -210,7 +264,7 @@ class OrderController extends Controller
                         'da_xem' => 0,
                         'ngay_tao' => now(),
                     ]);
-                }
+}
             }
 
             // Xóa/Làm trống giỏ hàng của người dùng sau khi đặt hàng thành công
@@ -229,7 +283,7 @@ class OrderController extends Controller
                 'ngay_tao' => now(),
             ]);
 
-            // ** QUAN TRỌNG: Trả về order_id trong response.data.order_id **
+            // QUAN TRỌNG: Trả về order_id trong response.data.order_id
             return response()->json(['message' => 'Đặt hàng thành công!', 'order_id' => $order->id], 201);
 
         } catch (\Exception $e) {
@@ -237,5 +291,25 @@ class OrderController extends Controller
             Log::error('Lỗi khi đặt hàng: ' . $e->getMessage() . ' - File: ' . $e->getFile() . ' - Line: ' . $e->getLine());
             return response()->json(['message' => 'Không thể đặt hàng. Vui lòng thử lại sau.', 'error_detail' => $e->getMessage()], 500);
         }
+    }
+    public function cancel($id)
+    {
+        $order = Order::find($id);
+
+        // Debug
+        Log::info('Hủy đơn:', [
+            'id' => $id,
+            'order_user_id' => $order?->nguoi_dung_id,
+            'auth_user_id' => Auth::id(),
+        ]);
+
+        if (!$order || $order->nguoi_dung_id !== Auth::id()) {
+            return response()->json(['message' => 'Đơn hàng không tồn tại hoặc không thuộc về bạn'], 404);
+        }
+
+        $order->trang_thai_don_hang = 5; // Đã hủy
+        $order->save();
+
+        return response()->json(['message' => 'Đơn hàng đã được hủy']);
     }
 }

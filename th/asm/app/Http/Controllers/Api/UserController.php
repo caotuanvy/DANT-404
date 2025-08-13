@@ -9,6 +9,7 @@ use App\Models\DiaChi; // Đảm bảo dòng này được thêm vào và đúng
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException; // Thêm dòng này để xử lý lỗi validate tốt hơn
 use Illuminate\Support\Facades\Log; // <<-- Đảm bảo đã import Log Facade
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -175,5 +176,34 @@ class UserController extends Controller
             Log::critical('Unhandled exception in changePassword for user ID: ' . $id, ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json(['success' => false, 'message' => 'Đã xảy ra lỗi khi đổi mật khẩu.', 'error' => $e->getMessage()], 500);
         }
+    }
+    public function updateAvatar(Request $request, $id)
+    {
+        // Xác thực yêu cầu
+        $request->validate([
+            'anh_dai_dien' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        $user = User::findOrFail($id);
+
+        if ($request->hasFile('anh_dai_dien')) {
+            // Xóa ảnh cũ nếu có
+            if ($user->anh_dai_dien) {
+                $oldAvatarPath = str_replace(url('/storage'), 'public', $user->anh_dai_dien);
+                Storage::delete($oldAvatarPath);
+            }
+
+            // Lưu ảnh mới
+            $path = $request->file('anh_dai_dien')->store('avatars', 'public');
+            $user->anh_dai_dien = url('/storage/' . $path);
+            $user->save();
+
+            return response()->json([
+                'message' => 'Cập nhật ảnh đại diện thành công!',
+                'anh_dai_dien' => $user->anh_dai_dien
+            ], 200);
+        }
+
+        return response()->json(['message' => 'Không có file ảnh được gửi.'], 400);
     }
 }

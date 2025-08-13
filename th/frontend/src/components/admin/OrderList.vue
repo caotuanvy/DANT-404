@@ -53,20 +53,23 @@
       <button :class="{ 'tab-btn': true, 'active': selectedStatusTab === null }" @click="setFilterStatus(null)">
         Tất cả <span class="tab-count">{{ countAll }}</span>
       </button>
-      <button :class="{ 'tab-btn': true, 'active': selectedStatusTab === 1 }" @click="setFilterStatus(1)">
-        Chờ xác nhận <span class="tab-count">{{ statusCounts[1] }}</span>
+      <!-- <button :class="{ 'tab-btn': true, 'active': selectedStatusTab === 1 }" @click="setFilterStatus(1)">
+        Mới đặt <span class="tab-count">{{ countNew }}</span>
+      </button> -->
+      <button :class="{ 'tab-btn': true, 'active': selectedStatusTab === 1 }" @click="setFilterStatus(2)">
+        Chờ xử lý <span class="tab-count">{{ countPending }}</span>
       </button>
-      <button :class="{ 'tab-btn': true, 'active': selectedStatusTab === 2 }" @click="setFilterStatus(2)">
-        Đã xác nhận <span class="tab-count">{{ statusCounts[2] }}</span>
+      <button :class="{ 'tab-btn': true, 'active': selectedStatusTab === 2 }" @click="setFilterStatus(3)">
+        Đã xác nhận <span class="tab-count">{{ countConfirmed }}</span>
       </button>
-      <button :class="{ 'tab-btn': true, 'active': selectedStatusTab === 3 }" @click="setFilterStatus(3)">
-        Đang giao <span class="tab-count">{{ statusCounts[3] }}</span>
+      <button :class="{ 'tab-btn': true, 'active': selectedStatusTab === 3 }" @click="setFilterStatus(4)">
+        Đang giao hàng <span class="tab-count">{{ countShipping }}</span>
       </button>
-      <button :class="{ 'tab-btn': true, 'active': selectedStatusTab === 4 }" @click="setFilterStatus(4)">
-        Hoàn thành <span class="tab-count">{{ statusCounts[4] }}</span>
+      <button :class="{ 'tab-btn': true, 'active': selectedStatusTab === 4 }" @click="setFilterStatus(5)">
+        Hoàn thành <span class="tab-count">{{ countCompleted }}</span>
       </button>
-      <button :class="{ 'tab-btn': true, 'active': selectedStatusTab === 5 }" @click="setFilterStatus(5)">
-        Đã hủy <span class="tab-count">{{ statusCounts[5] }}</span>
+      <button :class="{ 'tab-btn': true, 'active': selectedStatusTab === 5 }" @click="setFilterStatus(6)">
+        Đã hủy <span class="tab-count">{{ countCancelled }}</span>
       </button>
     </div>
 
@@ -259,11 +262,12 @@ export default {
       activeActionMenu: null,
       pendingStatusId: null,
       statusSteps: [
-        { id: 2, title: 'Chờ Xác Nhận', icon: 'icon-dollar' },
-        { id: 3, title: 'Đã Xác Nhận', icon: 'icon-truck' },
-        { id: 4, title: 'Đang Giao', icon: 'icon-shipping' },
-        { id: 5, title: 'Hoàn Thành', icon: 'icon-star' },
-        { id: 6, title: 'Đã hủy', icon: 'icon-cancel' }
+        
+        { id: 1, title: 'Đã Xác Nhận', icon: 'icon-dollar' },
+        { id: 2, title: 'Chờ Lấy Hàng', icon: 'icon-truck' },
+        { id: 3, title: 'Đang Giao', icon: 'icon-shipping' },
+        { id: 4, title: 'Hoàn Thành', icon: 'icon-star' },
+        { id: 5, title: 'Đã Hủy', icon: 'icon-receipt' },
       ],
     };
   },
@@ -441,6 +445,8 @@ export default {
       };
       return classes[status] || 'status-default';
     },
+    getTrangThai(status) { const statuses = { 1: 'Chờ xác nhận', 2: 'Đã xác nhận', 3: 'Đang giao hàng', 4: 'Hoàn thành', 5: 'Đã hủy' }; return statuses[status] || 'Không rõ'; },
+    getStatusClass(status) { const classes = { 1: 'status-pending', 2: 'status-confirmed', 3: 'status-shipping', 4: 'status-completed', 5: 'status-cancelled' }; return classes[status] || 'status-default'; },
     getPaymentStatus(isPaid, order) {
       if (Number(isPaid) === 1) return 'Đã thanh toán';
       if (Number(isPaid) === 0 && order.trang_thai_don_hang === 6) return 'Đã hủy'; // Đã hủy và chưa thanh toán
