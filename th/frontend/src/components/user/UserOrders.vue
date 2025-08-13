@@ -1,106 +1,133 @@
 <template>
-    <h1>Đơn hàng đã mua</h1>
-    <hr />
+  <h1>Đơn hàng đã mua</h1>
+  <hr />
 
-    <div class="order-status-tabs">
-      <button
-        v-for="status in orderStatuses"
-        :key="status.value"
-        :class="{ active: currentStatus === status.value }"
-        @click="filterOrdersByStatus(status.value)"
-      >
-        {{ status.label }}
-      </button>
+  <div class="order-status-tabs">
+    <button
+      v-for="status in orderStatuses"
+      :key="status.value"
+      :class="{ active: currentStatus === status.value }"
+      @click="filterOrdersByStatus(status.value)"
+    >
+      {{ status.label }}
+    </button>
+  </div>
+
+  <div class="order-list">
+    <div v-if="loading" class="loading-message">Đang tải đơn hàng...</div>
+    <div v-else-if="filteredOrders.length === 0" class="no-orders-message">
+      Không có đơn hàng nào trong trạng thái này.
     </div>
+    <div v-else>
+      <div v-for="order in filteredOrders" :key="order.id" class="order-item">
+        <div class="order-header">
+          <span class="order-current-status">{{ getStatusLabel(order.trang_thai_don_hang) }}</span>
+          <span class="order-date">Ngày đặt: {{ formatDate(order.ngay_dat) }}</span>
+        </div>
 
-    <div class="order-list">
-      <div v-if="loading" class="loading-message">Đang tải đơn hàng...</div>
-      <div v-else-if="filteredOrders.length === 0" class="no-orders-message">
-        Không có đơn hàng nào trong trạng thái này.
-      </div>
-      <div v-else>
-        <div v-for="order in filteredOrders" :key="order.id" class="order-item">
-          <div class="order-header">
-            <span class="order-current-status">{{ getStatusLabel(order.trang_thai_don_hang) }}</span>
-            <span class="order-date">Ngày đặt: {{ formatDate(order.ngay_dat) }}</span>
+        <div class="order-address">
+          Giao đến: {{ order.diachi?.dia_chi || "Không rõ địa chỉ" }}
+        </div>
+
+        <div
+          v-for="item in order.order_items"
+          :key="item.id"
+          class="order-product-item"
+        >
+          <img
+            :src="getImageUrl(item.bien_the.san_pham.hinh_anh_san_pham)"
+            alt="Product Image"
+            class="product-image"
+          />
+          <div class="product-details">
+            <span class="product-name">
+              {{ item.bien_the?.san_pham?.ten_san_pham || "Không rõ tên sản phẩm" }}
+            </span>
+            <span
+              class="product-variant"
+              v-if="item.bien_the?.mau_sac || item.bien_the?.kich_thuoc"
+            >
+              Phân loại:
+              {{ item.bien_the.mau_sac || "Màu không xác định" }}
+              {{ item.bien_the.kich_thuoc ? "- " + item.bien_the.kich_thuoc : "" }}
+            </span>
+            <span class="product-quantity">Số lượng: {{ item.so_luong }}</span>
+            <span class="product-price">Đơn giá: {{ formatCurrency(item.don_gia) }}</span>
+            <span class="product-subtotal">
+              Tổng: {{ formatCurrency(item.so_luong * item.don_gia) }}
+            </span>
           </div>
+        </div>
 
-          <div class="order-address">
-            Giao đến: {{ order.diachi?.dia_chi || "Không rõ địa chỉ" }}
+        <div class="order-footer">
+          <div class="payment-shipping-info">
+            <span>Phương thức thanh toán: </span>
+            {{ order.payment_method?.ten_pttt || "Không rõ" }}
+            <br />
+            <span>Phí vận chuyển: </span> {{ formatCurrency(order.phi_van_chuyen) }}
           </div>
-
-          <div
-            v-for="item in order.order_items"
-            :key="item.id"
-            class="order-product-item"
-          >
-            <img
-  :src="getImageUrl(item.bien_the.san_pham.hinh_anh_san_pham)"
-  alt="Product Image"
-  class="product-image"
-/>
-            <div class="product-details">
-              <span class="product-name">
-                {{ item.bien_the?.san_pham?.ten_san_pham || "Không rõ tên sản phẩm" }}
-              </span>
-              <span
-                class="product-variant"
-                v-if="item.bien_the?.mau_sac || item.bien_the?.kich_thuoc"
-              >
-                Phân loại:
-                {{ item.bien_the.mau_sac || "Màu không xác định" }}
-                {{ item.bien_the.kich_thuoc ? "- " + item.bien_the.kich_thuoc : "" }}
-              </span>
-              <span class="product-quantity">Số lượng: {{ item.so_luong }}</span>
-              <span class="product-price">Đơn giá: {{ formatCurrency(item.don_gia) }}</span>
-              <span class="product-subtotal">
-                Tổng: {{ formatCurrency(item.so_luong * item.don_gia) }}
-              </span>
-            </div>
-          </div>
-
-          <div class="order-footer">
-            <div class="payment-shipping-info">
-              <span>Phương thức thanh toán: </span>
-              {{ order.payment_method?.ten_pttt || "Không rõ" }}
-              <br />
-              <span>Phí vận chuyển: </span> {{ formatCurrency(order.phi_van_chuyen) }}
-            </div>
-            <div class="total-and-action">
-              <span class="order-total-amount">
-                Tổng tiền đơn hàng:
-                {{ formatCurrency(calculateOrderTotal(order)) }}
-              </span>
-              <button
-                v-if="order.trang_thai_don_hang === 1"
-                class="btn-cancel-order"
-                @click="confirmCancelOrder(order.id)"
-              >
-                Hủy đơn hàng
-              </button>
-            </div>
+          <div class="total-and-action">
+            <span class="order-total-amount">
+              Tổng tiền đơn hàng:
+              {{ formatCurrency(calculateOrderTotal(order)) }}
+            </span>
+            <button
+              v-if="order.trang_thai_don_hang === 1"
+              class="btn-cancel-order"
+              @click="openCancelModal(order.id)"
+            >
+              Hủy đơn hàng
+            </button>
           </div>
         </div>
       </div>
     </div>
+  </div>
+
+  <div v-if="isModalOpen" class="modal-overlay">
+    <div class="modal-content">
+      <h2>Xác nhận hủy đơn hàng</h2>
+      <p>Vui lòng chọn lý do để chúng tôi có thể cải thiện dịch vụ tốt hơn.</p>
+      <div class="form-group">
+        <label for="cancel-reason">Lý do hủy:</label>
+        <select id="cancel-reason" v-model="cancelReason">
+          <option value="">Chọn một lý do</option>
+          <option value="Sai địa chỉ giao hàng">Nhập sai địa chỉ giao hàng</option>
+          <option value="Sai thông tin người nhận">Sai thông tin người nhận</option>
+          <option value="Muốn thay đổi sản phẩm">Muốn thay đổi sản phẩm hoặc số lượng</option>
+          <option value="Muốn thay đổi phương thức thanh toán">Muốn thay đổi phương thức thanh toán</option>
+          <option value="Lý do khác">Lý do khác</option>
+        </select>
+        <p v-if="showError" class="error-message">Vui lòng chọn một lý do hủy đơn hàng!</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-cancel" @click="closeCancelModal">Đóng</button>
+        <button class="btn btn-confirm" @click="confirmCancelOrder">Xác nhận hủy</button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import axios from "axios";
 import { useRouter } from "vue-router";
-import Swal from 'sweetalert2'; // Import SweetAlert2
+import Swal from 'sweetalert2';
 
 const router = useRouter();
 const allOrders = ref([]);
 const currentStatus = ref("all");
 const loading = ref(true);
+
+const isModalOpen = ref(false);
+const currentOrderId = ref(null);
+const cancelReason = ref('');
+const showError = ref(false);
+
 const getImageUrl = (images) => {
   if (images && images.length > 0) {
-    // Trả về đường dẫn của ảnh từ API
     return `http://127.0.0.1:8000/storage/${images[0].duongdan}`;
   }
-  // Trả về ảnh placeholder trong thư mục public
   return '/placeholder-image.jpg';
 };
 
@@ -165,11 +192,6 @@ const fetchOrders = async () => {
   } catch (error) {
     console.error("Lỗi khi tải đơn hàng:", error.response?.data || error.message);
     allOrders.value = [];
-    Swal.fire({ // Dùng SweetAlert2 cho thông báo lỗi tải
-        icon: 'error',
-        title: 'Lỗi!',
-        text: 'Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.'
-    });
   } finally {
     loading.value = false;
   }
@@ -189,83 +211,83 @@ const calculateOrderTotal = (order) => {
   return itemsTotal + shipping;
 };
 
-const confirmCancelOrder = async (orderId) => {
-  // Định nghĩa danh sách các lý do hủy
-  const cancelReasons = {
-    'Sai địa chỉ giao hàng': 'Nhập sai địa chỉ giao hàng',
-    'Sai thông tin người nhận': 'Sai thông tin người nhận',
-    'Muốn thay đổi sản phẩm hoặc số lượng': 'Muốn thay đổi sản phẩm hoặc số lượng',
-    'Muốn thay đổi phương thức thanh toán': 'Muốn thay đổi phương thức thanh toán',
-    'Lý do khác': 'Lý do khác'
-  };
+const openCancelModal = (orderId) => {
+  currentOrderId.value = orderId;
+  isModalOpen.value = true;
+  cancelReason.value = '';
+  showError.value = false;
+};
 
-  const result = await Swal.fire({
-    title: 'Bạn có chắc chắn?',
-    text: 'Bạn sẽ không thể hoàn tác thao tác này sau khi hủy đơn hàng!',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: 'Có, hủy đơn hàng!',
-    cancelButtonText: 'Không, giữ lại đơn hàng',
-    
-    // Thêm input để người dùng chọn lý do
-    input: 'select',
-    inputOptions: cancelReasons,
-    inputPlaceholder: 'Chọn một lý do',
-    inputValidator: (value) => {
-      return new Promise((resolve) => {
-        if (value) {
-          resolve();
-        } else {
-          resolve('Vui lòng chọn một lý do hủy!');
-        }
-      });
-    }
-  });
+const closeCancelModal = () => {
+  isModalOpen.value = false;
+  currentOrderId.value = null;
+};
 
-  // Kiểm tra nếu người dùng bấm 'Có' và đã chọn lý do
-  if (!result.isConfirmed || !result.value) {
-    return; // Người dùng đã chọn không hủy hoặc chưa chọn lý do
-  }
+const confirmCancelOrder = async () => {
+  if (!cancelReason.value) {
+    showError.value = true;
+    return;
+  }
+  showError.value = false;
 
-  const cancelReasonValue = result.value; // Lấy giá trị đã chọn
-  const token = localStorage.getItem("token");
-  const order = allOrders.value.find((o) => o.id === orderId);
+  const token = localStorage.getItem("token");
+  const order = allOrders.value.find((o) => o.id === currentOrderId.value);
 
-  if (!order) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Lỗi!',
-      text: 'Không tìm thấy đơn hàng để hủy.'
-    });
-    return;
-  }
+  if (!order) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Lỗi',
+      text: 'Không tìm thấy đơn hàng để hủy.',
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+    });
+    closeCancelModal();
+    return;
+  }
 
-  try {
-    // Gửi lý do hủy lên API
-    await axios.post(`/orders/${order.id}/cancel`, {
-      ly_do_huy: cancelReasonValue 
-    }, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+  try {
+    await axios.post(`/orders/${order.id}/cancel`, {
+      ly_do_huy: cancelReason.value
+    }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-    order.trang_thai_don_hang = 5; // Cập nhật trạng thái thành 'Đã hủy'
-    Swal.fire(
-      'Đã hủy!',
-      'Đơn hàng của bạn đã được hủy thành công.',
-      'success'
-    );
-  } catch (error) {
-    console.error("Lỗi khi hủy đơn hàng:", error.response?.data || error.message);
-    Swal.fire({
-      icon: 'error',
-      title: 'Hủy thất bại!',
-      text: 'Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại.'
-    });
-  }
+    order.trang_thai_don_hang = 5;
+    closeCancelModal();
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Hủy đơn hàng thành công!',
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+      didOpen: (toast) => {
+        toast.addEventListener('mouseenter', Swal.stopTimer);
+        toast.addEventListener('mouseleave', Swal.resumeTimer);
+      }
+    });
+
+  } catch (error) {
+    console.error("Lỗi khi hủy đơn hàng:", error.response?.data || error.message);
+    Swal.fire({
+      icon: 'error',
+      title: 'Lỗi',
+      text: 'Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại.',
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+    });
+    closeCancelModal();
+  }
 };
 </script>
 
@@ -559,6 +581,154 @@ hr {
   .order-status-tabs button {
     width: 100%; /* Full width buttons for very small screens */
     text-align: center;
+  }
+}
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Tối hơn một chút để nổi bật modal */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeInOverlay 0.3s ease;
+}
+
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Nội dung modal */
+.modal-content {
+  background-color: #ffffff;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); /* Shadow rõ hơn */
+  width: 90%;
+  max-width: 500px; /* Rộng hơn một chút */
+  text-align: center;
+  animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Hiệu ứng scale đẹp hơn */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Font hiện đại hơn */
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.modal-content h2 {
+  margin-top: 0;
+  font-size: 26px;
+  color: #2c3e50; /* Màu đậm hơn */
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.modal-content p {
+  color: #7f8c8d; /* Màu xám hiện đại */
+  font-size: 15px;
+  margin-bottom: 25px;
+  line-height: 1.6;
+}
+
+/* Nhóm form */
+.form-group {
+  margin-bottom: 25px;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: bold;
+  color: #34495e;
+}
+
+.form-group select {
+  width: 100%;
+  padding: 12px 15px;
+  font-size: 16px;
+  border: 1px solid #dcdfe6;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  color: #34495e;
+  appearance: none; /* Ẩn mũi tên mặc định */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%237f8c8d'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 15px center;
+  background-size: 18px;
+  cursor: pointer;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-group select:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+.error-message {
+  color: #e74c3c;
+  font-size: 14px;
+  margin-top: 8px;
+  text-align: left;
+  font-weight: 500;
+}
+
+/* Các nút bấm */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+.modal-actions .btn {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.btn-confirm {
+  background-color: #4a90e2;
+  color: white;
+}
+
+.btn-confirm:hover {
+  background-color: #165297;
+  color: white;
+  transform: translateY(-2px);
+  /* box-shadow: 0 4px 10px rgba(255, 255, 255, 0.2); */
+}
+
+.btn-cancel {
+  background-color: #ecf0f1;
+  color: #34495e;
+}
+
+.btn-cancel:hover {
+  background-color: #d8d9da;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 480px) {
+  .modal-content {
+    padding: 30px 20px;
+  }
+  .modal-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .modal-actions .btn {
+    width: 100%;
   }
 }
 </style>
