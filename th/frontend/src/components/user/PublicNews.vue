@@ -61,14 +61,21 @@
 
       <div class="vohop-sidebar-section">
         <h3 class="vohop-sidebar-title"><i class="fa-solid fa-fire"></i> TIN XEM NHIỀU NHẤT</h3>
-        <div
-          class="vohop-popular-post"
-          v-for="tin in tinNoiBatList"
-          :key="tin.id"
-          @click="goToNewsDetail(tin)"
-        >
-          <img :src="tin.hinh_anh ? (tin.hinh_anh.startsWith('http') ? tin.hinh_anh : `http://localhost:8000/storage/${tin.hinh_anh}`) : 'https://via.placeholder.com/60x60'" alt="" />
-          <span>{{ tin.tieude }}</span>
+        <div class="vohop-popular-post" v-for="tin in tinNoiBatList" :key="tin.id" @click="goToNewsDetail(tin)">
+          <div class="vohop-post-image">
+            <img
+              :src="tin.hinh_anh ? (tin.hinh_anh.startsWith('http') ? tin.hinh_anh : `http://localhost:8000/storage/${tin.hinh_anh}`) : 'https://via.placeholder.com/60x60'"
+              alt=""
+            />
+          </div>
+          <div class="vohop-post-details">
+              <span class="vohop-popular-post-title">{{ tin.tieude }}</span>
+              <div class="vohop-post-meta">
+                  <span><i class="fa-regular fa-calendar"></i> {{ formatDate(tin.ngay_dang) }}</span>
+                  <span><i class="fa-solid fa-eye"></i> {{ tin.luot_xem || 0 }}</span>
+                  <span><i class="fa-solid fa-thumbs-up"></i> {{ tin.luot_like || 0 }}</span>
+              </div>
+          </div>
         </div>
       </div>
 
@@ -298,8 +305,12 @@ function getCategoryName(id) {
     padding: 16px;
   }
   .vohop-sidebar {
-    width: 100%;
-  }
+  width: 350px; /* Tăng chiều rộng để có thêm không gian */
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
   .vohop-main-header {
     flex-direction: column;
     align-items: flex-start;
@@ -504,27 +515,64 @@ function getCategoryName(id) {
 /* Hiệu ứng mới cho "TIN XEM NHIỀU NHẤT" */
 .vohop-popular-post {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
+  align-items: center; /* Căn chỉnh các item theo chiều dọc */
+  gap: 15px;
+  width: 330px;
+  padding: 12px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
   cursor: pointer;
-  transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-  border-radius: 8px; 
-  padding: 8px; 
 }
 
 .vohop-popular-post:hover {
   transform: translateY(-3px);
-  opacity: 0.9;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: #e2f5ff;
+}
+
+.vohop-post-details {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Căn giữa nội dung */
+  flex-grow: 1;
+}
+
+.vohop-popular-post-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #212529;
+  margin-bottom: 5px; /* Giảm khoảng cách với dòng meta */
+}
+
+.vohop-popular-post:hover .vohop-popular-post-title {
+  color: #007bff;
+}
+
+.vohop-post-meta {
+  display: flex;
+  align-items: center; /* Căn chỉnh các icon và số liệu theo chiều dọc */
+  gap: 10px; /* Khoảng cách giữa các mục */
+  font-size: 0.9rem;
+  color: #6c757d;
+  white-space: nowrap; /* NGĂN CÁC PHẦN TỬ BỊ XUỐNG DÒNG */
+}
+
+.vohop-post-meta span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.vohop-post-meta i {
+  color: #0d6efd;
 }
 
 .vohop-popular-post img {
-  width: 60px;
-  height: 60px;
+  width: 80px; /* Tăng chiều rộng ảnh */
+  height: 80px; /* Tăng chiều cao ảnh */
   object-fit: cover;
-  border-radius: 4px;
-  transition: transform 0.2s ease-in-out;
+  border-radius: 8px; /* Bo tròn góc ảnh */
 }
 
 .vohop-popular-post:hover img {

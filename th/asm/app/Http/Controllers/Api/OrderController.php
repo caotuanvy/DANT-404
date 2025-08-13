@@ -25,7 +25,6 @@ class OrderController extends Controller
 {
     public function index(Request $request)
     {
-
         $query = Order::whereNull('ngay_xoa')
             ->with([
                 'user', // Load thông tin người dùng
@@ -79,8 +78,8 @@ class OrderController extends Controller
                 $query->where('nguoi_dung_id', $userId);
             }
             $orders = $query->orderBy('ngay_dat', 'desc')
-                                 ->limit(20) // Giới hạn 20 đơn hàng gần nhất
-                                 ->get();
+                             ->limit(20) // Giới hạn 20 đơn hàng gần nhất
+                             ->get();
             return response()->json(['data' => $orders]); // Trả về dạng data: [...]
         } else {
             // Mặc định cho admin hoặc các trường hợp khác, sử dụng phân trang đầy đủ
@@ -299,6 +298,7 @@ class OrderController extends Controller
             return response()->json(['message' => 'Hệ thống đã xảy ra lỗi, vui lòng thử lại sau.', 'error' => $e->getMessage()], 500);
         }
     }
+
     public function cancel($id)
     {
         $order = Order::find($id);

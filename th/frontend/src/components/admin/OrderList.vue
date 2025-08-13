@@ -524,6 +524,167 @@ export default {
       if (step.id < current) return 'Đã hoàn thành';
       return 'Không thể chọn trực tiếp';
     },
+    applyFilters() {
+      this.appliedFilters = { ...this.localFilters };
+      this.selectedStatusTab = null; // Khi dùng advanced search, reset tab trạng thái
+      this.currentPage = 1; // Luôn reset về trang 1 khi áp dụng bộ lọc mới
+      this.fetchOrders(); // Gọi API với các bộ lọc mới
+    },
+    clearFilters() {
+      // Reset localFilters và appliedFilters
+      this.localFilters = { searchQuery: '', date: '', paymentMethod: '', priceRange: '' };
+      this.appliedFilters = { searchQuery: '', date: '', paymentMethod: '', priceRange: '' };
+      this.selectedStatusTab = null; // Reset tab trạng thái
+      this.currentPage = 1; // Reset về trang 1
+      this.fetchOrders(); // Tải lại đơn hàng không có bộ lọc
+    },
+    setFilterStatus(status) {
+      this.selectedStatusTab = status; // Cập nhật trạng thái tab
+      this.currentPage = 1; // Luôn reset về trang 1 khi chọn tab trạng thái
+      // Xóa các bộ lọc nâng cao khi chọn tab trạng thái để tránh xung đột
+      this.localFilters = { searchQuery: '', date: '', paymentMethod: '', priceRange: '' };
+      this.appliedFilters = { searchQuery: '', date: '', paymentMethod: '', priceRange: '' };
+      this.fetchOrders(); // Gọi API với bộ lọc trạng thái mới
+    },
+    toggleActionMenu(orderId) { this.activeActionMenu = this.activeActionMenu === orderId ? null : orderId; },
+    closeActionMenu() { this.activeActionMenu = null; },
+    handleUpdateClick(order) { this.openStatusModal(order); this.closeActionMenu(); },
+    handleExpandClick(orderId) { this.toggleExpand(orderId); this.closeActionMenu(); },
+    toggleExpand(orderId) { this.expandedOrderId = this.expandedOrderId === orderId ? null : orderId; },
+    getUserAvatarUrl(user) {
+      if (user && user.anh_dai_dien) return `http://localhost:8000/storage/${user.anh_dai_dien}`; // Giả sử path đúng
+      const name = user?.ho_ten || 'Khách Lạ';
+      const encodedName = encodeURIComponent(name);
+      return `https://ui-avatars.com/api/?name=${encodedName}&background=cfe2ff&color=052c65&font-size=0.5`;
+    },
+    formatDate(datetime) {
+      if (!datetime) return '';
+      const date = new Date(datetime);
+      // Ensure date is valid before formatting
+      if (isNaN(date.getTime())) {
+          return ''; // Or handle invalid date error appropriately
+      }
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${date.toLocaleTimeString('vi-VN')}`;
+    },
+    formatCurrency(amount) {
+      const value = Number(amount);
+      if (isNaN(value)) return '0 ₫';
+      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+    },
+    getTrangThai(status) {
+      const statuses = {
+        1: 'Chờ xác nhận',
+        2: 'Đã xác nhận',
+        3: 'Đang giao',
+        4: 'Hoàn thành',
+        5: 'Đã hủy'
+      };
+      return statuses[status] || 'Không rõ';
+    },
+    getStatusClass(status) {
+      const classes = {
+        1: 'status-pending',
+        2: 'status-confirmed',
+        3: 'status-shipping',
+        4: 'status-completed',
+        5: 'status-cancelled'
+      };
+      return classes[status] || 'status-default';
+    },
+    getTrangThai(status) { const statuses = { 1: 'Chờ xác nhận', 2: 'Đã xác nhận', 3: 'Đang giao hàng', 4: 'Hoàn thành', 5: 'Đã hủy' }; return statuses[status] || 'Không rõ'; },
+    getStatusClass(status) { const classes = { 1: 'status-pending', 2: 'status-confirmed', 3: 'status-shipping', 4: 'status-completed', 5: 'status-cancelled' }; return classes[status] || 'status-default'; },
+    getPaymentStatus(isPaid, order) {
+      if (Number(isPaid) === 1) return 'Đã thanh toán';
+      if (Number(isPaid) === 0 && order.trang_thai_don_hang === 6) return 'Đã hủy'; // Đã hủy và chưa thanh toán
+      if (Number(isPaid) === 0) return 'Chưa thanh toán';
+      return 'Chưa rõ';
+    },
+    getPaymentStatusClass(isPaid) {
+      if (isPaid === 1 || isPaid === true) return 'status-paid';
+      if (isPaid === 0 || isPaid === false) return 'status-unpaid';
+      return 'status-default';
+    },
+    openStatusModal(order) {
+      this.orderToUpdate = { ...order }; // Tạo bản sao để tránh sửa trực tiếp dữ liệu bảng
+      this.pendingStatusId = null;
+      this.isStatusModalVisible = true;
+    },
+    closeStatusModal() {
+      this.isStatusModalVisible = false;
+      this.orderToUpdate = null;
+      this.pendingStatusId = null;
+    },
+    getStepClass(step) {
+      if (!this.orderToUpdate) return 'pending';
+      const currentStatus = this.orderToUpdate.trang_thai_don_hang;
+      const pending = this.pendingStatusId;
+
+      if (step.id === pending) return 'pending-selection'; // Bước đang được chọn để cập nhật
+      if (step.id < currentStatus) return 'completed'; // Bước đã hoàn thành
+      if (step.id === currentStatus) return 'active'; // Bước hiện tại
+
+      // Các bước tiếp theo hợp lệ để chọn
+      if (step.id === currentStatus + 1 && step.id <= 5) return 'next-step'; // Chỉ cho phép tiến lên một bước (tối đa Hoàn thành)
+      if (step.id === 6 && currentStatus !== 6) return 'next-step is-cancel'; // Hủy có thể chọn từ mọi trạng thái (trừ đã hủy)
+
+      return 'pending'; // Các bước khác chưa tới hoặc không hợp lệ để chọn trực tiếp
+    },
+    selectNextStatus(step) {
+      if (!this.orderToUpdate) return;
+      const currentStatus = this.orderToUpdate.trang_thai_don_hang;
+
+      // Logic cho phép chọn bước tiếp theo (tiến 1 bước hoặc hủy)
+      if (step.id === currentStatus + 1 && step.id <= 5) {
+        this.pendingStatusId = step.id;
+      } else if (step.id === 6 && currentStatus !== 6) { // Cho phép hủy từ mọi trạng thái trừ khi đã hủy
+        this.pendingStatusId = step.id;
+      } else {
+        this.pendingStatusId = null; // Không cho phép chọn các bước khác
+      }
+    },
+    commitStatusUpdate() {
+      if (!this.pendingStatusId) return;
+      this.updateOrderStatus(this.orderToUpdate, this.pendingStatusId);
+    },
+    async updateOrderStatus(order, newStatus) {
+      try {
+        await axios.patch(`http://localhost:8000/api/orders/${order.id}/status`,
+          { trang_thai_don_hang: String(newStatus) },
+          { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+        );
+        // Nếu đơn hàng được chuyển sang "Hoàn thành" (id 5) và chưa thanh toán, thì xác nhận thanh toán
+        if (newStatus === 5 && Number(order.is_paid) === 0) {
+          await this.confirmPayment(order);
+        } else {
+          this.closeStatusModal();
+          this.fetchOrders(); // Tải lại dữ liệu để cập nhật trạng thái mới
+        }
+      } catch (err) {
+        console.error('Lỗi khi cập nhật trạng thái:', err);
+        alert('Cập nhật trạng thái thất bại!');
+      }
+    },
+    handleRefresh() {
+      // Reset tất cả các filter và trạng thái UI về mặc định
+      this.localFilters = { searchQuery: '', date: '', paymentMethod: '', priceRange: '' };
+      this.appliedFilters = { searchQuery: '', date: '', paymentMethod: '', priceRange: '' };
+      this.selectedStatusTab = null;
+      this.currentPage = 1; // Reset về trang 1
+      this.expandedOrderId = null;
+      this.isAdvancedSearchVisible = false;
+      this.activeActionMenu = null;
+      this.isStatusModalVisible = false;
+      this.orderToUpdate = null;
+      this.pendingStatusId = null;
+      this.fetchOrders(); // Gọi lại API để tải dữ liệu ban đầu
+      this.fetchPaymentMethods();
+    },
+    goToPage(page) {
+      // Chỉ cho phép chuyển trang nếu trang hợp lệ (dựa trên totalPages từ API)
+      if (page < 1 || page > this.totalPages) return;
+      this.currentPage = page;
+      this.fetchOrders(); // Gọi API để lấy dữ liệu cho trang mới
+    }
   },
   mounted() {
     this.fetchOrders();

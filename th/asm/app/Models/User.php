@@ -25,6 +25,7 @@ class User extends Authenticatable
         'anh_dai_dien',
         'vai_tro_id',
         'trang_thai',
+        'facebook_id',
         'slug',
         'ngay_tao',
         'ngay_sua',

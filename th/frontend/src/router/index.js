@@ -31,7 +31,7 @@ import GiamGiaManager from '@/components/admin/GiamGiaManager.vue';const routes 
   {
   path: '/:slug',
   name: 'StaticPage',
-  component: () => import('../components/user/ISV.vue') 
+  component: () => import('../components/user/StaticPage.vue') 
 },
 
   {

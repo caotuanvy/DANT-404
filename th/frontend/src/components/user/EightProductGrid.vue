@@ -35,7 +35,10 @@
               </div>
 
               <button class="add-to-cart-button" @click.prevent="addToCart(sp)">
-                🛒 Thêm
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                <span>Thêm</span>
               </button>
             </div>
           </div>
@@ -225,20 +228,41 @@ onMounted(async () => {
 }
 
 .add-to-cart-button {
-  position: static; /* Reset lại position */
+  /* Cải tiến: Dùng Flexbox để căn chỉnh icon và chữ */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px; /* Khoảng cách giữa icon và chữ */
+
   width: 100%;
   border: none;
-  padding: 10px;
-  font-size: 14px;
+  padding: 12px; /* Tăng padding một chút */
+  font-size: 16px; /* Tăng cỡ chữ cho dễ đọc */
+  font-weight: 600; /* Làm chữ đậm hơn */
   border-radius: 8px;
-  margin-top: 10px; /* Khoảng cách với phần giá */
+  margin-top: 10px;
+  
   background-color: #03A2DC;
   color: white;
-  transition: background 0.3s ease;
+  
+  /* Cải tiến: Thêm cursor và hiệu ứng transform */
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+/* Thêm CSS cho SVG bên trong nút */
+.add-to-cart-button svg {
+  width: 20px;
+  height: 20px;
 }
 
 .add-to-cart-button:hover {
-  background-color: #135593;
+  background-color: #028ec4; /* Màu hover nhẹ nhàng hơn */
+}
+
+/* Cải tiến: Thêm hiệu ứng khi nhấn nút */
+.add-to-cart-button:active {
+  transform: scale(0.98); /* Nút hơi thu nhỏ lại khi nhấn */
 }
 .main-2{
   background-color: white !important;

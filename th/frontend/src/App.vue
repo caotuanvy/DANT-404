@@ -15,34 +15,34 @@
             <span>Việt Nam</span>
             <i class="fas fa-caret-down"></i>
           </div>
-          
-                    <template v-if="isLoggedIn">
-                        <div class="user-menu-wrapper">
-                            <div class="user-info" @click="toggleUserMenu">
-                                <i class="fas fa-user"></i>
-                                <span>Xin chào, <strong>{{ userName }}</strong>!</span>
-                                <i class="fas fa-caret-down"></i>
-                            </div>
-                            <div class="user-dropdown-menu" v-if="showUserMenu">
-                                <ul>
-                                    <li @click="navigateToUserInfo">Thông tin tài khoản</li>
-                                    <li v-if="userRoleId === 1" @click="navigateToAdmin">Quản lý</li>
-                                    <li @click="handleLogout">Đăng xuất</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </template>
-                    <template v-else>
-                        <div class="user-info" @click="showLoginModal = true">
-                            <i class="fas fa-user"></i> Đăng nhập
-                        </div>
-                    </template>
+
+          <template v-if="isLoggedIn">
+            <div class="user-menu-wrapper">
+              <div class="user-info" @click="toggleUserMenu">
+                <img :src="userAvatar" alt="Avatar" class="user-avatar" />
+                <span>Xin chào, <strong>{{ userName }}</strong>!</span>
+                <i class="fas fa-caret-down"></i>
+              </div>
+              <div class="user-dropdown-menu" v-if="showUserMenu">
+                <ul>
+                  <li @click="navigateToUserInfo">Thông tin tài khoản</li>
+                  <li v-if="userRoleId === 1" @click="navigateToAdmin">Quản lý</li>
+                  <li @click="handleLogout">Đăng xuất</li>
+                </ul>
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <div class="user-info" @click="showLoginModal = true">
+              <i class="fas fa-user"></i> Đăng nhập
+            </div>
+          </template>
 
           <div class="cart-info">
-  <router-link to="/cart">
-    <i class="fas fa-shopping-cart"></i> Giỏ hàng (0)
-  </router-link>
-</div>
+            <router-link to="/cart">
+              <i class="fas fa-shopping-cart"></i> Giỏ hàng (0)
+            </router-link>
+          </div>
           <div class="notification"><i class="fas fa-bell"></i> Thông báo</div>
         </div>
       </div>
@@ -54,15 +54,14 @@
           <li>
             <a href="/Danh-muc-san-pham"><i class="fas fa-bars"></i> Danh mục sản phẩm</a>
           </li>
-          <li><a href="/">Trang Chủ</a></li>
-          <li><router-link to="/gioi-thieu">Giới Thiệu</router-link></li>
-          <li><a href="/tin-tuc">Tin Tức</a></li>
-          <li><a href="#">Liên Hệ</a></li>
-          <li v-for="page in staticPages.slice(0, 1)" :key="page.id">
-          <router-link :to="`/${page.Ten_trang}`">
-            {{ page.Tieu_de_trang }}
-          </router-link>
-        </li>
+          <li><router-link to="/">Trang Chủ</router-link></li>
+          <li><router-link to="/lien-he">Liên Hệ</router-link></li>
+          <li><router-link to="/tin-tuc">Tin Tức</router-link></li>
+          <li v-for="page in staticPages.slice(0, 2)" :key="page.id">
+            <router-link :to="`/${page.Ten_trang}`">
+              {{ page.Tieu_de_trang }}
+            </router-link>
+          </li>
         </ul>
         <div class="contact-info">
           <div class="contact-info-chil">
@@ -137,16 +136,17 @@ import { ref, computed, onMounted, watch, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import AuthModal from "./components/user/AuthModal.vue";
 import Swal from "sweetalert2";
-import axios from "axios"; // Bổ sung axios để gọi API
+import axios from "axios";
 
 const router = useRouter();
 
 const showLoginModal = ref(false);
 const isLoggedIn = ref(false);
 const userName = ref("");
+const userAvatar = ref("");
 const userRoleId = ref(null);
 const showUserMenu = ref(false);
-const staticPages = ref([]); // <== THÊM
+const staticPages = ref([]);
 
 const isAdminRoute = computed(() => {
   return router.currentRoute.value.path.startsWith("/admin");
@@ -162,6 +162,22 @@ const checkLoginStatus = () => {
       if (parsedUser && parsedUser.ho_ten) {
         isLoggedIn.value = true;
         userName.value = parsedUser.ho_ten;
+
+        // --- BẮT ĐẦU PHẦN ĐÃ CẬP NHẬT ---
+        // Tạo URL ảnh đại diện mặc định dựa trên chữ cái đầu tiên của tên
+        let defaultAvatarUrl = '';
+        if (parsedUser.ho_ten) {
+            const firstLetter = parsedUser.ho_ten.charAt(0).toUpperCase();
+            defaultAvatarUrl = `https://placehold.co/40x40/33ccff/FFFFFF?text=${firstLetter}`;
+        } else {
+            // Trường hợp không có tên, sử dụng một giá trị mặc định khác
+            defaultAvatarUrl = `https://placehold.co/40x40/33ccff/FFFFFF?text=AV`;
+        }
+
+        // Lấy ảnh đại diện từ localStorage, nếu không có thì dùng ảnh mặc định vừa tạo
+        userAvatar.value = parsedUser.anh_dai_dien || defaultAvatarUrl;
+        // --- KẾT THÚC PHẦN ĐÃ CẬP NHẬT ---
+
         userRoleId.value = parseInt(roleId);
       }
     } catch (e) {
@@ -170,11 +186,13 @@ const checkLoginStatus = () => {
       localStorage.removeItem("vai_tro_id");
       isLoggedIn.value = false;
       userName.value = "";
+      userAvatar.value = ''; // Đặt lại avatar về rỗng
       userRoleId.value = null;
     }
   } else {
     isLoggedIn.value = false;
     userName.value = "";
+    userAvatar.value = ''; // Đặt lại avatar về rỗng
     userRoleId.value = null;
   }
 };
@@ -196,6 +214,7 @@ const handleLogout = () => {
 
       isLoggedIn.value = false;
       userName.value = "";
+      userAvatar.value = '';
       userRoleId.value = null;
       showUserMenu.value = false;
 
@@ -235,7 +254,6 @@ const closeUserMenuOnClickOutside = (event) => {
   }
 };
 
-// ✅ Hàm mới: gọi API lấy danh sách trang tĩnh
 const fetchStaticPages = async () => {
   try {
     const response = await axios.get("http://localhost:8000/api/static-pages");
@@ -247,7 +265,7 @@ const fetchStaticPages = async () => {
 
 onMounted(() => {
   checkLoginStatus();
-  fetchStaticPages(); // ✅ gọi API khi mount
+  fetchStaticPages();
   document.addEventListener("click", closeUserMenuOnClickOutside);
 });
 
@@ -260,8 +278,8 @@ watch(showLoginModal, (newVal) => {
     checkLoginStatus();
   }
 });
-
 </script>
+
 <style>
 /* Global styles (cơ bản) */
 body {
@@ -276,8 +294,6 @@ body {
   padding-right: 12px;
   padding-left: 12px;
   margin-right: 100px;
-  /* margin-left: 100px; */
-  /* max-width: 1500px;  */
 }
 
 /* --- Top Bar (Header chính) --- */
@@ -292,7 +308,6 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 20px;
-  /* Khoảng cách giữa các phần tử chính trong top-bar */
 }
 
 .top-bar .logo-search {
@@ -300,7 +315,6 @@ body {
   align-items: center;
   gap: 12px;
   flex-grow: 1;
-  /* Cho phép nó mở rộng để chiếm không gian */
   margin-right: 20px;
 }
 
@@ -310,22 +324,17 @@ body {
 
 .top-bar .logo-404 {
   height: 50px;
-  /* Kích thước logo */
   width: auto;
   flex-shrink: 0;
-  /* Ngăn logo bị co lại */
 }
 
 .top-bar .search-box {
   display: flex;
   width: 100%;
   max-width: 600px;
-  /* Chiều rộng tối đa cho thanh tìm kiếm */
   border-radius: 20px;
-  /* Bo tròn góc */
   overflow: hidden;
   border: 1px solid #33ccff;
-  /* Viền xanh */
 }
 
 .top-bar .search-box input {
@@ -358,7 +367,6 @@ body {
   display: flex;
   align-items: center;
   gap: 20px;
-  /* Khoảng cách giữa các icon/thông tin người dùng */
   flex-shrink: 0;
 }
 
@@ -373,7 +381,6 @@ body {
   font-size: 14px;
   cursor: pointer;
   white-space: nowrap;
-  /* Ngăn chữ bị xuống dòng */
   transition: color 0.2s ease;
 }
 
@@ -382,32 +389,31 @@ body {
 .top-bar .notification:hover,
 .top-bar .country-selector:hover {
   color: #33ccff;
-  /* Đổi màu khi hover */
 }
+
 .top-bar .cart-info {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    color: #555; /* Màu mặc định cho toàn bộ khối cart-info */
-    font-size: 14px;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #555;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.2s ease;
 }
 
-/* Đảm bảo link bên trong cart-info không bị gạch chân và có màu kế thừa */
 .top-bar .cart-info a {
-    text-decoration: none; /* Bỏ gạch chân link */
-    color: inherit; /* Kế thừa màu từ parent (.cart-info) */
-    display: flex; /* Để icon và text trên cùng một hàng và căn giữa */
-    align-items: center;
-    gap: 5px; /* Giữ khoảng cách giữa icon và text */
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-/* Khi hover lên toàn bộ khối cart-info, đổi màu cho nó và các phần tử con kế thừa */
 .top-bar .cart-info:hover {
-    color: #33ccff; /* Đổi màu khi hover */
+  color: #33ccff;
 }
+
 .top-bar .country-selector img.flag {
   width: 30px;
   height: 20px;
@@ -435,7 +441,6 @@ body {
   margin: 0;
   display: flex;
   gap: 20px;
-  /* Khoảng cách giữa các mục menu */
 }
 
 .main-nav ul li a {
@@ -446,12 +451,10 @@ body {
   display: flex;
   align-items: center;
   gap: 5px;
-  /* Khoảng cách giữa icon và chữ */
 }
 
 .main-nav ul li a:hover {
   color: #e9ecef;
-  /* Đổi màu khi hover */
 }
 
 .main-nav .contact-info {
@@ -469,12 +472,8 @@ body {
   margin: auto;
 }
 
-/* --- Footer (CSS ví dụ cho footer, bạn có thể điều chỉnh) --- */
+/* --- Footer --- */
 .footer {
-    background-color: #343a40;
-    color: #f8f9fa;
-    padding: 40px 0;
-    
   background-color: #343a40;
   color: #f8f9fa;
   padding: 40px 0;
@@ -485,13 +484,11 @@ body {
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
-  /* Cho phép các phần tử xuống dòng trên màn hình nhỏ */
   gap: 30px;
 }
 
 .footer-section {
   flex: 1 1 250px;
-  /* Mỗi phần chiếm ít nhất 250px, có thể co giãn */
   min-width: 250px;
 }
 
@@ -543,7 +540,7 @@ body {
   line-height: 1.6;
 }
 
-/* --- Responsive adjustments for Header/Nav (ví dụ) --- */
+/* --- Responsive adjustments --- */
 @media (max-width: 992px) {
   .top-bar .logo-search {
     flex-direction: column;
@@ -554,7 +551,6 @@ body {
 
   .top-bar .search-box {
     max-width: none;
-    /* Cho phép tìm kiếm chiếm toàn bộ chiều rộng có sẵn */
   }
 
   .main-nav .container {
@@ -569,7 +565,6 @@ body {
 
   .main-nav .contact-info {
     display: none;
-    /* Có thể ẩn thông tin liên hệ trên màn hình nhỏ */
   }
 }
 
@@ -599,7 +594,6 @@ body {
 }
 
 .header-right .user-info {
-  /* Để giữ khoảng cách và căn chỉnh */
   display: flex;
   align-items: center;
   gap: 5px;
@@ -616,35 +610,26 @@ body {
 
 .user-info strong {
   color: #007bff;
-  /* Màu sắc nổi bật cho tên người dùng */
   font-weight: bold;
 }
 
 .user-menu-wrapper {
   position: relative;
-  /* Quan trọng để menu con định vị tương đối */
   display: flex;
   align-items: center;
-  /* Giữ các phần tử của wrapper trên cùng một hàng */
 }
 
 .user-dropdown-menu {
   position: absolute;
   top: 100%;
-  /* Đặt menu ngay bên dưới user-info */
   right: 0;
-  /* Căn phải với user-info */
   background-color: white;
   border: 1px solid #ddd;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   min-width: 150px;
   z-index: 100;
-  /* Đảm bảo menu hiển thị trên các nội dung khác */
   overflow: hidden;
-  /* Để bo góc của ul */
-  /* padding: 8px 0; */
-  /* Đệm trên dưới cho các item menu */
 }
 
 .user-dropdown-menu ul {
@@ -660,7 +645,6 @@ body {
   font-size: 14px;
   transition: background-color 0.2s ease, color 0.2s ease;
   white-space: nowrap;
-  /* Ngăn chữ bị xuống dòng */
 }
 
 .user-dropdown-menu ul li:hover {
@@ -668,7 +652,6 @@ body {
   color: #33ccff;
 }
 
-/* Điều chỉnh lại icon mũi tên trong user-info để nó xoay khi menu mở */
 .user-info .fa-caret-down {
   margin-left: 5px;
   transition: transform 0.2s ease;
@@ -676,15 +659,13 @@ body {
 
 .user-info.active .fa-caret-down {
   transform: rotate(180deg);
-  /* Xoay mũi tên khi menu mở */
 }
 
-/* Các điều chỉnh khác cho user-info khi đăng nhập */
 .header-right .user-info span strong {
   color: #007bff;
-  /* Màu sắc nổi bật cho tên người dùng */
   font-weight: bold;
 }
+
 .layout-wrapper {
   display: flex;
   flex-direction: column;
@@ -693,5 +674,14 @@ body {
 
 .page-content {
   flex: 1;
+}
+
+.header-right .user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 5px;
+  border: 2px solid #ddd;
 }
 </style>

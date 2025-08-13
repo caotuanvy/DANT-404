@@ -37,6 +37,7 @@ Route::apiResource('/admin/social-links', SocialLinkController::class);
 
 // Public Auth Routes
 Route::post('/auth/google', [GoogleAuthController::class, 'handleGoogleLogin']);
+Route::post('/auth/facebook', [AuthController::class, 'facebookLogin']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/kich-hoat/{token}', [AuthController::class, 'activate']);
