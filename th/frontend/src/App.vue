@@ -50,15 +50,31 @@
 
     <nav class="main-nav" v-if="!isAdminRoute">
       <div class="container">
-        <ul>
-          <li>
-            <a href="/Danh-muc-san-pham"><i class="fas fa-bars"></i> Danh mục sản phẩm</a>
+        <div class="nav-mobile-header">
+          <i class="fas fa-bars menu-toggle" @click="toggleMobileMenu"></i>
+          <router-link to="/">
+            <img src="/favicon.png" alt="Logo" class="logo-mobile" />
+          </router-link>
+        </div>
+
+        <ul :class="{ 'mobile-menu-active': showMobileMenu }">
+          <li class="menu-item menu-close">
+            <i class="fas fa-times menu-close-icon" @click="toggleMobileMenu"></i>
           </li>
-          <li><router-link to="/">Trang Chủ</router-link></li>
-          <li><router-link to="/lien-he">Liên Hệ</router-link></li>
-          <li><router-link to="/tin-tuc">Tin Tức</router-link></li>
-          <li v-for="page in staticPages.slice(0, 2)" :key="page.id">
-            <router-link :to="`/${page.Ten_trang}`">
+          <li class="menu-item">
+            <router-link to="/Danh-muc-san-pham" @click="toggleMobileMenu">Danh Mục Sản Phẩm</router-link>
+          </li>
+          <li class="menu-item">
+            <router-link to="/" @click="toggleMobileMenu">Trang Chủ</router-link>
+          </li>
+          <li class="menu-item">
+            <router-link to="/lien-he" @click="toggleMobileMenu">Liên Hệ</router-link>
+          </li>
+          <li class="menu-item">
+            <router-link to="/tin-tuc" @click="toggleMobileMenu">Tin Tức</router-link>
+          </li>
+          <li class="menu-item" v-for="page in staticPages.slice(0, 2)" :key="page.id">
+            <router-link :to="`/${page.Ten_trang}`" @click="toggleMobileMenu">
               {{ page.Tieu_de_trang }}
             </router-link>
           </li>
@@ -147,10 +163,33 @@ const userAvatar = ref("");
 const userRoleId = ref(null);
 const showUserMenu = ref(false);
 const staticPages = ref([]);
+const showMobileMenu = ref(false);
 
 const isAdminRoute = computed(() => {
   return router.currentRoute.value.path.startsWith("/admin");
 });
+
+const toggleMobileMenu = () => {
+  showMobileMenu.value = !showMobileMenu.value;
+};
+
+// Hàm mới để đóng menu khi click ra ngoài
+const closeMobileMenuOnClickOutside = (event) => {
+  if (showMobileMenu.value) {
+    const mobileMenuElement = document.querySelector('.main-nav ul');
+    const menuToggleButton = document.querySelector('.menu-toggle');
+
+    // Kiểm tra xem vị trí click có nằm ngoài menu và nút mở menu không
+    if (
+      mobileMenuElement &&
+      !mobileMenuElement.contains(event.target) &&
+      menuToggleButton &&
+      !menuToggleButton.contains(event.target)
+    ) {
+      showMobileMenu.value = false;
+    }
+  }
+};
 
 const checkLoginStatus = () => {
   const user = localStorage.getItem("user");
@@ -163,21 +202,15 @@ const checkLoginStatus = () => {
         isLoggedIn.value = true;
         userName.value = parsedUser.ho_ten;
 
-        // --- BẮT ĐẦU PHẦN ĐÃ CẬP NHẬT ---
-        // Tạo URL ảnh đại diện mặc định dựa trên chữ cái đầu tiên của tên
         let defaultAvatarUrl = '';
         if (parsedUser.ho_ten) {
             const firstLetter = parsedUser.ho_ten.charAt(0).toUpperCase();
             defaultAvatarUrl = `https://placehold.co/40x40/33ccff/FFFFFF?text=${firstLetter}`;
         } else {
-            // Trường hợp không có tên, sử dụng một giá trị mặc định khác
             defaultAvatarUrl = `https://placehold.co/40x40/33ccff/FFFFFF?text=AV`;
         }
 
-        // Lấy ảnh đại diện từ localStorage, nếu không có thì dùng ảnh mặc định vừa tạo
         userAvatar.value = parsedUser.anh_dai_dien || defaultAvatarUrl;
-        // --- KẾT THÚC PHẦN ĐÃ CẬP NHẬT ---
-
         userRoleId.value = parseInt(roleId);
       }
     } catch (e) {
@@ -186,13 +219,13 @@ const checkLoginStatus = () => {
       localStorage.removeItem("vai_tro_id");
       isLoggedIn.value = false;
       userName.value = "";
-      userAvatar.value = ''; // Đặt lại avatar về rỗng
+      userAvatar.value = '';
       userRoleId.value = null;
     }
   } else {
     isLoggedIn.value = false;
     userName.value = "";
-    userAvatar.value = ''; // Đặt lại avatar về rỗng
+    userAvatar.value = '';
     userRoleId.value = null;
   }
 };
@@ -267,10 +300,14 @@ onMounted(() => {
   checkLoginStatus();
   fetchStaticPages();
   document.addEventListener("click", closeUserMenuOnClickOutside);
+  // Thêm event listener cho menu di động
+  document.addEventListener('click', closeMobileMenuOnClickOutside);
 });
 
 onUnmounted(() => {
   document.removeEventListener("click", closeUserMenuOnClickOutside);
+  // Gỡ bỏ event listener khi component bị hủy
+  document.removeEventListener('click', closeMobileMenuOnClickOutside);
 });
 
 watch(showLoginModal, (newVal) => {
@@ -279,7 +316,6 @@ watch(showLoginModal, (newVal) => {
   }
 });
 </script>
-
 <style>
 /* Global styles (cơ bản) */
 body {
@@ -291,9 +327,10 @@ body {
 
 .container {
   width: 100%;
+  max-width: 1200px;
   padding-right: 12px;
   padding-left: 12px;
-  margin-right: 100px;
+  margin: 0 auto;
 }
 
 /* --- Top Bar (Header chính) --- */
@@ -443,6 +480,7 @@ body {
   gap: 20px;
 }
 
+/* Hiệu ứng hover cho các menu item */
 .main-nav ul li a {
   color: white;
   text-decoration: none;
@@ -454,7 +492,21 @@ body {
 }
 
 .main-nav ul li a:hover {
-  color: #e9ecef;
+  color: white; /* Màu xanh lá cây khi hover */
+}
+
+/* Các quy tắc mới để vô hiệu hóa hover cho trang hiện tại */
+.main-nav ul li a.router-link-active,
+.main-nav ul li a.router-link-exact-active {
+  color: white; /* Luôn hiển thị màu xanh lá cây cho trang hiện tại */
+  font-weight: bold; /* Thêm hiệu ứng nổi bật */
+  cursor: default; /* Thay đổi con trỏ chuột để người dùng biết không thể nhấp */
+}
+
+/* Vô hiệu hóa hiệu ứng hover trên liên kết của trang hiện tại */
+.main-nav ul li a.router-link-active:hover,
+.main-nav ul li a.router-link-exact-active:hover {
+  color: white; /* Giữ nguyên màu, không thay đổi khi hover */
 }
 
 .main-nav .contact-info {
@@ -555,19 +607,104 @@ body {
 
   .main-nav .container {
     flex-direction: column;
-    gap: 15px;
+    align-items: flex-start;
+    gap: 0;
   }
 
   .main-nav ul {
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-direction: column;
+    width: 250px;
+    max-height: auto;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1000;
+    background-color: #33ccff;
+    padding: 60px 20px 20px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .main-nav ul.mobile-menu-active {
+    transform: translateX(0);
+  }
+  
+  .main-nav ul li a {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    width: 100%;
+    display: block;
+  }
+
+  .main-nav ul li:last-child a {
+    border-bottom: none;
+  }
+
+  .main-nav .menu-toggle {
+    display: block;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+  }
+
+  .main-nav .nav-mobile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 5px 0;
+  }
+
+  .main-nav .logo-mobile {
+    display: block;
+    height: 40px;
+    margin-left: 10px;
   }
 
   .main-nav .contact-info {
     display: none;
   }
+  
+  /* Style cho nút đóng menu */
+  .menu-close {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+    position: absolute;
+    top: 15px;
+    right: 15px;
+  }
+  
+  .menu-close-icon {
+    font-size: 24px;
+    color: white;
+    cursor: pointer;
+    padding: 5px;
+  }
 }
 
+@media (min-width: 993px) {
+  .main-nav .menu-toggle {
+    display: none;
+  }
+
+  .main-nav .logo-mobile {
+    display: none;
+  }
+  
+  .main-nav .nav-mobile-header {
+    display: none;
+  }
+
+  /* Ẩn nút đóng trên màn hình desktop */
+  .menu-close {
+    display: none;
+  }
+}
+
+/* Các thay đổi để khắc phục lỗi tràn trên màn hình nhỏ */
 @media (max-width: 768px) {
   .top-bar .container {
     flex-wrap: wrap;
@@ -584,12 +721,48 @@ body {
 
   .top-bar .header-right {
     width: 100%;
-    justify-content: center;
-    gap: 15px;
+    justify-content: space-around;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .top-bar .cart-info span,
+  .top-bar .notification span {
+    display: none;
+  }
+  
+  .top-bar .cart-info a,
+  .top-bar .notification {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .top-bar .user-info {
+    font-size: 12px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    padding: 0 5px;
+  }
+
+  .user-info strong {
+    display: none;
+  }
+
+  .header-right .user-avatar {
+    width: 30px;
+    height: 30px;
+    margin-right: 5px;
   }
 
   .top-bar .country-selector {
     display: none;
+  }
+
+  .top-bar .search-box {
+    margin-top: 10px;
   }
 }
 

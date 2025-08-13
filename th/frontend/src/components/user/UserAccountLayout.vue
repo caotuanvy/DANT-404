@@ -1,25 +1,34 @@
 <template>
   <div class="content-area container">
-    <aside class="sidebar">
+    <button class="hamburger-btn" @click="toggleSidebar">
+      <i class="fas fa-bars"></i>
+    </button>
+
+    <aside class="sidebar" :class="{ 'sidebar-open': isSidebarOpen }">
       <div class="sidebar-header">
-        <span class="user-name"
-          >Xin Chào, <b>{{ userName }}</b></span
-        >
+        <span class="user-name">Xin Chào, <b>{{ userName }}</b></span>
       </div>
       <ul>
         <li
           :class="{ active: $route.path === '/user/profile' || $route.path === '/user' }"
+          @click="toggleSidebar"
         >
           <router-link to="/user/profile">
             <i class="fas fa-info-circle"></i> Thông tin và địa chỉ
           </router-link>
         </li>
-        <li :class="{ active: $route.path === '/user/orders' }">
+        <li
+          :class="{ active: $route.path === '/user/orders' }"
+          @click="toggleSidebar"
+        >
           <router-link to="/user/orders">
             <i class="fas fa-clipboard-list"></i> Đơn hàng đã mua
           </router-link>
         </li>
-        <li :class="{ active: $route.path === '/user/change-password' }">
+        <li
+          :class="{ active: $route.path === '/user/change-password' }"
+          @click="toggleSidebar"
+        >
           <router-link to="/user/change-password">
             <i class="fas fa-lock"></i> Thay đổi mật khẩu
           </router-link>
@@ -35,7 +44,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import Swal from "sweetalert2";
 
@@ -45,6 +54,7 @@ const route = useRoute();
 const isLoggedIn = ref(true);
 const userRoleId = ref(null);
 const showUserMenu = ref(false);
+const isSidebarOpen = ref(false); // Thêm biến trạng thái cho sidebar
 
 const fetchUserName = () => {
   const storedUser = localStorage.getItem("user");
@@ -61,51 +71,60 @@ const fetchUserName = () => {
   }
 };
 
+const handleLogout = () => {
+  Swal.fire({
+    title: 'Bạn có chắc chắn muốn đăng xuất?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Có, đăng xuất!',
+    cancelButtonText: 'Hủy'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('vai_tro_id');
+      isLoggedIn.value = false;
+      userName.value = '';
+      userRoleId.value = null;
+      showUserMenu.value = false;
+      router.push('/').then(() => {
+        window.location.reload();
+      });
+    }
+  });
+};
+
+const toggleSidebar = () => {
+  isSidebarOpen.value = !isSidebarOpen.value;
+};
+
+// Hàm đóng sidebar khi màn hình lớn hơn mobile
+const closeSidebarOnResize = () => {
+  if (window.innerWidth > 768 && isSidebarOpen.value) {
+    isSidebarOpen.value = false;
+  }
+};
+
 onMounted(() => {
   fetchUserName();
+  window.addEventListener('resize', closeSidebarOnResize);
 });
 
-const handleLogout = () => {
-    Swal.fire({
-        title: 'Bạn có chắc chắn muốn đăng xuất?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Có, đăng xuất!',
-        cancelButtonText: 'Hủy'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Xóa dữ liệu đăng nhập
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            localStorage.removeItem('vai_tro_id');
-
-            // Cập nhật trạng thái đăng nhập
-            isLoggedIn.value = false;
-            userName.value = '';
-            userRoleId.value = null;
-            showUserMenu.value = false;
-
-            // Điều hướng về trang chủ và reload
-            router.push('/').then(() => {
-                window.location.reload();
-            });
-
-        }
-    });
-};
+onUnmounted(() => {
+  window.removeEventListener('resize', closeSidebarOnResize);
+});
 
 </script>
 
 <style scoped>
-/* Đặt tất cả CSS bạn muốn cho layout này vào đây */
-/* Ví dụ từ các đoạn mã trước đó của bạn */
 .content-area {
   display: flex;
   gap: 25px;
   padding: 30px 0;
   align-items: flex-start;
+  position: relative; /* Quan trọng để nút hamburger định vị tuyệt đối */
 }
 
 .container {
@@ -120,6 +139,7 @@ const handleLogout = () => {
   border-radius: 8px;
   min-width: 250px;
   color: black;
+  transition: transform 0.3s ease-in-out;
 }
 
 .sidebar-header {
@@ -188,12 +208,6 @@ const handleLogout = () => {
   border-color: #007bff;
 }
 
-.sidebar .logout-btn:active {
-  background-color: #0056b3;
-  border-color: #0056b3;
-  color: #ffffff;
-}
-
 .main-content {
   flex-grow: 1;
   background-color: white;
@@ -203,13 +217,57 @@ const handleLogout = () => {
   min-height: 70vh;
 }
 
-/* Các biến CSS toàn cục nếu bạn đã định nghĩa ở đâu đó */
-/* :root {
-    --primary-blue: #007bff;
-    --dark-blue: #0056b3;
-    --light-grey: #f8f9fa;
-    --border-color: #dee2e6;
-    --text-color: #333;
-    --dark-text: #212529;
-} */
+/* Nút Hamburger Menu (Ẩn trên desktop) */
+.hamburger-btn {
+  display: none;
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 100; /* Đảm bảo nút ở trên tất cả các lớp khác */
+}
+
+/* --- Media Queries cho responsive --- */
+@media (max-width: 768px) {
+  .content-area {
+    flex-direction: column;
+    padding: 15px;
+    gap: 0;
+  }
+  
+  .container {
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  /* Hiển thị nút hamburger trên mobile */
+  .hamburger-btn {
+    display: block;
+  }
+
+  /* Ẩn sidebar trên mobile */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    transform: translateX(-100%);
+    z-index: 99;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Hiển thị sidebar khi có class sidebar-open */
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    width: 100%;
+    padding: 15px;
+    margin-top: 50px; /* Tạo khoảng trống để không bị nút hamburger che */
+  }
+}
 </style>

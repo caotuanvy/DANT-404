@@ -775,23 +775,27 @@ const handleLogout = () => {
 }
 
 .form-actions .save-btn {
-    background-color: #28a745; /* Màu xanh lá cho nút lưu */
+    background-color: #4a90e2; /* Màu xanh lá cho nút lưu */
     color: white;
     border: none;
+    transition: all 0.3s ease;
 }
 
 .form-actions .save-btn:hover {
-    background-color: #218838;
+    background-color: #165297;
+    transform: translateY(-2px);
 }
 
 .form-actions .cancel-btn {
-    background-color: #ff1f1f; 
-    color: white;
-    border: none;
+    background-color: white; 
+    color: #4a90e2;
+    border: 1px solid #4a90e2;
+    transition: all 0.3s ease;
 }
 
 .form-actions .cancel-btn:hover {
-    background-color: #ad0000;
+    background-color: #d7dadb;
+    transform: translateY(-2px);
 }
 
 /* Kế thừa style error-message đã có */
@@ -1076,23 +1080,29 @@ body {
 }
 
 .personal-edit-form .save-btn {
-    background-color: #28a745;
+    background-color: #4a90e2;
     color: white;
     border: none;
+    transition: all 0.3s ease;
+
 }
 
 .personal-edit-form .save-btn:hover {
-    background-color: #218838;
+    background-color: #165297;
+    transform: translateY(-2px);
 }
 
 .personal-edit-form .cancel-btn {
-    background-color: #ff1f1f;
-    color: white;
-    border: none;
+    background-color: white; 
+    color: #4a90e2;
+    border: 1px solid #4a90e2;
+    transition: all 0.3s ease;
+
 }
 
 .personal-edit-form .cancel-btn:hover {
-    background-color: #ad0000;
+    background-color: #d7dadb;
+    transform: translateY(-2px);
 }
 
 /* Kế thừa style error-message đã có */
@@ -1165,5 +1175,92 @@ body {
     display: flex;
     gap: 10px;
     justify-content: flex-start;
+}
+/* --- RESPONSIVE DESIGN --- */
+@media (max-width: 992px) {
+  .content-area {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .sidebar {
+    min-width: unset;
+    width: 100%;
+  }
+
+  .sidebar ul {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .sidebar ul li a {
+    padding: 8px 15px;
+  }
+
+  .sidebar .logout-btn {
+    margin-top: 20px;
+  }
+
+  .main-content {
+    padding: 25px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    margin: 20px auto;
+  }
+
+  .main-content {
+    padding: 20px;
+  }
+  
+  .main-content h1 {
+    font-size: 20px;
+  }
+  
+  .main-content h2 {
+    font-size: 16px;
+  }
+  
+  .form-row {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .save-btn,
+  .cancel-btn,
+  .update-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .user-avatar-section {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .user-avatar-section .avatar-display {
+    margin-right: 0;
+    margin-bottom: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 15px;
+  }
+
+  .sidebar ul {
+    flex-direction: column;
+  }
 }
 </style>

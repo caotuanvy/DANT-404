@@ -299,26 +299,22 @@ class OrderController extends Controller
         }
     }
 
-    public function cancel($id)
-    {
-        $order = Order::find($id);
+    public function cancel(Request $request, $id)
+{
+    $order = Order::find($id);
 
-        // Debug
-        Log::info('Hủy đơn:', [
-            'id' => $id,
-            'order_user_id' => $order?->nguoi_dung_id,
-            'auth_user_id' => Auth::id(),
-        ]);
+    // Kiểm tra và debug
+    Log::info('Hủy đơn:', [
+        'id' => $id,
+        'order_user_id' => $order?->nguoi_dung_id,
+        'auth_user_id' => Auth::id(),
+        'ly_do_huy_request' => $request->input('ly_do_huy') // Lấy lý do từ request
+    ]);
 
-        if (!$order || $order->nguoi_dung_id !== Auth::id()) {
-            return response()->json(['message' => 'Đơn hàng không tồn tại hoặc không thuộc về bạn'], 404);
-        }
-
-        $order->trang_thai_don_hang = 5; // Đã hủy
-        $order->save();
-
-        return response()->json(['message' => 'Đơn hàng đã được hủy']);
+    if (!$order || $order->nguoi_dung_id !== Auth::id()) {
+        return response()->json(['message' => 'Đơn hàng không tồn tại hoặc không thuộc về bạn'], 404);
     }
+}
     public function getStatusCounts(Request $request)
     {
         try {

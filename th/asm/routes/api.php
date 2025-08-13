@@ -189,6 +189,7 @@ Route::patch('/orders/{id}/hide', [OrderController::class, 'hideOrder']);
 Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
 Route::post('/orders/store', [OrderController::class, 'store']);
 
+Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
 // Thống Kê
 Route::get('/analytics/revenue', [ProductController::class, 'getRevenueStatistics']);
 Route::get('/analytics/overall', [ProductController::class, 'getOverallStatistics']);
@@ -196,6 +197,8 @@ Route::get('/analytics/overall', [ProductController::class, 'getOverallStatistic
 Route::get('/users', [UserController::class, 'index']);
 Route::delete('/users/{id}', [UserController::class, 'destroy']);
 Route::put('/users/{id}', [UserController::class, 'update']);
+Route::post('/users/{id}/avatar', [UserController::class, 'updateAvatar']);
+
 
 // Product Variants
 Route::get('/products/{id}/variants', [SanPhamBienTheController::class, 'index']);

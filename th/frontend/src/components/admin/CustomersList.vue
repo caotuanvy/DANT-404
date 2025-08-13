@@ -463,7 +463,7 @@ h1 {
 }
 
 .custom-switch:checked {
-    background-color: #dc3545; /* Màu đỏ cho trạng thái Vô hiệu hóa */
+    background-color: #16a34a; /* Màu đỏ cho trạng thái Vô hiệu hóa */
 }
 
 .custom-switch:checked::before {
