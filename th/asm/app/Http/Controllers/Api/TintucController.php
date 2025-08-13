@@ -372,6 +372,8 @@ class TintucController extends Controller
                     'noidung' => $item->noidung,
                     'ngay_dang' => $item->ngay_dang,
                     'danhMuc' => $item->danhMuc,
+                    'luot_xem' => $item->luot_xem, // Thêm trường lượt xem
+                    'luot_like' => $item->luot_like, // Thêm trường lượt thích
                 ];
             });
 
@@ -423,7 +425,7 @@ class TintucController extends Controller
 
         return response()->json($news);
     }
-    
+
 
 
 }
