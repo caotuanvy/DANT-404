@@ -110,8 +110,18 @@
     </div>
 
     <div class="product-description-section">
-      <h3>Mô tả sản phẩm</h3>
-      <div v-html="product.description" class="description-content"></div>
+        <h3>Mô tả sản phẩm</h3>
+        <div 
+            class="description-content" 
+            :class="{ 'expanded': showFullDescription }"
+            v-html="product.description">
+        </div>
+        <button 
+            v-if="product.description && product.description.length > 500"
+            @click="showFullDescription = !showFullDescription"
+            class="read-more-btn">
+            {{ showFullDescription ? 'Thu gọn' : 'Xem thêm' }}
+        </button>
     </div>
   </div>
   <div v-else class="loading-state">
@@ -130,7 +140,7 @@ const quantity = ref(1);
 const route = useRoute();
 const selectedSize = ref(null);
 const selectedColor = ref(null);
-
+const showFullDescription = ref(false);
 // --- COMPUTED PROPERTIES ---
 
 const uniqueSizes = computed(() => {
@@ -632,7 +642,47 @@ onMounted(async () => {
 .description-content :deep(*) {
   margin-bottom: 1em;
 }
+.description-content {
+    max-height: 250px; /* Chiều cao ban đầu của mô tả bị cắt */
+    overflow: hidden;
+    position: relative;
+    transition: max-height 0.5s ease-in-out;
+}
 
+.description-content.expanded {
+    max-height: none; /* Chiều cao không giới hạn khi được mở rộng */
+}
+
+/* Thêm một gradient mờ dần để tạo hiệu ứng đẹp mắt */
+.description-content:not(.expanded)::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100px; /* Độ cao của hiệu ứng mờ */
+    background: linear-gradient(to top, white, rgba(255, 255, 255, 0));
+    pointer-events: none; /* Đảm bảo gradient không chặn các tương tác */
+}
+
+.read-more-btn {
+    display: block;
+    width: 150px;
+    margin: 1.5rem auto 0;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    background-color: #f1f3f5;
+    color: #495057;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.read-more-btn:hover {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+}
 /* === Responsive adjustments === */
 @media (max-width: 992px) {
   .product-container {

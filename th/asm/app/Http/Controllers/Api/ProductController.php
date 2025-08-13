@@ -334,15 +334,16 @@ public function update(Request $request, $id)
                 }
             }
 
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $file) {
-                    $path = $file->store('products', 'public');
-                    HinhAnhSanPham::create([
-                        'san_pham_id' => $sanPham->san_pham_id,
-                        'duongdan' => Storage::url($path),
-                    ]);
+
+                if ($request->hasFile('images')) {
+                    foreach ($request->file('images') as $file) {
+                        $path = $file->store('products', 'public');
+                        HinhAnhSanPham::create([
+                            'san_pham_id' => $sanPham->san_pham_id,
+                            'duongdan' => $path,
+                        ]);
+                    }
                 }
-            }
 
             DB::commit();
 
