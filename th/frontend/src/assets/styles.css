@@ -5,6 +5,7 @@ body {
   background-color: #f3f4f6;
   margin: 0;
   padding: 0;
+  height: auto;
 }
 
 .nav-main {
@@ -38,8 +39,8 @@ nav a {
   font-family: "Lora", serif;
 }
 
-.sidebar {
-  width: 220px;
+/* .sidebar {
+  width: 260px;
   background: black;
   color: white;
   padding: 20px;
@@ -65,7 +66,7 @@ nav a {
 
 .sidebar a:hover {
   text-decoration: underline;
-}
+} */
 
 .main-content {
   flex: 1;

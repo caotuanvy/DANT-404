@@ -379,6 +379,7 @@
 import { ref, reactive, onMounted, watch, computed } from 'vue';
 import axios from 'axios';
 import Editor from '@tinymce/tinymce-vue';
+import Swal from 'sweetalert2';
 const showAiModal = ref(false);
  
 const aiInput = reactive({    
@@ -519,8 +520,17 @@ const handleSubmit = async () => {
     const response = await axios.post('products', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
-    alert('Thêm sản phẩm thành công!');
-    window.location.href = '/admin/products';
+    Swal.fire({
+  toast: true,
+  position: 'top-end',
+  icon: 'success',
+  title: 'Đã thêm sản phẩm thành công!',
+  showConfirmButton: false,
+  timer: 2000,
+  timerProgressBar: true
+}).then(() => {
+  window.location.href = '/admin/products';
+});
 
   } catch (error) {
     if (error.response && error.response.status === 422) {
@@ -573,7 +583,15 @@ const generateSeoContent = async () => {
             product.mo_ta = response.data.product_description_long;
         }
 
-        alert('Tạo nội dung AI thành công!');
+              Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'Đã tạo nội dung AI thành công!',
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true
+      })
         closeAiModal(); 
 
     } catch (error) {

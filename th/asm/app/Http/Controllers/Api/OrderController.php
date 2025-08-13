@@ -24,7 +24,6 @@ class OrderController extends Controller
 {
     public function index(Request $request)
     {
-
         $query = Order::whereNull('ngay_xoa')
             ->with([
                 'user', // Load thông tin người dùng
@@ -74,12 +73,12 @@ class OrderController extends Controller
         if ($request->has('get_latest_for_user') && $request->get_latest_for_user) {
             // Logic để chỉ lấy N đơn hàng gần nhất cho một user cụ thể
             $userId = Auth::id(); // Lấy ID của người dùng hiện tại
-if ($userId) {
+            if ($userId) {
                 $query->where('nguoi_dung_id', $userId);
             }
             $orders = $query->orderBy('ngay_dat', 'desc')
-                                 ->limit(20) // Giới hạn 20 đơn hàng gần nhất
-                                 ->get();
+                             ->limit(20) // Giới hạn 20 đơn hàng gần nhất
+                             ->get();
             return response()->json(['data' => $orders]); // Trả về dạng data: [...]
         } else {
             // Mặc định cho admin hoặc các trường hợp khác, sử dụng phân trang đầy đủ
@@ -146,7 +145,7 @@ if ($userId) {
     {
         try {
             if ($order->is_paid == 1) {
-return response()->json(['message' => 'Đơn hàng này đã được xác nhận thanh toán trước đó.'], 400);
+                return response()->json(['message' => 'Đơn hàng này đã được xác nhận thanh toán trước đó.'], 400);
             }
             $order->is_paid = 1;
             $order->save();
@@ -207,7 +206,7 @@ return response()->json(['message' => 'Đơn hàng này đã được xác nhậ
             } elseif (isset($validatedData['dia_chi_moi'])) {
                 $newAddress = DiaChi::create([
                     'nguoi_dung_id' => $userId,
-'ho_ten' => $validatedData['dia_chi_moi']['ho_ten'],
+                    'ho_ten' => $validatedData['dia_chi_moi']['ho_ten'],
                     'sdt' => $validatedData['dia_chi_moi']['sdt'],
                     'dia_chi' => $validatedData['dia_chi_moi']['dia_chi'],
                 ]);
@@ -264,7 +263,7 @@ return response()->json(['message' => 'Đơn hàng này đã được xác nhậ
                         'da_xem' => 0,
                         'ngay_tao' => now(),
                     ]);
-}
+                }
             }
 
             // Xóa/Làm trống giỏ hàng của người dùng sau khi đặt hàng thành công
@@ -292,6 +291,7 @@ return response()->json(['message' => 'Đơn hàng này đã được xác nhậ
             return response()->json(['message' => 'Không thể đặt hàng. Vui lòng thử lại sau.', 'error_detail' => $e->getMessage()], 500);
         }
     }
+
     public function cancel($id)
     {
         $order = Order::find($id);

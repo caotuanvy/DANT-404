@@ -1,6 +1,9 @@
 <template>
   <div>
     <h2>Sửa danh mục</h2>
+    <div v-if="message" :class="messageClass">
+      {{ message }}
+    </div>
     <form @submit.prevent="updateCategory" enctype="multipart/form-data">
       <div>
         <label for="name">Tên danh mục:</label>
@@ -61,9 +64,11 @@ export default {
       currentImage: null,
       imageFile: null,
       previewImage: null,
-      // THAY ĐỔI: Tên biến từ parent_id thành danh_muc_cha_id
       danh_muc_cha_id: null,
       parentCategories: [],
+      // Thêm các biến mới để quản lý thông báo
+      message: "",
+      messageClass: "",
     };
   },
   mounted() {
@@ -85,23 +90,23 @@ export default {
         this.category_name = res.data.ten_danh_muc;
         this.description = res.data.mo_ta;
         this.currentImage = res.data.image_url;
-        // THAY ĐỔI: Lấy giá trị từ danh_muc_cha_id thay vì parent_id
         this.danh_muc_cha_id = res.data.danh_muc_cha_id || null;
       } catch (error) {
         console.error("Lỗi khi lấy danh mục:", error);
-        alert("Không thể tải dữ liệu danh mục.");
+        // Hiển thị thông báo lỗi ngay trên trang
+        this.message = "Không thể tải dữ liệu danh mục.";
+        this.messageClass = "error-message";
       }
     },
     async fetchParentCategories() {
       try {
         const token = localStorage.getItem("token");
-        // THAY ĐỔI: API endpoint từ /api/categories thành /api/danh-muc-cha
         const res = await axios.get(`http://localhost:8000/api/danh-muc-cha`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        this.parentCategories = res.data; // Không cần lọc nếu backend trả về đúng DanhMucCha
+        this.parentCategories = res.data;
       } catch (error) {
         console.error("Lỗi khi lấy danh mục cha:", error);
       }
@@ -114,24 +119,23 @@ export default {
       }
     },
     async updateCategory() {
+      this.message = ""; // Xóa thông báo cũ trước khi gửi request
+      this.messageClass = "";
+
       try {
         const token = localStorage.getItem("token");
         const formData = new FormData();
         formData.append("ten_danh_muc", this.category_name);
         formData.append("mo_ta", this.description);
-        // THAY ĐỔI: Tên trường gửi đi từ parent_id thành danh_muc_cha_id
         formData.append("danh_muc_cha_id", this.danh_muc_cha_id);
-
-        // RẤT QUAN TRỌNG CHO PHƯƠNG THỨC PUT VỚI FORM-DATA
-        // Thêm trường _method=PUT để Laravel nhận diện đây là PUT request khi dùng FormData
         formData.append("_method", "PUT");
 
         if (this.imageFile) {
           formData.append("image", this.imageFile);
         }
 
-        const res = await axios.post( // Vẫn dùng axios.post và thêm _method=PUT
-          `http://localhost:8000/api/categories/${this.$route.params.id}`, // Bỏ `?_method=PUT` ở đây, vì đã thêm vào formData
+        const res = await axios.post(
+          `http://localhost:8000/api/categories/${this.$route.params.id}`,
           formData,
           {
             headers: {
@@ -141,12 +145,24 @@ export default {
           }
         );
         if (res.status === 200) {
-          alert("Cập nhật danh mục thành công!");
-          this.$router.push("/admin/category");
+          // Gán thông báo thành công và class tương ứng
+          this.message = "Cập nhật danh mục thành công! 🎉";
+          this.messageClass = "success-message";
+          
+          // Sử dụng setTimeout để chuyển hướng sau khi thông báo hiện ra
+          setTimeout(() => {
+            if (this.danh_muc_cha_id) {
+              this.$router.push(`/admin/categories/${this.danh_muc_cha_id}/children`);
+            } else {
+              this.$router.push("/admin/categories");
+            }
+          }, 1500); // Chờ 1.5 giây để người dùng đọc thông báo
         }
       } catch (error) {
         console.error("Lỗi khi cập nhật danh mục:", error);
-        alert("Có lỗi xảy ra khi cập nhật.");
+        // Gán thông báo lỗi và class tương ứng
+        this.message = error.response?.data?.message || "Có lỗi xảy ra khi cập nhật.";
+        this.messageClass = "error-message";
       }
     },
   },
@@ -169,5 +185,28 @@ button {
   color: white;
   border: none;
   cursor: pointer;
+}
+
+/* Thêm CSS cho thông báo */
+.success-message {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 5px;
+  background-color: #d4edda; /* Màu nền xanh lá nhạt */
+  color: #155724; /* Màu chữ xanh lá đậm */
+  border: 1px solid #c3e6cb;
+  font-weight: bold;
+  text-align: center;
+}
+
+.error-message {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 5px;
+  background-color: #f8d7da; /* Màu nền đỏ nhạt */
+  color: #721c24; /* Màu chữ đỏ đậm */
+  border: 1px solid #f5c6cb;
+  font-weight: bold;
+  text-align: center;
 }
 </style>

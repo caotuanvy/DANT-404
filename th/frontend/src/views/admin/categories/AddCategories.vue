@@ -1,6 +1,9 @@
 <template>
   <div>
     <h2>Thêm danh mục mới</h2>
+    <div v-if="message" :class="messageClass">
+      {{ message }}
+    </div>
     <form @submit.prevent="addCategory">
       <div>
         <label for="name">Tên danh mục:</label>
@@ -54,9 +57,11 @@ export default {
       description: "",
       imageFile: null,
       previewImage: null,
-      // THAY ĐỔI: Tên biến từ parent_id thành danh_muc_cha_id
       danh_muc_cha_id: null,
       parentCategories: [],
+      // Thêm các biến mới để quản lý thông báo
+      message: "",
+      messageClass: "",
     };
   },
   mounted() {
@@ -66,11 +71,9 @@ export default {
     async fetchParentCategories() {
       try {
         const token = localStorage.getItem("token");
-        // THAY ĐỔI: API endpoint từ /api/categories thành /api/danh-muc-cha
         const res = await axios.get("http://localhost:8000/api/danh-muc-cha", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        // BỎ LỌC: Backend đã trả về đúng danh mục cha, không cần lọc !cat.parent_id nữa
         this.parentCategories = res.data;
       } catch (error) {
         console.error("Lỗi khi lấy danh mục cha:", error);
@@ -84,26 +87,27 @@ export default {
       }
     },
     async addCategory() {
+      this.message = ""; // Xóa thông báo cũ
+      this.messageClass = "";
+
       try {
         const token = localStorage.getItem("token");
         if (!token) {
-          alert("Vui lòng đăng nhập trước!");
+          this.message = "Vui lòng đăng nhập trước!";
+          this.messageClass = "error-message";
           return;
         }
 
         const formData = new FormData();
         formData.append("ten_danh_muc", this.category_name);
         formData.append("mo_ta", this.description || "");
-        // THAY ĐỔI: Tên trường gửi đi từ parent_id thành danh_muc_cha_id
         formData.append("danh_muc_cha_id", this.danh_muc_cha_id);
+
         if (this.imageFile) {
           formData.append("image", this.imageFile);
-          // LƯU Ý: Slug thường nên được tạo từ tên danh mục hoặc là tên file an toàn.
-          // imageFile.name.replace(/\.[^/.]+$/, "") chỉ lấy tên file gốc.
-          // Nếu bạn đã chỉnh sửa backend để tự tạo slug từ tên file, thì có thể bỏ dòng này.
-          formData.append("slug", this.imageFile.name.replace(/\.[^/.]+$/, ""));
+          formData.append("slug", this.category_name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''));
         } else {
-          formData.append("slug", ""); // Hoặc tạo slug từ category_name nếu không có ảnh
+           formData.append("slug", this.category_name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''));
         }
 
         const response = await axios.post(
@@ -118,16 +122,27 @@ export default {
         );
 
         if (response.status === 201 || response.status === 200) {
-          alert("Danh mục đã được thêm thành công!");
-          this.$router.push("/admin/category");
+          this.message = "Danh mục đã được thêm thành công! 🎉";
+          this.messageClass = "success-message";
+          
+          setTimeout(() => {
+            if (this.danh_muc_cha_id) {
+              this.$router.push(`/admin/categories/${this.danh_muc_cha_id}/children`);
+            } else {
+              this.$router.push("/admin/categories");
+            }
+            // Tùy chọn: Reset form sau khi chuyển hướng
+            this.category_name = "";
+            this.description = "";
+            this.imageFile = null;
+            this.previewImage = null;
+            this.danh_muc_cha_id = null;
+          }, 1500); // Chờ 1.5 giây
         }
       } catch (error) {
         console.error("Lỗi khi thêm danh mục:", error);
-        if (error.response) {
-          alert(`Lỗi: ${error.response.data.message || "Có lỗi xảy ra!"}`);
-        } else {
-          alert("Có lỗi xảy ra, vui lòng thử lại!");
-        }
+        this.message = error.response?.data?.message || "Có lỗi xảy ra, vui lòng thử lại!";
+        this.messageClass = "error-message";
       }
     },
   },
@@ -151,5 +166,28 @@ button {
   color: white;
   border: none;
   cursor: pointer;
+}
+
+/* Thêm CSS cho thông báo */
+.success-message {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 5px;
+  background-color: #d4edda; /* Màu nền xanh lá nhạt */
+  color: #155724; /* Màu chữ xanh lá đậm */
+  border: 1px solid #c3e6cb;
+  font-weight: bold;
+  text-align: center;
+}
+
+.error-message {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 5px;
+  background-color: #f8d7da; /* Màu nền đỏ nhạt */
+  color: #721c24; /* Màu chữ đỏ đậm */
+  border: 1px solid #f5c6cb;
+  font-weight: bold;
+  text-align: center;
 }
 </style>

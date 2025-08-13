@@ -22,7 +22,7 @@
 import { ref } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
-
+import Swal from 'sweetalert2';
 const router = useRouter()
 const tieuDe = ref('')
 const tenTrang = ref('')
@@ -38,11 +38,24 @@ const addPage = async () => {
       }
     })
 
-    alert('Thêm trang tĩnh thành công')
+    Swal.fire({
+    toast: true,
+    position: 'top-end',
+    icon: 'success',
+    title: `Đã thêm trang tĩnh thành công!`,
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true
+  });
     router.back()
   } catch (error) {
     console.error('Lỗi khi thêm trang:', error)
-    alert('Thêm không thành công!')
+    Swal.fire({
+        icon: 'error',
+        title: 'Thao tác thất bại',
+        text: 'Đã có lỗi xảy ra, vui lòng thử lại.',
+        confirmButtonColor: '#d33'
+    });
   }
 }
 </script>

@@ -74,7 +74,7 @@
 // Script của bạn giữ nguyên, không cần thay đổi
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
-
+import Swal from 'sweetalert2';
 const pages = ref([])
 const editingId = ref(null)
 const editTieuDe = ref('')
@@ -93,22 +93,48 @@ const fetchPages = async () => {
   }
 }
 
-const deletePage = async (id) => {
-  if (!confirm('Bạn có chắc muốn xóa trang này?')) return
+const deletePage = (id) => { // Bỏ async ở đây vì chúng ta sẽ xử lý trong .then()
+  Swal.fire({
+    title: 'Bạn có chắc chắn?',
+    text: "Bạn sẽ không thể hoàn tác hành động này!",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Vâng, xóa nó!',
+    cancelButtonText: 'Hủy'
+  }).then(async (result) => { // Thêm async ở đây
+    if (result.isConfirmed) {
+      // --- NẾU NGƯỜI DÙNG BẤM "Vâng, xóa nó!" THÌ CHẠY LOGIC DƯỚI ĐÂY ---
+      try {
+        await axios.delete(`http://localhost:8000/api/admin/trang-tinh/${id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        pages.value = pages.value.filter(page => page.Trang_tinh_id !== id);
 
-  try {
-    await axios.delete(`http://localhost:8000/api/admin/trang-tinh/${id}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
+        // Hiển thị thông báo xóa thành công
+        Swal.fire(
+          'Đã xóa!',
+          'Trang của bạn đã được xóa thành công.',
+          'success'
+        );
+
+      } catch (error) {
+        console.error('Lỗi khi xóa:', error);
+        Swal.fire(
+          'Thất bại!',
+          'Đã có lỗi xảy ra khi xóa trang.',
+          'error'
+        );
       }
-    })
-    pages.value = pages.value.filter(page => page.Trang_tinh_id !== id)
-    alert('Xóa thành công')
-  } catch (error) {
-    console.error('Lỗi khi xóa:', error)
-    alert('Xóa không thành công!')
-  }
-}
+      // --- KẾT THÚC LOGIC XÓA ---
+    }
+  });
+};
+  
 
 const startEdit = (page) => {
   editingId.value = page.Trang_tinh_id
@@ -139,11 +165,24 @@ const saveEdit = async (id) => {
       pages.value[index].Ten_trang = editTenTrang.value
     }
 
-    alert('Cập nhật thành công')
+     Swal.fire({
+    toast: true,
+    position: 'top-end',
+    icon: 'success',
+    title: 'Cập Nhật Thành Công!',
+    showConfirmButton: false,
+    timer: 2000,
+    timerProgressBar: true
+  });
     cancelEdit()
   } catch (error) {
     console.error('Lỗi khi cập nhật:', error)
-    alert('Cập nhật thất bại!')
+    Swal.fire({
+    icon: 'error',
+    title: 'Lỗi!',
+    text: 'Cập Nhật Không Thành Công.',
+    confirmButtonColor: '#d33',
+});
   }
 }
 

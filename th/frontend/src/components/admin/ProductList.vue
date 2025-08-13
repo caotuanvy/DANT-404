@@ -124,7 +124,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
-
+import Swal from 'sweetalert2';
 const products = ref([]);
 const errorMessage = ref('');
 const loading = ref(false);
@@ -170,7 +170,12 @@ const toggleNoiBat = async (product) => {
     product.noi_bat = newStatus;
   } catch (error) {
     console.error('Lỗi khi cập nhật trạng thái nổi bật:', error);
-    alert('Cập nhật trạng thái nổi bật thất bại!');
+     Swal.fire({
+        icon: 'error',
+        title: 'Thao tác thất bại',
+        text: 'Đã có lỗi xảy ra, vui lòng thử lại.',
+        confirmButtonColor: '#d33'
+    });
   }
 };
 
@@ -184,10 +189,23 @@ const toggleProductStatus = async (product) => {
 
     product.trang_thai = !product.trang_thai;
     
-    alert(`Đã ${action} sản phẩm thành công!`);
+    Swal.fire({
+    toast: true,
+    position: 'top-end',
+    icon: 'success',
+    title: `Đã ${action} sản phẩm thành công!`,
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true
+  });
   } catch (error) {
     console.error(`Lỗi khi ${action} sản phẩm:`, error);
-    alert(`Thao tác thất bại!`);
+    Swal.fire({
+        icon: 'error',
+        title: 'Thao tác thất bại',
+        text: 'Đã có lỗi xảy ra, vui lòng thử lại.',
+        confirmButtonColor: '#d33'
+    });
   }
 };
 
@@ -210,26 +228,11 @@ onMounted(() => {
 
 <style scoped>
 
-:root {
-  --color-primary: #4FC3F7;
-  --color-primary-hover: #1d4ed8;
-  --color-bg-page: #f3f4f6;
-  --color-bg-card: #ffffff;
-  --color-border: gray;
-  --color-text-primary: #111827;
-  --color-text-secondary: #6b7280;
-  --color-text-tertiary: #9ca3af;
-  --color-green: #16a34a; 
-  --color-red: #dc2626;
-  --color-gray: #4b5563;
-  --radius: 8px;
-  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-}
+
 
 .page-wrapper {
   background-color: var(--color-bg-page);
-  padding: 2rem;
-  min-height: 100vh;
+  margin-left: -0px !important;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 .page-header {
@@ -345,7 +348,8 @@ onMounted(() => {
 .product-table {
   width: 100%;
   border-collapse: collapse;
-  white-space: nowrap;
+ 
+  table-layout: fixed;
 }
 .product-table th, .product-table td {
   padding: 1rem;
@@ -358,7 +362,7 @@ onMounted(() => {
   color: var(--color-text-secondary);
   font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.05em;
   font-weight: 600;
 }
 .product-table tbody tr:last-child td {

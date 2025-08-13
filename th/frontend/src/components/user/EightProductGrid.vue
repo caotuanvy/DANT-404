@@ -18,7 +18,7 @@
             <div class="product-info">
               <span class="product-category">{{ sp.ten_danh_muc || 'Danh mục' }}</span>
               <h3 class="product-name">{{ sp.ten_san_pham }}</h3>
-              <p class="product-description">{{ sp.Mo_ta_seo || '...' }}</p>
+              <p class="product-description" v-html="sp.Mo_ta_seo"></p>
 
               <div class="product-rating">
                 ⭐ {{ sp.diem_danh_gia || '4.8' }} 
@@ -35,7 +35,10 @@
               </div>
 
               <button class="add-to-cart-button" @click.prevent="addToCart(sp)">
-                🛒 Thêm
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                <span>Thêm</span>
               </button>
             </div>
           </div>
@@ -132,13 +135,14 @@ onMounted(async () => {
   border-radius: 14px;
   padding: 16px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   border: 1px solid #e0e0e0;
   transition: transform 0.2s ease;
-  height: 480px;
+  height: 100%; /* Cho phép thẻ co giãn */
+  position: relative; /* Rất quan trọng cho discount-badge */
+  
+  /* === THAY ĐỔI CHÍNH: DÙNG FLEXBOX === */
+  display: flex;
+  flex-direction: column;
 }
 
 .product-card:hover {
@@ -156,20 +160,18 @@ onMounted(async () => {
   padding: 4px 10px;
   border-radius: 6px;
 }
-.product-info{
+.product-info {
   width: 100%;
-  position: relative;
-  
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; /* Quan trọng: Giúp đẩy phần dưới cùng xuống */
 }
 .product-img {
   width: 100%;
   height: 180px;
   object-fit: contain;
-  border-radius: 8px;
   margin-bottom: 12px;
-  box-shadow: none !important;
 }
-
 .product-category {
   font-size: 12px;
   font-weight: 500;
@@ -178,21 +180,20 @@ onMounted(async () => {
   padding: 5px 12px;
   border-radius: 6px;
   margin-bottom: 8px;
+  align-self: flex-start;
 }
-
 .product-name {
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 4px;
- 
+  min-height: 48px;
 }
-
 .product-description {
   font-size: 13px;
   color: #555;
-  
-  min-height: 36px;
+  min-height: 39px;
   margin-bottom: 6px;
+  flex-grow: 1; /* Đẩy phần giá và nút xuống dưới */
 }
 
 .product-rating {
@@ -207,43 +208,61 @@ onMounted(async () => {
 }
 
 .price-section {
-  position: absolute;
-  top: 190px;
-
-}
-
-.original-price {
-  font-size: 14px;
-  color: #999;
-  text-decoration: line-through;
-  margin-top: -10px;
-  
+  position: static; /* Reset lại position */
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: auto; /* Quan trọng: Tự động đẩy xuống dưới cùng của thẻ */
 }
 
 .current-price {
   font-size: 18px;
   font-weight: bold;
   color: red;
-  
+}
+
+.original-price {
+  font-size: 14px;
+  color: #999;
+  text-decoration: line-through;
 }
 
 .add-to-cart-button {
-  background-color: #1663AB;
-  color: white;
+  /* Cải tiến: Dùng Flexbox để căn chỉnh icon và chữ */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px; /* Khoảng cách giữa icon và chữ */
+
+  width: 100%;
   border: none;
-  padding:  10px;
-  font-size: 14px;
+  padding: 12px; /* Tăng padding một chút */
+  font-size: 16px; /* Tăng cỡ chữ cho dễ đọc */
+  font-weight: 600; /* Làm chữ đậm hơn */
   border-radius: 8px;
-  width: 100px;
-  transition: background 0.3s ease;
-  position: absolute;
-  right: 5px;
-  top: 210px;
+  margin-top: 10px;
   
+  background-color: #03A2DC;
+  color: white;
+  
+  /* Cải tiến: Thêm cursor và hiệu ứng transform */
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+/* Thêm CSS cho SVG bên trong nút */
+.add-to-cart-button svg {
+  width: 20px;
+  height: 20px;
 }
 
 .add-to-cart-button:hover {
-  background-color: #135593;
+  background-color: #028ec4; /* Màu hover nhẹ nhàng hơn */
+}
+
+/* Cải tiến: Thêm hiệu ứng khi nhấn nút */
+.add-to-cart-button:active {
+  transform: scale(0.98); /* Nút hơi thu nhỏ lại khi nhấn */
 }
 .main-2{
   background-color: white !important;
@@ -253,6 +272,45 @@ onMounted(async () => {
   text-decoration: none; 
   color: inherit;
   display: block;
+}
+@media (max-width: 768px) {
+    .product-section {
+        padding: 20px 10px; 
+    }
+
+    .product-grid {
+        
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .product-card {
+        /* Chiều cao tự động, giảm padding */
+        height: auto;
+        padding: 10px;
+    }
+    
+    .product-img {
+        height: 120px; /* Giảm chiều cao ảnh */
+    }
+
+    .product-name {
+        font-size: 14px;
+        min-height: 42px; /* Đủ chỗ cho 2 dòng */
+    }
+
+    .product-description {
+        display: none; /* Ẩn mô tả ngắn trên mobile để tiết kiệm không gian */
+    }
+
+    .current-price {
+        font-size: 16px;
+    }
+
+    .original-price {
+        font-size: 12px;
+    }
 }
 </style>
 

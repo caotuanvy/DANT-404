@@ -4,11 +4,11 @@
       <div class="vohop-main-header">
         <h1 class="vohop-title">Tin tức mới nhất</h1>
         <div class="vohop-search-box">
-          <input type="text" placeholder="Q Tìm kiếm tin tức..." />
+          <input type="text" placeholder="Q Tìm kiếm tin tức..." v-model="searchQuery" @keyup.enter="handleSearch" />
         </div>
       </div>
       <div class="vohop-news-grid">
-        <div class="vohop-news-card" v-for="item in newsList" :key="item.id" @click="goToNewsDetail(item)">
+        <div class="vohop-news-card" v-for="item in displayedNews" :key="item.id" @click="goToNewsDetail(item)">
           <div class="vohop-card-image-container">
             <img
               :src="item.hinh_anh
@@ -30,6 +30,14 @@
             <div class="vohop-footer-info">
               <span><i class="fa-regular fa-calendar"></i> {{ formatDate(item.ngay_dang) }}</span>
               <span><i class="fa-solid fa-eye"></i> {{ item.luot_xem || 0 }}</span>
+            </div>
+            <div class="vohop-tags">
+              <button
+                v-if="getFirstTag(item.tu_khoa_seo)"
+                @click.stop="handleSelectTag(getFirstTag(item.tu_khoa_seo))"
+              >
+                #{{ getFirstTag(item.tu_khoa_seo) }}
+              </button>
             </div>
           </div>
         </div>
@@ -53,50 +61,128 @@
 
       <div class="vohop-sidebar-section">
         <h3 class="vohop-sidebar-title"><i class="fa-solid fa-fire"></i> TIN XEM NHIỀU NHẤT</h3>
-        <div
-          class="vohop-popular-post"
-          v-for="tin in tinNoiBatList"
-          :key="tin.id"
-          @click="goToNewsDetail(tin)"
-        >
-          <img :src="tin.hinh_anh ? (tin.hinh_anh.startsWith('http') ? tin.hinh_anh : `http://localhost:8000/storage/${tin.hinh_anh}`) : 'https://via.placeholder.com/60x60'" alt="" />
-          <span>{{ tin.tieude }}</span>
+        <div class="vohop-popular-post" v-for="tin in tinNoiBatList" :key="tin.id" @click="goToNewsDetail(tin)">
+          <div class="vohop-post-image">
+            <img
+              :src="tin.hinh_anh ? (tin.hinh_anh.startsWith('http') ? tin.hinh_anh : `http://localhost:8000/storage/${tin.hinh_anh}`) : 'https://via.placeholder.com/60x60'"
+              alt=""
+            />
+          </div>
+          <div class="vohop-post-details">
+              <span class="vohop-popular-post-title">{{ tin.tieude }}</span>
+              <div class="vohop-post-meta">
+                  <span><i class="fa-regular fa-calendar"></i> {{ formatDate(tin.ngay_dang) }}</span>
+                  <span><i class="fa-solid fa-eye"></i> {{ tin.luot_xem || 0 }}</span>
+                  <span><i class="fa-solid fa-thumbs-up"></i> {{ tin.luot_like || 0 }}</span>
+              </div>
+          </div>
         </div>
       </div>
 
       <div class="vohop-sidebar-section">
         <h3 class="vohop-sidebar-title"><i class="fa-solid fa-tags"></i> TAGS</h3>
-        <div class="vohop-tags">
-          <button v-for="(tag, index) in tagsList" :key="tag">
+        <div class="vohop-tags-grid">
+          <button
+            v-for="tag in displayedTags"
+            :key="tag"
+            @click="handleSelectTag(tag)"
+            :class="{ active: activeTag === tag }"
+          >
             #{{ tag }}
           </button>
         </div>
       </div>
-    </aside>  
+    </aside>
   </div>
 </template>
 
-
-
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-
 const newsList = ref([])
+const allNews = ref([]) // Lưu trữ toàn bộ tin tức để xáo trộn
 const activeDanhMuc = ref(null)
 const danhMucList = ref([])
 const tinNoiBatList = ref([])
-const tagsList = ref(['burger', 'khuyến mãi', 'pizza', 'gà rán'])
+const tagsList = ref([])
+const allTags = ref([]) // Lưu trữ toàn bộ tags để xáo trộn
+const activeTag = ref(null)
+const searchQuery = ref('')
 
 const router = useRouter()
+
+// Hàm xáo trộn mảng
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+// Computed property để giới hạn số lượng tin tức hiển thị và xáo trộn
+const displayedNews = computed(() => shuffleArray([...allNews.value]).slice(0, 10))
+
+// Computed property để giới hạn số lượng tags hiển thị ở sidebar và xáo trộn
+const displayedTags = computed(() => shuffleArray([...allTags.value]).slice(0, 10))
 
 onMounted(async () => {
   await fetchDanhMucList()
   await fetchAllNews()
   await fetchTinNoiBat()
+  await fetchTags()
 })
 
+// Hàm mới: Tải danh sách tags từ API
+async function fetchTags() {
+  try {
+    const res = await fetch('http://localhost:8000/api/tags')
+    const data = await res.json()
+    allTags.value = data // Lưu toàn bộ tags
+  } catch (err) {
+    console.error("Lỗi khi tải danh sách tags:", err)
+    allTags.value = []
+  }
+}
+
+// Hàm mới: Xử lý khi click vào tag
+async function handleSelectTag(tag) {
+  if (activeTag.value === tag) {
+    activeTag.value = null
+    await fetchAllNews()
+  } else {
+    activeTag.value = tag
+    activeDanhMuc.value = null // Bỏ chọn danh mục khi chọn tag
+    try {
+      const res = await fetch(`http://localhost:8000/api/tin-tuc-theo-tag/${tag}`)
+      allNews.value = await res.json() // Cập nhật allNews thay vì newsList
+    } catch (err) {
+      console.error("Lỗi khi tải tin tức theo tag:", err)
+      allNews.value = []
+    }
+  }
+}
+
+// Hàm mới: Xử lý tìm kiếm
+async function handleSearch() {
+  if (searchQuery.value.trim() === '') {
+    await fetchAllNews();
+    return;
+  }
+  // Giả định có một API tìm kiếm theo tiêu đề hoặc nội dung
+  // Hiện tại tôi sẽ sử dụng API lọc theo tag nếu bạn gõ một tag vào
+  await handleSelectTag(searchQuery.value);
+}
+
+// Hàm mới: Lấy một từ khóa đầu tiên của một bài viết
+function getFirstTag(tagsStr) {
+  if (!tagsStr) return null;
+  const tags = tagsStr.split(',').map(tag => tag.trim()).filter(t => t);
+  return tags.length > 0 ? tags[0] : null;
+}
+
+// Hàm cũ: Lấy danh mục
 async function fetchDanhMucList() {
   try {
     const res = await fetch('http://localhost:8000/api/danh-muc-tin-tuc')
@@ -107,27 +193,33 @@ async function fetchDanhMucList() {
   }
 }
 
+// Hàm cũ: Lấy tất cả tin tức
 async function fetchAllNews() {
   try {
     const res = await fetch('http://localhost:8000/api/tintuc-cong-khai')
-    newsList.value = await res.json()
+    allNews.value = await res.json() // Lưu toàn bộ tin tức
+    activeDanhMuc.value = null
+    activeTag.value = null
   } catch (err) {
     console.error("Lỗi khi tải tất cả tin tức công khai:", err)
-    newsList.value = []
+    allNews.value = []
   }
 }
 
+// Hàm cũ: Xử lý khi chọn danh mục
 async function handleSelectDanhMuc(id) {
   activeDanhMuc.value = id
+  activeTag.value = null // Bỏ chọn tag khi chọn danh mục
   try {
     const res = await fetch(`http://localhost:8000/api/tintuc-cong-khai/danh-muc/${id}`)
-    newsList.value = await res.json()
+    allNews.value = await res.json() // Cập nhật allNews thay vì newsList
   } catch (err) {
     console.error("Lỗi khi tải tin tức theo danh mục:", err)
-    newsList.value = []
+    allNews.value = []
   }
 }
 
+// Hàm cũ: Lấy tin nổi bật
 async function fetchTinNoiBat() {
   try {
     const res = await fetch('http://localhost:8000/api/tin-noi-bat')
@@ -138,16 +230,19 @@ async function fetchTinNoiBat() {
   }
 }
 
+// Hàm cũ: Chuyển đến trang chi tiết
 function goToNewsDetail(news) {
   router.push({ name: 'ChiTietTinTucCongKhaiSlug', params: { slug: news.slug } })
 }
 
+// Hàm cũ: Định dạng ngày
 function formatDate(dateStr) {
   if (!dateStr) return ''
   const d = new Date(dateStr)
   return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '/')
 }
 
+// Hàm cũ: Lấy đoạn trích nội dung
 function getNoiDungSnippet(noidung) {
   if (typeof noidung === 'string' && noidung.startsWith('<')) {
     const doc = new DOMParser().parseFromString(noidung, 'text/html')
@@ -172,16 +267,10 @@ function getNoiDungSnippet(noidung) {
   return noidung ? (noidung.length > 80 ? noidung.slice(0, 80) + '...' : noidung) : ''
 }
 
-// Hàm để lấy tên danh mục từ id
+// Hàm cũ: Lấy tên danh mục
 function getCategoryName(id) {
   const category = danhMucList.value.find(c => c.id_danh_muc_tin_tuc === id);
   return category ? category.ten_danh_muc : 'Khác';
-}
-
-// Hàm lấy màu sắc cho tags
-function getTagColor(index) {
-  const colors = ['#ADD8E6', '#ADD8E6', '#ADD8E6', '#ADD8E6']; // Thay đổi thành màu xanh nhạt
-  return colors[index % colors.length];
 }
 </script>
 
@@ -207,6 +296,29 @@ function getTagColor(index) {
   background: white;
   border-radius: 12px;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+  font-family: 'Arial', sans-serif;
+}
+
+@media (max-width: 992px) {
+  .vohop-container {
+    flex-direction: column;
+    padding: 16px;
+  }
+  .vohop-sidebar {
+  width: 350px; /* Tăng chiều rộng để có thêm không gian */
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+  .vohop-main-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .vohop-search-box {
+    width: 100%;
+    margin-top: 10px;
+  }
 }
 
 .vohop-main-content {
@@ -248,6 +360,7 @@ function getTagColor(index) {
 
 .vohop-search-box input::placeholder {
   color: var(--text-light);
+  opacity: 0.5;
 }
 
 .vohop-news-grid {
@@ -274,11 +387,12 @@ function getTagColor(index) {
 
 .vohop-card-image-container {
   position: relative;
+  height: 200px;
 }
 
 .vohop-card-image-container img {
   width: 100%;
-  height: 200px;
+  height: 100%;
   object-fit: cover;
 }
 
@@ -291,7 +405,7 @@ function getTagColor(index) {
   border-radius: 4px;
   font-size: 0.8rem;
   font-weight: bold;
-  background-color: #33ccff; /* Màu xanh nhạt */
+  background-color: #33ccff;
 }
 
 .vohop-card-body {
@@ -319,7 +433,7 @@ function getTagColor(index) {
 
 .vohop-card-footer {
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
   border-top: 1px solid var(--border-color);
@@ -398,50 +512,133 @@ function getTagColor(index) {
   color: var(--primary-color);
 }
 
+/* Hiệu ứng mới cho "TIN XEM NHIỀU NHẤT" */
 .vohop-popular-post {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
+  align-items: center; /* Căn chỉnh các item theo chiều dọc */
+  gap: 15px;
+  width: 330px;
+  padding: 12px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
   cursor: pointer;
-  transition: opacity 0.2s;
 }
 
 .vohop-popular-post:hover {
-  opacity: 0.8;
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: #e2f5ff;
+}
+
+.vohop-post-details {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Căn giữa nội dung */
+  flex-grow: 1;
+}
+
+.vohop-popular-post-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #212529;
+  margin-bottom: 5px; /* Giảm khoảng cách với dòng meta */
+}
+
+.vohop-popular-post:hover .vohop-popular-post-title {
+  color: #007bff;
+}
+
+.vohop-post-meta {
+  display: flex;
+  align-items: center; /* Căn chỉnh các icon và số liệu theo chiều dọc */
+  gap: 10px; /* Khoảng cách giữa các mục */
+  font-size: 0.9rem;
+  color: #6c757d;
+  white-space: nowrap; /* NGĂN CÁC PHẦN TỬ BỊ XUỐNG DÒNG */
+}
+
+.vohop-post-meta span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.vohop-post-meta i {
+  color: #0d6efd;
 }
 
 .vohop-popular-post img {
-  width: 60px;
-  height: 60px;
+  width: 80px; /* Tăng chiều rộng ảnh */
+  height: 80px; /* Tăng chiều cao ảnh */
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: 8px; /* Bo tròn góc ảnh */
+}
+
+.vohop-popular-post:hover img {
+  transform: scale(1.05);
 }
 
 .vohop-popular-post span {
   font-size: 0.9rem;
   color: var(--text-dark);
   line-height: 1.4;
+  transition: color 0.2s ease-in-out;
 }
 
-.vohop-tags {
+.vohop-popular-post:hover span {
+  color: var(--primary-color);
+}
+/* Kết thúc hiệu ứng mới */
+
+.vohop-tags-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  padding-top: 8px;
 }
 
-.vohop-tags button {
-  border: none;
-  color: white;
+.vohop-tags-grid button {
+  border: 1px solid #cceeff;
+  background-color: #f0f8ff;
+  color: #004080;
   border-radius: 20px;
-  padding: 6px 14px;
-  font-size: 0.8rem;
+  padding: 8px 16px;
+  font-size: 0.85rem;
   cursor: pointer;
-  transition: opacity 0.2s;
-  background-color: #ADD8E6; /* Màu xanh nhạt */
+  transition: background-color 0.2s, color 0.2s, transform 0.2s;
 }
 
-.vohop-tags button:hover {
-  opacity: 0.8;
+.vohop-tags-grid button:hover {
+  background-color: #cceeff;
+  transform: translateY(-2px);
+}
+
+.vohop-tags-grid button.active {
+  background-color: #03A2DC;
+  color: white;
+  border-color: var(--primary-color);
+}
+
+/* Căn chỉnh lại tags trong card */
+.vohop-news-card .vohop-tags {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.vohop-news-card .vohop-tags button {
+  border: none;
+  background-color: #e2f5ff;
+  color: #0d6efd;
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.vohop-news-card .vohop-tags button:hover {
+  background-color: #cceeff;
 }
 </style>

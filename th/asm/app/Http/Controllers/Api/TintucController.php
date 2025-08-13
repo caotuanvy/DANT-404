@@ -156,6 +156,26 @@ class TintucController extends Controller
         'luot_xem' => $tintuc->luot_xem,
     ]);
    }
+   public function tangLuotLike($id)
+{
+    // Tìm tin tức theo ID
+    $tintuc = Tintuc::find($id);
+
+    // Kiểm tra xem tin tức có tồn tại không
+    if (!$tintuc) {
+        return response()->json(['message' => 'Không tìm thấy tin tức'], 404);
+    }
+
+    // Tăng lượt like lên 1
+    $tintuc->increment('luot_like');
+    $tintuc->refresh();
+
+    // Trả về số lượt like mới
+    return response()->json([
+        'message' => 'Tăng lượt thích thành công',
+        'luot_like' => $tintuc->luot_like
+    ]);
+}
     // Lấy tin tức nổi bật
    public function tinNoiBat()
     {
@@ -352,6 +372,8 @@ class TintucController extends Controller
                     'noidung' => $item->noidung,
                     'ngay_dang' => $item->ngay_dang,
                     'danhMuc' => $item->danhMuc,
+                    'luot_xem' => $item->luot_xem, // Thêm trường lượt xem
+                    'luot_like' => $item->luot_like, // Thêm trường lượt thích
                 ];
             });
 
@@ -362,6 +384,48 @@ class TintucController extends Controller
         return response()->json(['message' => 'Không thể tải tin tức liên quan.'], 500);
     }
    }
+
+    public function getAllTags()
+    {
+        // Lấy tất cả các tin tức
+        $news = Tintuc::all();
+
+        // Khởi tạo một mảng để chứa tất cả các tag
+        $allTags = [];
+
+        // Lặp qua từng tin tức và tách các tag
+        foreach ($news as $item) {
+            if ($item->tu_khoa_seo) {
+                // Tách chuỗi từ khóa bằng dấu phẩy và thêm vào mảng
+                $tags = explode(',', $item->tu_khoa_seo);
+                foreach ($tags as $tag) {
+                    $allTags[] = trim($tag); // Cắt bỏ khoảng trắng dư thừa
+                }
+            }
+        }
+
+        // Lọc để chỉ lấy các tag duy nhất và sắp xếp chúng
+        $uniqueTags = array_unique($allTags);
+        sort($uniqueTags);
+
+        return response()->json(array_values($uniqueTags));
+    }
+
+    /**
+     * Lấy danh sách tin tức dựa trên một từ khóa cụ thể.
+     *
+     * @param string $tag
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getNewsByTag($tag)
+    {
+        // Lọc tin tức mà cột `tu_khoa_seo` chứa từ khóa được truyền vào
+        $news = Tintuc::where('tu_khoa_seo', 'like', '%' . $tag . '%')
+                      ->get();
+
+        return response()->json($news);
+    }
+
 
 
 }

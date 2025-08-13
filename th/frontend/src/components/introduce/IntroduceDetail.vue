@@ -34,7 +34,7 @@ import Marker from '@editorjs/marker'
 import Delimiter from '@editorjs/delimiter'
 import InlineCode from '@editorjs/inline-code'
 import LinkTool from '@editorjs/link'
-
+import Swal from 'sweetalert2';
 
 const page = ref(null)
 const renderedHtml = ref('')
@@ -168,12 +168,25 @@ const save = async () => {
  
     page.value.Noi_dung_trang = JSON.stringify(output)
 
-    alert(' Cập nhật thành công!')
+    Swal.fire({
+    toast: true,
+    position: 'top-end',
+    icon: 'success',
+    title: `Cập nhật  thành công!`,
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true
+  });
     isEditing.value = false
     renderedHtml.value = await convertBlocksToHtml(output)
   } catch (error) {
     console.error('Lỗi khi lưu:', error)
-    alert('Lỗi khi lưu nội dung!')
+    Swal.fire({
+        icon: 'error',
+        title: 'Thao tác thất bại',
+        text: 'Đã có lỗi xảy ra, vui lòng thử lại.',
+        confirmButtonColor: '#d33'
+    });
   }
 }
 const convertBlocksToHtml = async (data) => {
