@@ -51,7 +51,7 @@ onMounted(fetchActiveLinks);
 .floating-container {
   position: fixed;
   bottom: 25px;
-  right: 25px;
+  right: 20px;
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -85,7 +85,7 @@ onMounted(fetchActiveLinks);
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background-color: #4FC3F7;
+  background-color: #33ccff;
   border: none;
   color: white;
   display: flex;
@@ -95,12 +95,13 @@ onMounted(fetchActiveLinks);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   transition: background-color 0.3s ease, transform 0.2s ease;
   padding: 15px;
+  margin-bottom: 70px;
 }
 .trigger-icon-container {
   transition: transform 0.3s ease;
 }
 .trigger-button:hover {
-  background-color: #039BE5;
+  background-color: #2497d5;
   transform: scale(1.1);
 }
 .trigger-button.is-open {

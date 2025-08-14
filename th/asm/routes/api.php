@@ -28,6 +28,8 @@ use App\Http\Controllers\Api\ParentCategoryProductController;
 use App\Http\Controllers\Api\SocialLinkController;
 use App\Http\Controllers\Api\GiamGiaController;
 use App\Http\Controllers\Api\CouponController;
+use App\Http\Controllers\Api\ChatController;
+
 Route::get('/social-links/active', [SocialLinkController::class, 'getActiveLinks']);
 Route::patch('/admin/social-links/{id}/status', [SocialLinkController::class, 'updateStatus']);
 Route::apiResource('/admin/social-links', SocialLinkController::class);
@@ -201,6 +203,12 @@ Route::delete('/users/{id}', [UserController::class, 'destroy']);
 Route::put('/users/{id}', [UserController::class, 'update']);
 Route::post('/users/{id}/avatar', [UserController::class, 'updateAvatar']);
 
+Route::prefix('chat')->group(function () {
+    Route::post('/send-message', [ChatController::class, 'sendMessage']);
+    Route::get('/get-messages', [ChatController::class, 'getMessages']);
+    Route::post('/get-or-create-conversation', [ChatController::class, 'getOrCreateConversation']);
+    Route::get('/admin/conversations', [ChatController::class, 'getConversationsForAdmin']);
+});
 
 // Product Variants
 Route::get('/products/{id}/variants', [SanPhamBienTheController::class, 'index']);
