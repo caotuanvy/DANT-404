@@ -184,13 +184,13 @@ function getFirstTag(tagsStr) {
 
 // Hàm cũ: Lấy danh mục
 async function fetchDanhMucList() {
-  try {
-    const res = await fetch('http://localhost:8000/api/danh-muc-tin-tuc')
-    danhMucList.value = await res.json()
-  } catch (err) {
-    console.error("Lỗi khi tải danh mục:", err)
-    danhMucList.value = []
-  }
+    try {
+        const res = await fetch('http://localhost:8000/api/danh-muc-cong-khai');
+        danhMucList.value = await res.json();
+    } catch (err) {
+        console.error("Lỗi khi tải danh mục:", err);
+        danhMucList.value = [];
+    }
 }
 
 // Hàm cũ: Lấy tất cả tin tức

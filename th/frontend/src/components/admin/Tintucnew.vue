@@ -11,38 +11,32 @@
     </header>
 
     <div class="content-card">
-      <div class="row mb-3 g-2 filter-bar">
-        <div class="col-md-6">
-          <div class="search-input-wrapper">
-            <input
-              type="text"
-              class="form-control search-input"
-              placeholder="Tìm kiếm theo tiêu đề hoặc slug..."
-              v-model="searchQuery"
-            />
-            <button
-              v-if="searchQuery"
-              class="clear-search-btn"
-              @click="clearSearch"
-              aria-label="Xóa tìm kiếm"
-            >
-              &times;
-            </button>
-          </div>
+      <div class="filter-bar">
+        <div class="search-input-wrapper">
+          <input
+            type="text"
+            class="form-control search-input"
+            placeholder="Tìm kiếm..."
+            v-model="searchQuery"
+          />
+          <button
+            v-if="searchQuery"
+            class="clear-search-btn"
+            @click="clearSearch"
+            aria-label="Xóa tìm kiếm"
+          >
+            &times;
+          </button>
         </div>
-        <div class="col-md-3">
-          <select class="form-select" v-model="categoryFilter">
-            <option value="">Tất cả danh mục</option>
-            <option v-for="cat in categories" :key="cat.id" :value="cat.ten_danh_muc">{{ cat.ten_danh_muc }}</option>
-          </select>
-        </div>
-        <div class="col-md-3">
-          <select class="form-select" v-model="statusFilter">
-            <option value="">Tất cả trạng thái</option>
-            <option value="1">Hiển thị</option>
-            <option value="0">Ẩn</option>
-          </select>
-        </div>
+        <select class="form-select" v-model="categoryFilter">
+          <option value="">Tất cả danh mục</option>
+          <option v-for="cat in categories" :key="cat.id" :value="cat.ten_danh_muc">{{ cat.ten_danh_muc }}</option>
+        </select>
+        <select class="form-select" v-model="statusFilter">
+          <option value="">Tất cả trạng thái</option>
+          <option value="1">Hiển thị</option>
+          <option value="0">Ẩn</option>
+        </select>
       </div>
 
       <div class="table-container">
@@ -66,8 +60,8 @@
               <td colspan="10" class="text-center py-8">Đang tải dữ liệu...</td>
             </tr>
             <tr v-for="news in filteredNews" :key="news.id" class="table-row" :class="{'is-inactive-row': news.trang_thai != 1}">
-              <td><input type="checkbox"></td>
-              <td>
+              <td data-label="Chọn"><input type="checkbox"></td>
+              <td data-label="Tiêu đề">
                 <div class="news-title-cell">
                   <router-link :to="`/tintuc/${news.slug}`" class="news-title news-title-link">
                     {{ truncateText(news.tieude, 6) }}
@@ -75,7 +69,7 @@
                   <div class="news-slug">{{ truncateText(news.slug, 6) }}</div>
                 </div>
               </td>
-              <td class="text-center">
+              <td data-label="Hình ảnh" class="text-center">
                 <img
                   :src="getImageUrl(news.hinh_anh)"
                   :alt="news.tieude"
@@ -84,30 +78,30 @@
                 />
                 <span v-else class="text-secondary text-sm">N/A</span>
               </td>
-              <td class="text-center">
+              <td data-label="Danh mục" class="text-center">
                 <span v-if="news.danh_muc" class="badge">
                   {{ news.danh_muc.ten_danh_muc }}
                 </span>
                 <span v-else class="text-secondary text-sm">N/A</span>
               </td>
-              <td class="text-center">{{ news.ngay_dang ? new Date(news.ngay_dang).toLocaleDateString() : 'N/A' }}</td>
-              <td class="text-center">
+              <td data-label="Ngày đăng" class="text-center">{{ news.ngay_dang ? new Date(news.ngay_dang).toLocaleDateString() : 'N/A' }}</td>
+              <td data-label="Nổi bật" class="text-center">
                 <button @click="toggleNoiBat(news)" class="toggle-switch" :class="{ 'is-active': news.noi_bat == 1 }">
                   <span class="toggle-circle"></span>
                 </button>
               </td>
-              <td class="text-center">
+              <td data-label="Duyệt" class="text-center">
                 <button @click="toggleDuyet(news)" class="toggle-switch" :class="{ 'is-active': news.duyet_tin_tuc == 1 }">
                   <span class="toggle-circle"></span>
                 </button>
               </td>
-              <td class="text-center">{{ news.luot_xem || 0 }}</td>
-              <td class="text-center">
+              <td data-label="Lượt xem" class="text-center">{{ news.luot_xem || 0 }}</td>
+              <td data-label="Trạng thái" class="text-center">
                 <span class="status-badge" :class="news.trang_thai == 1 ? 'is-active' : 'is-inactive'">
                   {{ news.trang_thai == 1 ? 'Hiển thị' : 'Ẩn' }}
                 </span>
               </td>
-              <td class="text-center">
+              <td data-label="Hành động" class="text-center">
                 <div class="action-buttons">
                   <router-link :to="`/tintuc/${news.slug}`" class="action-icon" title="Xem chi tiết">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
@@ -196,7 +190,6 @@ const getNews = async () => {
       },
     });
     newsList.value = res.data;
-    console.log('Tin tức:', newsList.value);
   } catch (error) {
     errorMessage.value = 'Lỗi khi lấy tin tức: ' + (error.response?.data?.message || error.message);
   } finally {
@@ -209,7 +202,7 @@ const getCategories = async () => {
     const res = await axios.get('http://localhost:8000/api/danh-muc-tin-tuc');
     categories.value = res.data;
   } catch (error) {
-    // Handle error if needed
+    // Xử lý lỗi nếu cần
   }
 };
 
@@ -282,10 +275,12 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/*
+ * BASE STYLES
+ */
 .page-wrapper {
   background-color: #f3f4f6;
   padding: 2rem;
-
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 .page-header {
@@ -325,7 +320,7 @@ onMounted(() => {
   border-radius: 8px;
   font-weight: 500;
   cursor: pointer;
-  transition: bbackground-color 0.3s ease, transform 0.3s ease;
+  transition: background-color 0.3s ease, transform 0.3s ease;
   width: 180px;
   height: 40px;
 }
@@ -337,23 +332,23 @@ onMounted(() => {
   background-color:#3b82f6;
   transform: scale(1.05);
 }
+
+.filter-bar {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+.search-input-wrapper {
+  position: relative;
+}
 .search-input {
   width: 100%;
-  max-width: 400px;
   padding: 0.6rem 1rem;
   border-radius: 5px !important;
   border: 1px solid gray !important;
   font-size: 0.875rem;
   padding-left: 2.5rem;
-  min-width: 300px;
-}
-.filter-bar {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-}
-.search-input-wrapper {
-  position: relative;
 }
 .clear-search-btn {
   position: absolute;
@@ -370,6 +365,15 @@ onMounted(() => {
 .clear-search-btn:hover {
   color: #dc2626;
 }
+.form-select {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border-radius: 5px !important;
+  border: 1px solid gray !important;
+  background-color: white;
+  font-size: 0.875rem;
+}
+
 .table-container {
   overflow-x: auto;
 }
@@ -406,7 +410,6 @@ onMounted(() => {
   font-weight: 500;
   color: #111827;
   text-decoration: none;
-  /* Các thuộc tính CSS cho ellipsis đã được di chuyển xuống news-title-cell để tránh xung đột */
 }
 .news-title-link:hover {
   text-decoration: underline;
@@ -415,7 +418,6 @@ onMounted(() => {
 .news-slug {
   font-size: 0.85rem;
   color: #6b7280;
-  /* Các thuộc tính CSS cho ellipsis đã được di chuyển xuống news-title-cell để tránh xung đột */
 }
 .news-thumbnail {
   width: 80px;
@@ -443,7 +445,7 @@ onMounted(() => {
 }
 .status-badge.is-active {
   color: #16a34a;
-  background-color: #5ed389;
+  background-color: #dcfce7;
 }
 .status-badge.is-inactive {
   color: #6b7280;
@@ -481,7 +483,7 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.25rem; /* Đã thay đổi khoảng cách ở đây */
+  gap: 0.25rem;
   flex-wrap: nowrap;
 }
 .action-icon {
@@ -516,10 +518,98 @@ onMounted(() => {
   background: none;
 }
 .is-inactive-row {
-  background-color: #f3f4f6;
-  opacity: 0.6;
-} 
+  background-color: #f9fafb;
+  opacity: 0.7;
+}
 .is-inactive-row .news-title {
   color: #9ca3af;
+}
+
+/*
+ * RESPONSIVE MOBILE STYLES (Dưới 768px)
+ */
+@media (max-width: 768px) {
+  .page-wrapper {
+    padding: 1rem;
+  }
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  .page-title {
+    text-align: center;
+    font-size: 1.5rem;
+  }
+  .btn-add {
+    width: 100%;
+    justify-content: center;
+  }
+  .content-card {
+    padding: 1rem;
+  }
+  .filter-bar {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .table-container {
+    overflow-x: visible;
+  }
+  .news-table, .news-table tbody, .news-table tr {
+    display: block;
+    width: 100%;
+  }
+  .news-table thead {
+    display: none;
+  }
+  .news-table tr {
+    margin-bottom: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  }
+  .news-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0.75rem 1rem;
+  }
+  .news-table td:last-child {
+    border-bottom: none;
+  }
+  .news-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #4b5563;
+    flex-shrink: 0;
+    width: 120px;
+  }
+
+  /* Ẩn cột checkbox và căn chỉnh các cột khác */
+  .news-table td:first-child {
+    display: none;
+  }
+  .news-title-cell {
+    align-items: flex-end;
+  }
+  .news-thumbnail {
+    margin: 0;
+  }
+  .action-buttons {
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+  .action-icon {
+    width: 36px;
+    height: 36px;
+  }
+  .action-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+  .toggle-switch {
+    margin-left: auto;
+  }
 }
 </style>

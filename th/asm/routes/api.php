@@ -69,6 +69,7 @@ Route::get('/tintuc/{id}', [TintucController::class, 'show']);
 Route::put('/tintuc/{id}', [TintucController::class, 'update']);
 Route::delete('/tintuc/{id}', [TintucController::class, 'destroy']);
 Route::get('/tintuc-cong-khai', [TintucController::class, 'tintucCongKhai']);
+Route::get('/tin-tuc-quan-trong', [TintucController::class, 'tinTucQuanTrong']);
 Route::get('tintuc-cong-khai/slug/{slug}', [TintucController::class, 'chitietCongKhaiBySlug']);
 Route::get('/tin-noi-bat', [TintucController::class, 'tinNoiBat']);
 Route::get('/xemtintuc-admin/{id}', [TintucController::class, 'xemchitiettintucadmin']);
@@ -86,6 +87,7 @@ Route::put('/danh-muc-tin-tuc/{id}/toggle-status', [DanhMucTtController::class, 
 Route::apiResource('danh-muc-tin-tuc', DanhMucTtController::class);
 Route::get('/xemdanhmuc-admin/{id}', [DanhMucTtController::class, 'xemChiTietDanhMucAdmin']);
 Route::get('tintuc-cong-khai/danh-muc/{id}', [DanhMucTtController::class, 'tintucCongKhaiTheoDanhMuc']);
+Route::get('danh-muc-cong-khai', [DanhMucTtController::class, 'danhMucCongKhai']);
 
 // Binh luan
 Route::prefix('admin/binhluan')->group(function () {
