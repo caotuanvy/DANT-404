@@ -71,9 +71,9 @@
           <div class="vohop-post-details">
               <span class="vohop-popular-post-title">{{ tin.tieude }}</span>
               <div class="vohop-post-meta">
-                  <span><i class="fa-regular fa-calendar"></i> {{ formatDate(tin.ngay_dang) }}</span>
-                  <span><i class="fa-solid fa-eye"></i> {{ tin.luot_xem || 0 }}</span>
-                  <span><i class="fa-solid fa-thumbs-up"></i> {{ tin.luot_like || 0 }}</span>
+                <span><i class="fa-regular fa-calendar"></i> {{ formatDate(tin.ngay_dang) }}</span>
+                <span><i class="fa-solid fa-eye"></i> {{ tin.luot_xem || 0 }}</span>
+                <span><i class="fa-solid fa-thumbs-up"></i> {{ tin.luot_like || 0 }}</span>
               </div>
           </div>
         </div>
@@ -101,12 +101,12 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const newsList = ref([])
-const allNews = ref([]) // Lưu trữ toàn bộ tin tức để xáo trộn
+const allNews = ref([])
 const activeDanhMuc = ref(null)
 const danhMucList = ref([])
 const tinNoiBatList = ref([])
 const tagsList = ref([])
-const allTags = ref([]) // Lưu trữ toàn bộ tags để xáo trộn
+const allTags = ref([])
 const activeTag = ref(null)
 const searchQuery = ref('')
 
@@ -139,7 +139,7 @@ async function fetchTags() {
   try {
     const res = await fetch('http://localhost:8000/api/tags')
     const data = await res.json()
-    allTags.value = data // Lưu toàn bộ tags
+    allTags.value = data
   } catch (err) {
     console.error("Lỗi khi tải danh sách tags:", err)
     allTags.value = []
@@ -153,10 +153,10 @@ async function handleSelectTag(tag) {
     await fetchAllNews()
   } else {
     activeTag.value = tag
-    activeDanhMuc.value = null // Bỏ chọn danh mục khi chọn tag
+    activeDanhMuc.value = null
     try {
       const res = await fetch(`http://localhost:8000/api/tin-tuc-theo-tag/${tag}`)
-      allNews.value = await res.json() // Cập nhật allNews thay vì newsList
+      allNews.value = await res.json()
     } catch (err) {
       console.error("Lỗi khi tải tin tức theo tag:", err)
       allNews.value = []
@@ -170,8 +170,6 @@ async function handleSearch() {
     await fetchAllNews();
     return;
   }
-  // Giả định có một API tìm kiếm theo tiêu đề hoặc nội dung
-  // Hiện tại tôi sẽ sử dụng API lọc theo tag nếu bạn gõ một tag vào
   await handleSelectTag(searchQuery.value);
 }
 
@@ -197,7 +195,7 @@ async function fetchDanhMucList() {
 async function fetchAllNews() {
   try {
     const res = await fetch('http://localhost:8000/api/tintuc-cong-khai')
-    allNews.value = await res.json() // Lưu toàn bộ tin tức
+    allNews.value = await res.json()
     activeDanhMuc.value = null
     activeTag.value = null
   } catch (err) {
@@ -209,10 +207,10 @@ async function fetchAllNews() {
 // Hàm cũ: Xử lý khi chọn danh mục
 async function handleSelectDanhMuc(id) {
   activeDanhMuc.value = id
-  activeTag.value = null // Bỏ chọn tag khi chọn danh mục
+  activeTag.value = null
   try {
     const res = await fetch(`http://localhost:8000/api/tintuc-cong-khai/danh-muc/${id}`)
-    allNews.value = await res.json() // Cập nhật allNews thay vì newsList
+    allNews.value = await res.json()
   } catch (err) {
     console.error("Lỗi khi tải tin tức theo danh mục:", err)
     allNews.value = []
@@ -287,6 +285,7 @@ function getCategoryName(id) {
   --text-light: #adb5bd;
 }
 
+/* Base styles for larger screens */
 .vohop-container {
   display: flex;
   max-width: 1200px;
@@ -297,28 +296,6 @@ function getCategoryName(id) {
   border-radius: 12px;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
   font-family: 'Arial', sans-serif;
-}
-
-@media (max-width: 992px) {
-  .vohop-container {
-    flex-direction: column;
-    padding: 16px;
-  }
-  .vohop-sidebar {
-  width: 350px; /* Tăng chiều rộng để có thêm không gian */
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-  .vohop-main-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .vohop-search-box {
-    width: 100%;
-    margin-top: 10px;
-  }
 }
 
 .vohop-main-content {
@@ -512,10 +489,9 @@ function getCategoryName(id) {
   color: var(--primary-color);
 }
 
-/* Hiệu ứng mới cho "TIN XEM NHIỀU NHẤT" */
 .vohop-popular-post {
   display: flex;
-  align-items: center; /* Căn chỉnh các item theo chiều dọc */
+  align-items: center;
   gap: 15px;
   width: 330px;
   padding: 12px;
@@ -534,7 +510,7 @@ function getCategoryName(id) {
 .vohop-post-details {
   display: flex;
   flex-direction: column;
-  justify-content: center; /* Căn giữa nội dung */
+  justify-content: center;
   flex-grow: 1;
 }
 
@@ -542,7 +518,7 @@ function getCategoryName(id) {
   font-size: 1rem;
   font-weight: 600;
   color: #212529;
-  margin-bottom: 5px; /* Giảm khoảng cách với dòng meta */
+  margin-bottom: 5px;
 }
 
 .vohop-popular-post:hover .vohop-popular-post-title {
@@ -551,11 +527,11 @@ function getCategoryName(id) {
 
 .vohop-post-meta {
   display: flex;
-  align-items: center; /* Căn chỉnh các icon và số liệu theo chiều dọc */
-  gap: 10px; /* Khoảng cách giữa các mục */
+  align-items: center;
+  gap: 10px;
   font-size: 0.9rem;
   color: #6c757d;
-  white-space: nowrap; /* NGĂN CÁC PHẦN TỬ BỊ XUỐNG DÒNG */
+  white-space: nowrap;
 }
 
 .vohop-post-meta span {
@@ -569,10 +545,10 @@ function getCategoryName(id) {
 }
 
 .vohop-popular-post img {
-  width: 80px; /* Tăng chiều rộng ảnh */
-  height: 80px; /* Tăng chiều cao ảnh */
+  width: 80px;
+  height: 80px;
   object-fit: cover;
-  border-radius: 8px; /* Bo tròn góc ảnh */
+  border-radius: 8px;
 }
 
 .vohop-popular-post:hover img {
@@ -589,7 +565,6 @@ function getCategoryName(id) {
 .vohop-popular-post:hover span {
   color: var(--primary-color);
 }
-/* Kết thúc hiệu ứng mới */
 
 .vohop-tags-grid {
   display: flex;
@@ -620,7 +595,6 @@ function getCategoryName(id) {
   border-color: var(--primary-color);
 }
 
-/* Căn chỉnh lại tags trong card */
 .vohop-news-card .vohop-tags {
   display: flex;
   gap: 8px;
@@ -640,5 +614,129 @@ function getCategoryName(id) {
 
 .vohop-news-card .vohop-tags button:hover {
   background-color: #cceeff;
+}
+
+/* ----------------------------------------------------------------------- */
+/* Mobile-first and Responsive Overrides */
+/* ----------------------------------------------------------------------- */
+
+/* Adjustments for screens smaller than 992px (Mobile and Tablet) */
+@media (max-width: 992px) {
+  .vohop-container {
+    flex-direction: column;
+    padding: 16px;
+    margin: 15px auto;
+    border-radius: 0;
+    box-shadow: none;
+    background: #fff;
+  }
+
+  .vohop-main-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .vohop-title {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+  }
+
+  .vohop-search-box {
+    width: 100%;
+    margin-bottom: 15px;
+  }
+
+  .vohop-news-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .vohop-news-card {
+    border-radius: 8px;
+  }
+
+  .vohop-card-image-container {
+    height: 180px;
+  }
+
+  .vohop-card-body {
+    padding: 12px;
+  }
+
+  .vohop-card-body h3 {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+  }
+
+  .vohop-card-body p {
+    font-size: 0.85rem;
+  }
+
+  .vohop-card-footer {
+    padding: 10px 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .vohop-footer-info {
+    font-size: 0.8rem;
+    gap: 10px;
+  }
+
+  .vohop-news-card .vohop-tags {
+    margin-top: 0;
+  }
+
+  .vohop-news-card .vohop-tags button {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+  }
+
+  .vohop-sidebar {
+    width: 100%;
+    gap: 16px;
+  }
+
+  .vohop-sidebar-section {
+    padding: 12px;
+  }
+
+  .vohop-sidebar-title {
+    font-size: 1rem;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+  }
+
+  .vohop-sidebar-section li {
+    font-size: 0.85rem;
+    padding: 6px 0;
+  }
+  
+  .vohop-popular-post {
+    width: 100%;
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .vohop-popular-post img {
+    width: 70px;
+    height: 70px;
+  }
+
+  .vohop-popular-post-title {
+    font-size: 0.95rem;
+  }
+
+  .vohop-post-meta {
+    font-size: 0.8rem;
+    gap: 8px;
+  }
+  
+  .vohop-tags-grid button {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+  }
 }
 </style>
