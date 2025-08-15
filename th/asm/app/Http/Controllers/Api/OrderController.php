@@ -11,6 +11,7 @@ use App\Models\DiaChi;
 use App\Models\Notifications;
 use App\Models\SanPham; // Import model SanPham
 use App\Models\HinhAnhSanPham; // Import model HinhAnhSanPham
+use App\Models\GiamGia; // Import model GiamGia]
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -24,7 +25,6 @@ class OrderController extends Controller
 {
     public function index(Request $request)
     {
-
         $query = Order::whereNull('ngay_xoa')
             ->with([
                 'user', // Load thông tin người dùng
@@ -78,8 +78,8 @@ class OrderController extends Controller
                 $query->where('nguoi_dung_id', $userId);
             }
             $orders = $query->orderBy('ngay_dat', 'desc')
-                                 ->limit(20) // Giới hạn 20 đơn hàng gần nhất
-                                 ->get();
+                             ->limit(20) // Giới hạn 20 đơn hàng gần nhất
+                             ->get();
             return response()->json(['data' => $orders]); // Trả về dạng data: [...]
         } else {
             // Mặc định cho admin hoặc các trường hợp khác, sử dụng phân trang đầy đủ
@@ -160,156 +160,208 @@ class OrderController extends Controller
             return response()->json(['message' => 'Không thể xác nhận thanh toán. Vui lòng thử lại.'], 500);
         }
     }
-
-    public function store(Request $request)
+ public function store(Request $request)
     {
         $user = Auth::user();
         if (!$user) {
-            return response()->json(['message' => 'Vui lòng đăng nhập.'], 401);
+            return response()->json(['message' => 'Bạn cần đăng nhập để đặt hàng.'], 401);
         }
 
-        $userId = $user->nguoi_dung_id ?? $user->id;
+        // BƯỚC 1: Validate dữ liệu đầu vào từ frontend
+        $validatedData = $request->validate([
+            'phuong_thuc_thanh_toan_id' => 'required|integer|exists:phuong_thuc_thanh_toan,phuong_thuc_thanh_toan_id',
+            'dia_chi_id' => 'required|integer|exists:dia_chi,id_dia_chi',
+            'phi_van_chuyen' => 'required|numeric|min:0',
+            'ma_giam_gia' => 'nullable|string|max:255',
+            'ghi_chu' => 'nullable|string',
+        ]);
+
+        // Bắt đầu transaction để đảm bảo an toàn dữ liệu: nếu có lỗi, mọi thứ sẽ được hoàn tác.
+        DB::beginTransaction();
 
         try {
-            $validatedData = $request->validate([
-                'tong_tien' => 'required|numeric|min:0',
-                'phuong_thuc_thanh_toan_id' => 'required|integer',
-                'hinh_thuc_giao_hang' => 'required|string|max:50',
-                'phi_van_chuyen' => 'required|numeric|min:0',
-                'san_pham' => 'required|array|min:1',
-                'san_pham.*.bien_the_id' => 'required|integer|exists:san_pham_bien_the,bien_the_id',
-                'san_pham.*.so_luong' => 'required|integer|min:1',
-                'san_pham.*.don_gia' => 'required|numeric|min:0',
+            // BƯỚC 2: Lấy thông tin giỏ hàng và sản phẩm của người dùng
+            $cartItems = DB::table('gio_hang_chi_tiet as ghct')
+                ->join('san_pham_bien_the as spbt', 'ghct.san_pham_bien_the_id', '=', 'spbt.bien_the_id')
+                ->join('gio_hang as gh', 'ghct.gio_hang_id', '=', 'gh.gio_hang_id')
+                ->where('gh.nguoi_dung_id', $user->nguoi_dung_id)
+                ->select('spbt.bien_the_id', 'spbt.ten_bien_the', 'spbt.gia', 'spbt.so_luong_ton_kho', 'ghct.so_luong')
+                ->lockForUpdate() // Khóa các dòng sản phẩm để tránh race condition
+                ->get();
 
-                'dia_chi_id' => 'sometimes|integer|exists:dia_chi,id_dia_chi',
-                'dia_chi_moi' => 'sometimes|array',
-                'dia_chi_moi.ho_ten' => 'required_with:dia_chi_moi|string|max:255',
-                'dia_chi_moi.sdt' => 'required_with:dia_chi_moi|string|max:20',
-                'dia_chi_moi.dia_chi' => 'required_with:dia_chi_moi|string|max:255',
-            ]);
-
-        } catch (ValidationException $e) {
-            Log::warning('Lỗi Validation khi đặt hàng: ' . json_encode($e->errors()));
-            return response()->json(['message' => 'Dữ liệu đầu vào không hợp lệ.', 'errors' => $e->errors()], 422);
-        }
-
-        try {
-            DB::beginTransaction();
-
-            $shippingAddressId = null;
-            if (isset($validatedData['dia_chi_id'])) {
-                $shippingAddress = DiaChi::find($validatedData['dia_chi_id']);
-                if (!$shippingAddress || ($shippingAddress->nguoi_dung_id != $userId && !($user->isAdmin ?? false))) {
-                    DB::rollBack();
-                    return response()->json(['message' => 'Địa chỉ giao hàng không hợp lệ hoặc không thuộc về bạn.'], 400);
-                }
-                $shippingAddressId = $shippingAddress->id_dia_chi ?? $shippingAddress->id;
-            } elseif (isset($validatedData['dia_chi_moi'])) {
-                $newAddress = DiaChi::create([
-                    'nguoi_dung_id' => $userId,
-                    'ho_ten' => $validatedData['dia_chi_moi']['ho_ten'],
-                    'sdt' => $validatedData['dia_chi_moi']['sdt'],
-                    'dia_chi' => $validatedData['dia_chi_moi']['dia_chi'],
-                ]);
-                $shippingAddressId = $newAddress->id_dia_chi ?? $newAddress->id;
-            } else {
-                DB::rollBack();
-                return response()->json(['message' => 'Vui lòng cung cấp địa chỉ giao hàng.'], 400);
+            if ($cartItems->isEmpty()) {
+                return response()->json(['message' => 'Giỏ hàng của bạn đang trống.'], 400);
             }
 
-            $order = Order::create([
-                'nguoi_dung_id' => $userId,
-                'tong_tien' => $validatedData['tong_tien'],
-                'phuong_thuc_thanh_toan_id' => $validatedData['phuong_thuc_thanh_toan_id'],
-                'hinh_thuc_giao_hang' => $validatedData['hinh_thuc_giao_hang'],
-                'phi_van_chuyen' => $validatedData['phi_van_chuyen'],
-                'dia_chi_id' => $shippingAddressId,
-                'ngay_dat' => now(),
-                'trang_thai_don_hang' => '1',
-                'is_paid' => 0,
-            ]);
+            // BƯỚC 3: Kiểm tra số lượng tồn kho trước khi xử lý
+            foreach ($cartItems as $item) {
+                if ($item->so_luong > $item->so_luong_ton_kho) {
+                    DB::rollBack(); // Hủy bỏ transaction
+                    return response()->json(['message' => 'Sản phẩm "' . $item->ten_bien_the . '" không đủ số lượng tồn kho. Chỉ còn ' . $item->so_luong_ton_kho . ' sản phẩm.'], 400);
+                }
+            }
 
-            foreach ($validatedData['san_pham'] as $item) {
-                $bienThe = SanPhamBienThe::find($item['bien_the_id']);
-                if (!$bienThe || $bienThe->so_luong_ton_kho < $item['so_luong']) {
-                    DB::rollBack();
-                    return response()->json(['message' => 'Sản phẩm "' . ($bienThe->ten_bien_the ?? 'ID: ' . $item['bien_the_id']) . '" không đủ số lượng tồn kho hoặc không tồn tại.'], 400);
+            // BƯỚC 4: Tính tổng tiền hàng (subtotal)
+            $subtotal = $cartItems->sum(fn($item) => $item->gia * $item->so_luong);
+            $coupon = null;
+            $discountAmount = 0;
+
+            // BƯỚC 5: Xác thực lại toàn bộ mã giảm giá ở backend
+            if (!empty($validatedData['ma_giam_gia'])) {
+                $coupon = GiamGia::where('ma_giam_gia', $validatedData['ma_giam_gia'])->first();
+
+                // 5.1. Kiểm tra các điều kiện cơ bản của mã
+                if (!$coupon || !$coupon->trang_thai || $coupon->ngay_ket_thuc < now() || $coupon->so_luong_da_dung >= $coupon->so_luong) {
+                     return response()->json(['message' => 'Mã giảm giá không hợp lệ hoặc đã hết hạn.'], 400);
+                }
+                if ($coupon->gia_tri_don_hang_toi_thieu && $subtotal < $coupon->gia_tri_don_hang_toi_thieu) {
+                     return response()->json(['message' => 'Đơn hàng chưa đạt giá trị tối thiểu để áp dụng mã.'], 400);
                 }
 
+                // 5.2. Kiểm tra nếu là mã cá nhân (đã được gửi riêng)
+                $isPrivateCouponQuery = DB::table('nguoi_dung_giam_gia')->where('giam_gia_id', $coupon->giam_gia_id);
+                if ($isPrivateCouponQuery->exists()) {
+                    $userHasCoupon = $isPrivateCouponQuery->where('nguoi_dung_id', $user->nguoi_dung_id)->first();
+                    if (!$userHasCoupon || $userHasCoupon->da_su_dung) {
+                        return response()->json(['message' => 'Mã giảm giá này không dành cho bạn hoặc đã được sử dụng.'], 400);
+                    }
+                }
+
+                // 5.3. Tính toán lại số tiền giảm giá một cách an toàn
+                if ($coupon->loai_giam_gia == 'percentage') {
+                    $discountAmount = ($subtotal * $coupon->gia_tri) / 100;
+                    if ($coupon->gia_tri_giam_toi_da && $discountAmount > $coupon->gia_tri_giam_toi_da) {
+                        $discountAmount = $coupon->gia_tri_giam_toi_da;
+                    }
+                } elseif ($coupon->loai_giam_gia == 'fixed_amount') {
+                    $discountAmount = $coupon->gia_tri;
+                }
+            }
+
+            // BƯỚC 6: Tính toán tổng tiền cuối cùng
+            $finalTotal = $subtotal - $discountAmount + $validatedData['phi_van_chuyen'];
+            if ($finalTotal < 0) $finalTotal = 0;
+
+            // BƯỚC 7: Tạo đơn hàng
+            $order = Order::create([
+                'nguoi_dung_id' => $user->nguoi_dung_id,
+                'phuong_thuc_thanh_toan_id' => $validatedData['phuong_thuc_thanh_toan_id'],
+                'id_giam_gia' => $coupon ? $coupon->giam_gia_id : null,
+                'so_tien_giam' => $discountAmount,
+                'dia_chi_id' => $validatedData['dia_chi_id'],
+                'trang_thai_don_hang' => 1, // 1 = Chờ xác nhận
+                'ghi_chu' => $validatedData['ghi_chu'] ?? null,
+                'phi_van_chuyen' => $validatedData['phi_van_chuyen'],
+                'tong_tien' => $finalTotal,
+                'ngay_dat' => now(),
+            ]);
+
+            // BƯỚC 8: Tạo chi tiết đơn hàng và cập nhật tồn kho
+            foreach ($cartItems as $item) {
                 OrderItem::create([
                     'don_hang_id' => $order->id,
-                    'san_pham_bien_the_id' => $item['bien_the_id'],
-                    'so_luong' => $item['so_luong'],
-                    'don_gia' => $bienThe->gia,
-                    'thanh_tien' => $item['so_luong'] * $bienThe->gia,
+                    'san_pham_bien_the_id' => $item->bien_the_id,
+                    'so_luong' => $item->so_luong,
+                    'don_gia' => $item->gia,
+                    'thanh_tien' => $item->gia * $item->so_luong
                 ]);
-
-                // Giảm số lượng tồn kho của sản phẩm
-                $bienThe->so_luong_ton_kho -= $item['so_luong'];
-                $bienThe->save();
-
-                // Kiểm tra và lấy sản phẩm cha an toàn
-                if (!$bienThe->relationLoaded('sanPham')) {
-                    $bienThe->load('sanPham');
-                }
-                $sanPham = $bienThe->sanPham ?? null;
-                $tenSanPham = $sanPham ? $sanPham->ten_san_pham : 'Không xác định';
-
-                // Thông báo sắp hết hàng nếu tồn kho thấp
-                if ($bienThe->so_luong_ton_kho <= 5) {
-                    Notifications::create([
-                        'loai_thong_bao' => 'Sắp hết hàng',
-                        'mo_ta' => 'Biến thể "' . $bienThe->ten_bien_the . '" của sản phẩm "' . $tenSanPham . '" sắp hết hàng.',
-                        'tin_bao' => 'Tồn kho: ' . $bienThe->so_luong_ton_kho . ' sản phẩm.',
-                        'da_xem' => 0,
-                        'ngay_tao' => now(),
-                    ]);
-                }
+                // Trừ số lượng tồn kho
+                SanPhamBienThe::where('bien_the_id', $item->bien_the_id)->decrement('so_luong_ton_kho', $item->so_luong);
             }
 
-            // Xóa/Làm trống giỏ hàng của người dùng sau khi đặt hàng thành công
-            $cart = Cart::where('nguoi_dung_id', $userId)->first();
-            if ($cart) {
-                $cart->chiTiet()->delete();
-                $cart->delete();
+            // BƯỚC 9: Cập nhật số lượt sử dụng mã giảm giá
+            if ($coupon) {
+                $coupon->increment('so_luong_da_dung');
+                // Nếu là mã cá nhân, đánh dấu đã sử dụng
+                DB::table('nguoi_dung_giam_gia')
+                    ->where('nguoi_dung_id', $user->nguoi_dung_id)
+                    ->where('giam_gia_id', $coupon->giam_gia_id)
+                    ->update(['da_su_dung' => true]);
             }
 
+            // BƯỚC 10: Xóa giỏ hàng
+            DB::table('gio_hang_chi_tiet')->whereIn('gio_hang_chi_tiet_id', function($query) use ($user) {
+                $query->select('ghct.gio_hang_chi_tiet_id')->from('gio_hang_chi_tiet as ghct')
+                    ->join('gio_hang as gh', 'ghct.gio_hang_id', '=', 'gh.gio_hang_id')
+                    ->where('gh.nguoi_dung_id', $user->nguoi_dung_id);
+            })->delete();
+
+            // Hoàn tất và lưu mọi thay đổi vào CSDL
             DB::commit();
-            Notifications::create([
-                'loai_thong_bao' => 'Đơn hàng mới',
-                'mo_ta' => 'Khách hàng ' . ($user->ho_ten ?? $user->name) . ' vừa đặt đơn hàng.',
-                'tin_bao' => 'Mã đơn: ' . $order->id . ', Tổng tiền: ' . number_format($order->tong_tien) . 'đ',
-                'da_xem' => 0,
-                'ngay_tao' => now(),
-            ]);
 
-            // QUAN TRỌNG: Trả về order_id trong response.data.order_id
             return response()->json(['message' => 'Đặt hàng thành công!', 'order_id' => $order->id], 201);
 
         } catch (\Exception $e) {
+            // Nếu có bất kỳ lỗi nào xảy ra, hủy bỏ mọi thay đổi đã thực hiện
             DB::rollBack();
-            Log::error('Lỗi khi đặt hàng: ' . $e->getMessage() . ' - File: ' . $e->getFile() . ' - Line: ' . $e->getLine());
-            return response()->json(['message' => 'Không thể đặt hàng. Vui lòng thử lại sau.', 'error_detail' => $e->getMessage()], 500);
+            Log::error('Lỗi khi tạo đơn hàng: ' . $e->getMessage());
+            return response()->json(['message' => 'Hệ thống đã xảy ra lỗi, vui lòng thử lại sau.', 'error' => $e->getMessage()], 500);
         }
     }
-    public function cancel($id)
+
+    public function cancel(Request $request, $id)
+{
+    $order = Order::find($id);
+
+    // Kiểm tra và debug
+    Log::info('Hủy đơn:', [
+        'id' => $id,
+        'order_user_id' => $order?->nguoi_dung_id,
+        'auth_user_id' => Auth::id(),
+        'ly_do_huy_request' => $request->input('ly_do_huy') // Lấy lý do từ request
+    ]);
+
+    if (!$order || $order->nguoi_dung_id !== Auth::id()) {
+        return response()->json(['message' => 'Đơn hàng không tồn tại hoặc không thuộc về bạn'], 404);
+    }
+}
+    public function getStatusCounts(Request $request)
     {
-        $order = Order::find($id);
+        try {
+            // 1. Định nghĩa các key mà frontend mong đợi
+            $statusKeys = [
+                1 => 'pending',     // Chờ xác nhận
+                2 => 'confirmed',   // Đã xác nhận
+                3 => 'shipping',    // Đang giao
+                4 => 'completed',   // Hoàn thành
+                5 => 'cancelled',   // Đã hủy
+            ];
 
-        // Debug
-        Log::info('Hủy đơn:', [
-            'id' => $id,
-            'order_user_id' => $order?->nguoi_dung_id,
-            'auth_user_id' => Auth::id(),
-        ]);
+            // 2. Khởi tạo mảng đếm với giá trị ban đầu là 0
+            $counts = array_fill_keys(array_values($statusKeys), 0);
 
-        if (!$order || $order->nguoi_dung_id !== Auth::id()) {
-            return response()->json(['message' => 'Đơn hàng không tồn tại hoặc không thuộc về bạn'], 404);
+            // 3. Truy vấn CSDL để lấy số lượng theo từng 'trang_thai_don_hang'
+            // Đây là một truy vấn rất hiệu quả
+            $dbCounts = Order::query()
+                ->select('trang_thai_don_hang', DB::raw('count(*) as total'))
+                ->groupBy('trang_thai_don_hang')
+                ->get();
+
+            // 4. Lặp qua kết quả từ CSDL và điền vào mảng $counts
+            foreach ($dbCounts as $row) {
+                // Kiểm tra xem trạng thái từ CSDL có trong định nghĩa của chúng ta không
+                if (isset($statusKeys[$row->trang_thai_don_hang])) {
+                    $statusKey = $statusKeys[$row->trang_thai_don_hang];
+                    $counts[$statusKey] = $row->total;
+                }
+            }
+
+            // 5. Tính tổng số đơn hàng và thêm vào mảng
+            $counts['all'] = array_sum($counts);
+
+            // Hoặc nếu bạn muốn 'all' là tổng tất cả đơn hàng không phân biệt trạng thái
+            // $counts['all'] = Order::count();
+
+
+            // 6. Trả về kết quả dưới dạng JSON
+            return response()->json($counts);
+
+        } catch (\Exception $e) {
+            // Xử lý nếu có lỗi xảy ra
+            return response()->json([
+                'message' => 'Không thể lấy dữ liệu thống kê.',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $order->trang_thai_don_hang = 5; // Đã hủy
-        $order->save();
-
-        return response()->json(['message' => 'Đơn hàng đã được hủy']);
     }
 }

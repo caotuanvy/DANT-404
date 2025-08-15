@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\DiaChi;
-use App\Models\User; // Hoặc tên model người dùng thực tế của bạn
+use App\Models\User; 
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;

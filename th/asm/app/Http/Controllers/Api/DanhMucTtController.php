@@ -7,6 +7,8 @@ use App\Models\DanhMucTinTuc;
 use Illuminate\Http\Request;
 use App\Models\Tintuc;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use App\Models\DanhMuc;
 
 class DanhMucTtController extends Controller
 {
@@ -128,4 +130,9 @@ class DanhMucTtController extends Controller
 
     return response()->json($tintucs);
     }
+    public function danhMucCongKhai()
+{
+    $danhMucs = DanhMucTinTuc::where('trang_thai', 1)->get();
+    return response()->json($danhMucs);
+}
 }

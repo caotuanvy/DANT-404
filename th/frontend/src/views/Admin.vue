@@ -217,8 +217,6 @@ const menu = [
     label: 'Quản lý sản phẩm',
     items: [
       { to: '/admin/products', label: 'Sản phẩm', icon: 'bi bi-box' },
-     
-      // Thêm dòng dưới để dẫn đến trang danh mục cấp 2 (ví dụ mặc định cha có id=1)
       { to: '/admin/danh-muc-cap-2', label: 'Danh mục', icon: 'bi bi-diagram-2' },
     ]
   },
@@ -254,6 +252,12 @@ const menu = [
       { to: '/admin/slide', label: 'Slide Show', icon: 'bi bi-calendar-week' },
       { to: '/admin/introduce',label : 'Trang Tĩnh', icon: 'bi bi-info-circle' },
     ],
+  },
+  {
+    label: 'Quản lý mã giảm giá',
+    items: [
+      { to: '/admin/coupons', label: 'Mã giảm giá', icon: 'bi bi-ticket-perforated' }
+    ]
   },
 ];
 

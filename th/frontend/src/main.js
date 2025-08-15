@@ -38,7 +38,7 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/firebase-messaging-sw.js')
       .then((registration) => {
-        console.log(' Service Worker đã được đăng ký:', registration);
+        // console.log(' Service Worker đã được đăng ký:', registration);
       })
       .catch((error) => {
         console.error(' Đăng ký Service Worker thất bại:', error);
@@ -57,7 +57,7 @@ function loadFacebookSdk() {
                 version: 'v19.0',
             });
             FB.AppEvents.logPageView();
-            console.log('Facebook SDK đã khởi tạo thành công!');
+            // console.log('Facebook SDK đã khởi tạo thành công!');
             appState.isFacebookSdkLoaded = true;
             resolve();
         };

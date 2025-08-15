@@ -1,68 +1,74 @@
 <template>
   <section class="content">
-    <h2>Danh sách tin tức</h2>
-    <router-link to="/admin/tintuc/add" class="btn-add">+ Thêm tin tức</router-link>
-    <div v-if="loading">Đang tải dữ liệu...</div>
-    <table v-if="!loading && tintucs.length > 0">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Tiêu đề</th>
-          <th>Danh mục</th>
-          <th>Ngày đăng</th>
-          <th>Hình ảnh</th>
-          <th>Hiển thị trang chủ</th>
-          <th>Duyệt</th>
-          <th>Xem chi tiết</th>
-          <th>Hành động</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(tintuc, index) in tintucs" :key="tintuc.id">
-          <td>{{ index + 1 }}</td>
-          <td>{{ tintuc.tieude }}</td>
-          <td>
-            {{ tintuc.danhMuc ? tintuc.danhMuc.ten_danh_muc : (tintuc.danh_muc ? tintuc.danh_muc.ten_danh_muc : (tintuc.danhmuc ? tintuc.danhmuc.ten : '-')) }}
-          </td>
-          <td>{{ tintuc.ngay_dang ? tintuc.ngay_dang.substring(0, 10) : '' }}</td>
-          <td>
-            <img
-              v-if="tintuc.hinh_anh"
-              :src="tintuc.hinh_anh.startsWith('http') ? tintuc.hinh_anh : `http://localhost:8000/storage/${tintuc.hinh_anh}`"
-              alt="Hình ảnh"
-              style="width: 60px; height: auto; object-fit: cover;"
-            />
-            <img
-              v-else
-              src="https://via.placeholder.com/60x40?text=No+Image"
-              alt="Không có"
-              style="width: 60px; height: auto; object-fit: cover;"
-            />
-          </td>
-          <td>
-            <span class="switch" @click="toggleNoiBat(tintuc)">
-              <span :class="['slider', tintuc.noi_bat == 1 ? 'on' : 'off']"></span>
-            </span>
-          </td>
-          <td>
-            <span class="switch" @click="toggleDuyet(tintuc)">
-              <span :class="['slider', tintuc.duyet_tin_tuc == 1 ? 'on' : 'off']"></span>
-            </span>
-          </td>
-          <td>
-            <router-link :to="`/admin/tintuc/${tintuc.id}`" class="btn-detail">Xem chi tiết</router-link>
-          </td>
-          <td>
-            <div class="action-buttons">
-              <router-link :to="`/admin/tintuc/${tintuc.id}/edit`" class="btn-edit">Sửa</router-link>
-              <button @click="deleteTintuc(tintuc.id)" class="btn-delete">Xóa</button>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <p v-if="!loading && tintucs.length === 0">Chưa có tin tức nào.</p>
-    <p v-if="errorMessage" style="color: red;">{{ errorMessage }}</p>
+    <div class="header-container">
+      <h2>Danh sách tin tức</h2>
+      <router-link to="/admin/tintuc/add" class="btn-add">+ Thêm tin tức</router-link>
+    </div>
+    <div v-if="loading" class="loading-message">Đang tải dữ liệu...</div>
+
+    <div class="table-container" v-if="!loading && tintucs.length > 0">
+      <table class="tintuc-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Tiêu đề</th>
+            <th>Danh mục</th>
+            <th>Ngày đăng</th>
+            <th>Hình ảnh</th>
+            <th class="text-center">Hiển thị trang chủ</th>
+            <th class="text-center">Duyệt</th>
+            <th class="text-center">Xem chi tiết</th>
+            <th class="text-center">Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(tintuc, index) in tintucs" :key="tintuc.id">
+            <td data-label="#">{{ index + 1 }}</td>
+            <td data-label="Tiêu đề">{{ tintuc.tieude }}</td>
+            <td data-label="Danh mục">
+              {{ tintuc.danhMuc?.ten_danh_muc || tintuc.danh_muc?.ten_danh_muc || (tintuc.danhmuc ? tintuc.danhmuc.ten : '-') }}
+            </td>
+            <td data-label="Ngày đăng">{{ tintuc.ngay_dang ? tintuc.ngay_dang.substring(0, 10) : '' }}</td>
+            <td data-label="Hình ảnh">
+              <img
+                v-if="tintuc.hinh_anh"
+                :src="tintuc.hinh_anh.startsWith('http') ? tintuc.hinh_anh : `http://localhost:8000/storage/${tintuc.hinh_anh}`"
+                alt="Hình ảnh"
+                class="tintuc-thumbnail"
+              />
+              <img
+                v-else
+                src="https://via.placeholder.com/60x40?text=No+Image"
+                alt="Không có"
+                class="tintuc-thumbnail"
+              />
+            </td>
+            <td data-label="Hiển thị trang chủ" class="text-center">
+              <span class="switch" @click="toggleNoiBat(tintuc)">
+                <span :class="['slider', tintuc.noi_bat == 1 ? 'on' : 'off']"></span>
+              </span>
+            </td>
+            <td data-label="Duyệt" class="text-center">
+              <span class="switch" @click="toggleDuyet(tintuc)">
+                <span :class="['slider', tintuc.duyet_tin_tuc == 1 ? 'on' : 'off']"></span>
+              </span>
+            </td>
+            <td data-label="Xem chi tiết" class="text-center">
+              <router-link :to="`/admin/tintuc/${tintuc.id}`" class="btn-detail">Xem chi tiết</router-link>
+            </td>
+            <td data-label="Hành động" class="text-center">
+              <div class="action-buttons">
+                <router-link :to="`/admin/tintuc/${tintuc.id}/edit`" class="btn-edit">Sửa</router-link>
+                <button @click="deleteTintuc(tintuc.id)" class="btn-delete">Xóa</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p v-if="!loading && tintucs.length === 0" class="empty-message">Chưa có tin tức nào.</p>
+    <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
   </section>
 </template>
 
@@ -108,7 +114,6 @@ const deleteTintuc = async (id) => {
   }
 };
 
-// Toggle Nổi bật
 const toggleNoiBat = async (tintuc) => {
   const newNoiBat = tintuc.noi_bat == 1 ? 0 : 1;
   try {
@@ -125,7 +130,6 @@ const toggleNoiBat = async (tintuc) => {
   }
 };
 
-// Toggle Duyệt
 const toggleDuyet = async (tintuc) => {
   const newDuyet = tintuc.duyet_tin_tuc == 1 ? 0 : 1;
   try {
@@ -145,67 +149,141 @@ const toggleDuyet = async (tintuc) => {
 onMounted(() => {
   getTintucs();
 });
-
 </script>
 
 <style scoped>
+/*
+ * BASE STYLES
+ */
 .content {
   padding: 20px;
+  font-family: Arial, sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+h2 {
+  font-size: 24px;
+  color: #333;
+  margin: 0;
 }
 
 .btn-add {
   display: inline-block;
-  margin-bottom: 10px;
-  padding: 6px 12px;
+  padding: 8px 16px;
   background-color: #4FC3F7;
   color: white;
   border-radius: 4px;
   text-decoration: none;
   transition: background-color 0.3s ease, transform 0.3s ease;
-  font-weight: bolder;
+  font-weight: bold;
+  white-space: nowrap;
 }
+
 .btn-add:hover {
   background-color: #039BE5;
   transform: scale(1.05);
 }
-.btn-edit {
-  color: #2196f3;
-  text-decoration: none;
-  margin: 0 5px;
-  font-weight: bolder;
-}
-.btn-detail {
-  color: #009688;
-  text-decoration: none;
-  margin: 0 5px;
-  font-weight: bolder;
-}
-.btn-delete {
-  border: none;
-  background: none;
-  color: red;
-  cursor: pointer;
-  padding: 0;
-  font-size: 1em;
-  font-weight: bolder;
-}
-button:hover {
-  text-decoration: underline;
-}
-.action-buttons {
-  display: flex;
-  flex-direction: row;
-  gap: 8px;
-  align-items: center;
+
+.table-container {
+  overflow-x: auto;
+  width: 100%;
 }
 
-/* Toggle switch style for Nổi bật & Duyệt */
-.switch {
+.tintuc-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.tintuc-table th, .tintuc-table td {
+  border: 1px solid #ddd;
+  padding: 12px 8px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.tintuc-table th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.tintuc-table tbody tr:hover {
+  background-color: #f5f5f5;
+}
+
+.tintuc-thumbnail {
+  width: 60px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+  display: block;
+  margin: 0 auto;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* Action Buttons */
+.action-buttons {
   display: flex;
-  align-items: center;
-  gap: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.btn-edit, .btn-delete, .btn-detail {
+  padding: 6px 10px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: opacity 0.3s;
+  white-space: nowrap;
+  font-size: 0.9em;
+}
+
+.btn-edit {
+  color: white;
+  background-color: #2196f3;
+  border: 1px solid #2196f3;
+}
+
+.btn-detail {
+  color: white;
+  background-color: #009688;
+  border: 1px solid #009688;
+}
+
+.btn-delete {
+  background-color: #f44336;
+  color: white;
+  border: 1px solid #f44336;
   cursor: pointer;
-  user-select: none;
+}
+
+.btn-edit:hover, .btn-detail:hover, .btn-delete:hover {
+  opacity: 0.8;
+}
+
+/* Toggle switch style */
+.switch {
+  display: inline-block;
+  position: relative;
+  width: 54px;
+  height: 30px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .slider {
@@ -213,10 +291,8 @@ button:hover {
   height: 30px;
   border-radius: 15px;
   background: #ccc;
-  position: relative;
+  position: absolute;
   transition: background 0.3s;
-  flex-shrink: 0;
-  display: inline-block;
 }
 
 .slider::before {
@@ -229,19 +305,127 @@ button:hover {
   border-radius: 50%;
   background: #fff;
   transition: left 0.3s, background 0.3s;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
 }
 
 .slider.on {
   background: #4CAF50;
 }
+
 .slider.on::before {
   left: 27px;
-  background: #fff;
 }
 
-/* Ẩn chữ label */
-.switch-label {
-  display: none;
+.loading-message, .empty-message, .error-message {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 1.1em;
+}
+
+.error-message {
+  color: red;
+}
+
+/* * RESPONSIVE MOBILE STYLES (Dưới 768px)
+ */
+@media (max-width: 768px) {
+  h2 {
+    font-size: 20px;
+    text-align: center;
+    margin-bottom: 15px;
+  }
+  .header-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+  .btn-add {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 0;
+  }
+  
+  .table-container {
+    overflow-x: visible;
+  }
+
+  /* Ẩn header của bảng và biến mỗi hàng thành một "thẻ" */
+  table {
+    border: none;
+    width: 100%;
+  }
+  thead {
+    display: none;
+  }
+  tr {
+    display: block;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  td {
+    display: block;
+    text-align: left;
+    padding: 10px 15px;
+    border-bottom: 1px solid #eee;
+    position: relative;
+    padding-left: 140px; /* Thêm khoảng trống cho nhãn */
+    font-size: 14px;
+  }
+  td:last-child {
+    border-bottom: none;
+  }
+  
+  td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: bold;
+    color: #555;
+    white-space: nowrap;
+    width: 120px;
+  }
+
+  /* Ẩn cột # trên mobile */
+  td:nth-child(1) {
+    display: none;
+  }
+
+  /* Căn chỉnh lại các phần tử bên trong cột */
+  .tintuc-thumbnail {
+    display: block;
+    margin-left: 0;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 5px;
+    align-items: stretch;
+    margin-top: 10px;
+  }
+  .action-buttons > * {
+    width: 100%;
+    text-align: center;
+    padding: 8px 10px;
+    box-sizing: border-box;
+  }
+
+  /* Đảm bảo các nút switch được căn chỉnh đúng */
+  .switch {
+    display: flex;
+    justify-content: flex-end;
+  }
+  td[data-label="Hiển thị trang chủ"], td[data-label="Duyệt"], td[data-label="Xem chi tiết"], td[data-label="Hành động"] {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-left: 15px; /* Điều chỉnh padding cho các cột này */
+  }
+  td[data-label="Hành động"] .action-buttons {
+    margin-top: 0;
+  }
 }
 </style>

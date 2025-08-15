@@ -18,7 +18,17 @@
         {{ product.danh_muc?.ten_danh_muc || 'Không có danh mục' }}
       </p>
 
-      <p><strong>Mô tả:</strong> {{ product.mo_ta }}</p>
+      <div>
+      <strong>Mô tả:</strong>
+      <div
+        class="description"
+        :class="{ 'collapsed': !showFullDescription }"
+        v-html="product.mo_ta"
+      ></div>
+      <button v-if="isDescriptionLong" @click="showFullDescription = !showFullDescription">
+        {{ showFullDescription ? 'Thu gọn' : 'Xem thêm' }}
+      </button>
+    </div>
 
       <div v-if="product.hinh_anh_san_pham && product.hinh_anh_san_pham.length > 0">
         <p><strong>Hình ảnh:</strong></p>
@@ -49,7 +59,14 @@ import axios from 'axios';
 const product = ref(null);
 const route = useRoute();
 const router = useRouter();
+import { ref, onMounted, computed } from 'vue';
 
+const showFullDescription = ref(false);
+
+const isDescriptionLong = computed(() => {
+  if (!product.value?.mo_ta) return false;
+  return product.value.mo_ta.length > 300; // tuỳ chỉnh
+});
 const getProductDetail = async () => {
   try {
     const res = await axios.get(`http://localhost:8000/api/products/${route.params.id}`, {
@@ -84,5 +101,13 @@ onMounted(() => {
   border-radius: 10px;
   max-width: 700px;
   margin: auto;
+}
+.description {
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.description.collapsed {
+  max-height: 150px; /* chiều cao khi thu gọn */
 }
 </style>
