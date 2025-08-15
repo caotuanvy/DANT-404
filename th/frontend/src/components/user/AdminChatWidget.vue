@@ -79,6 +79,9 @@ const errorMessage = ref('');
 const isSending = ref(false);
 const isMinimized = ref(true);
 
+// === THÊM BIẾN CACHE MỚI ===
+const messageCache = ref({});
+
 // --- DOM References ---
 const messagesContainer = ref(null);
 
@@ -97,19 +100,37 @@ const fetchConversations = async () => {
   }
 };
 
+// === SỬA HÀM fetchMessages ĐỂ DÙNG CACHING ===
 const fetchMessages = async () => {
   if (!selectedConversationId.value) return;
+
+  // 1. Hiển thị dữ liệu từ cache ngay lập tức nếu có
+  if (messageCache.value[selectedConversationId.value]) {
+    messages.value = messageCache.value[selectedConversationId.value];
+    await nextTick();
+    scrollToBottom();
+  } else {
+    // Nếu không có cache, xóa tin nhắn cũ để tránh nhầm lẫn khi chuyển đổi
+    messages.value = [];
+  }
+
   try {
     const response = await axios.get('/chat/get-messages', {
       params: { conversation_id: selectedConversationId.value }
     });
+    
+    // 2. Cập nhật messages và lưu vào cache
     messages.value = response.data;
+    messageCache.value[selectedConversationId.value] = response.data;
+
     errorMessage.value = '';
     await nextTick();
     scrollToBottom();
   } catch (error) {
     console.error('Lỗi khi lấy tin nhắn:', error);
     errorMessage.value = 'Không thể lấy tin nhắn. Vui lòng thử lại sau.';
+    // Nếu lỗi, xóa cache cho cuộc trò chuyện này để lần sau tải lại
+    delete messageCache.value[selectedConversationId.value];
   }
 };
 
@@ -136,13 +157,14 @@ const sendMessage = async () => {
       sender_id: adminId.value,
     });
     newMessage.value = '';
-    // Sau khi gửi tin nhắn thành công, cập nhật lại cả messages và conversations
+    // Sau khi gửi tin nhắn thành công, gọi lại fetchMessages
+    // để cập nhật tin nhắn mới và lưu vào cache
     await fetchMessages();
     await fetchConversations();
   } catch (error) {
     console.error('Lỗi khi gửi tin nhắn:', error);
     errorMessage.value = 'Gửi tin nhắn thất bại. Vui lòng kiểm tra lại backend.';
-    messages.value = messages.value.filter(msg => msg.id !== tempMessage.id); // Xóa tin nhắn tạm nếu gửi thất bại
+    messages.value = messages.value.filter(msg => msg.id !== tempMessage.id); // Xóa tin nhắn tạm
   } finally {
     isSending.value = false;
   }
@@ -169,6 +191,7 @@ const selectConversation = async (conv) => {
     await updateConversationAdmin(conv);
   }
 
+  // fetchMessages() sẽ tự động sử dụng cache
   fetchMessages();
 };
 
@@ -211,13 +234,12 @@ onUnmounted(() => {
 
 // --- Watchers ---
 watch(selectedConversationId, (newVal) => {
-  // Clear any existing message polling interval
   if (messagePollingInterval) {
     clearInterval(messagePollingInterval);
     messagePollingInterval = null;
   }
-  // Start a new polling interval for the selected conversation
   if (newVal) {
+    // fetchMessages() sẽ tự động dùng cache, sau đó polling để lấy tin mới
     fetchMessages();
     messagePollingInterval = setInterval(fetchMessages, 3000);
   }
