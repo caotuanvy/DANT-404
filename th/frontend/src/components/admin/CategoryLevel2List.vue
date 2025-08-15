@@ -24,8 +24,6 @@
               <th>Mô tả</th>
               <th>Trạng thái</th>
               <th class="text-center">Hình ảnh</th> 
-              <th>Ngày tạo</th>
-              <th>Ngày sửa</th>
               <th class="text-center">Hành động</th>
               
             </tr>
@@ -52,8 +50,6 @@
                   class="danhmuc-thumbnail"
                 />
               </td>
-              <td>{{ cat.created_at || 'N/A' }}</td>
-              <td>{{ cat.updated_at || 'N/A' }}</td>
               <td class="text-center">
                 <div class="action-buttons">
                   <!-- Xem danh mục con -->

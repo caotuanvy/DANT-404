@@ -37,7 +37,7 @@ class ParentCategoryProductController extends Controller
                     'danh_muc_con' => $childCategoriesFromParent,
                     'pagination' => [
                         'total' => 0,
-                        'per_page' => 9,
+                        'per_page' => 15,
                         'current_page' => 1,
                         'last_page' => 1,
                         'from' => 0,
@@ -51,8 +51,8 @@ class ParentCategoryProductController extends Controller
             $maxPrice = $request->input('max_price');
             $keyword = $request->input('keyword');
             $sortBy = $request->input('sort_by'); 
-            $perPage = $request->input('per_page', 6); // Số sản phẩm trên mỗi trang, mặc định là 9
-            $page = $request->input('page', 1); // Trang hiện tại, mặc định là 1
+            $perPage = $request->input('per_page', 30);
+            $page = $request->input('page', 1);
 
             $query = SanPham::with(['danhMuc', 'hinhAnhSanPham']);
             
@@ -89,10 +89,9 @@ class ParentCategoryProductController extends Controller
                 $query->latest(); 
             }
 
-            // Sử dụng paginate() thay cho get()
             $paginatedProducts = $query->paginate($perPage, ['*'], 'page', $page);
 
-            // Chuyển đổi dữ liệu sản phẩm cho frontend
+            // Cập nhật phần này để thêm thuộc tính khuyen_mai và mo_ta_ngan
             $resultProducts = $paginatedProducts->map(function ($item) {
                 $imageUrl = '/placeholder.jpg';
                 if ($item->hinhAnhSanPham && $item->hinhAnhSanPham->isNotEmpty()) {
@@ -101,12 +100,26 @@ class ParentCategoryProductController extends Controller
                         $imageUrl = asset('storage/' . $firstImage->duongdan);
                     }
                 }
+                
+                // Giả định bạn có thuộc tính `khuyen_mai` và `mo_ta_ngan` trong model SanPham
+                // Ép kiểu về float và xử lý giá trị null/undefined để tránh lỗi
+                $discountPercentage = (float)($item->khuyen_mai ?? 0);
+                $originalPrice = (float)($item->gia ?? 0);
+                $discountedPrice = $originalPrice;
+
+                if ($discountPercentage > 0) {
+                    $discountedPrice = $originalPrice - ($originalPrice * ($discountPercentage / 100));
+                }
+
                 return [
                     'id' => $item->san_pham_id,
                     'ten_san_pham' => $item->ten_san_pham,
-                    'gia' => (float)$item->gia,
+                    'gia_goc' => $discountPercentage > 0 ? $originalPrice : null,
+                    'gia_da_giam' => $discountedPrice,
+                    'khuyen_mai' => $discountPercentage,
                     'slug' => $item->slug,
                     'image_url' => $imageUrl,
+                    'mo_ta' => $item->Mo_ta_seo,
                     'danh_muc' => $item->danhMuc,
                 ];
             });
