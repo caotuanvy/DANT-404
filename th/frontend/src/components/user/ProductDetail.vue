@@ -130,7 +130,7 @@
 </template>
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router'; // Thêm useRouter
 import axios from 'axios';
 
 // --- STATE ---
@@ -138,6 +138,7 @@ const product = ref(null);
 const selectedImage = ref(null);
 const quantity = ref(1);
 const route = useRoute();
+const router = useRouter(); // Khởi tạo router
 const selectedSize = ref(null);
 const selectedColor = ref(null);
 const showFullDescription = ref(false);
@@ -247,6 +248,12 @@ const decreaseQuantity = () => {
 };
 
 const addToCart = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        // Nếu chưa đăng nhập, chuyển hướng đến trang đăng nhập
+        router.push('/login');
+        return;
+    }
     if (!selectedVariant.value) {
         alert('Vui lòng chọn đầy đủ thuộc tính của sản phẩm.');
         return;
@@ -260,7 +267,6 @@ const addToCart = async () => {
           san_pham_bien_the_id: selectedVariant.value.bien_the_id,
           quantity: quantity.value,
         };
-        const token = localStorage.getItem('token');
         const response = await axios.post('/cart/add', payload, {
           headers: {
             Authorization: `Bearer ${token}`
@@ -693,7 +699,7 @@ onMounted(async () => {
   .product-page {
     padding: 1rem;
   }
-  .product-container, .product-description-section {
+  .product-container, .product_description-section {
     padding: 1.5rem;
   }
   .product-name {
