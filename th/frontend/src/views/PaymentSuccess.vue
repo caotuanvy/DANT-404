@@ -1,13 +1,20 @@
 <template>
   <div class="d-flex justify-content-center align-items-center min-vh-100 bg-light py-5 px-3">
     <div class="card shadow-lg p-4 p-sm-5 mx-auto" style="max-width: 900px; width: 100%; border-radius: 0.5rem;">
-      <div class="text-center mb-4 mb-sm-5">
+      <div v-if="successMessage" class="text-center mb-4 mb-sm-5">
         <svg class="text-success mx-auto mb-3" width="64" height="64" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path fill-rule="evenodd" d="M10.293 15.707a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L9 13.586l3.293-3.293a1 1 0 011.414 1.414l-4 4z" clip-rule="evenodd"></path>
           <path fill-rule="evenodd" d="M12 22a10 10 0 100-20 10 10 0 000 20zM12 2a8 8 0 100 16 8 8 0 000-16z" clip-rule="evenodd"></path>
         </svg>
         <h1 class="fs-3 fw-bold text-dark mb-2">Đặt hàng thành công!</h1>
         <p class="text-secondary">Cảm ơn bạn đã mua hàng. Đơn hàng của bạn đã được xác nhận thành công.</p>
+      </div>
+      <div v-else-if="errorMessage" class="text-center mb-4 mb-sm-5">
+        <svg class="text-danger mx-auto mb-3" width="64" height="64" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2a10 10 0 100 20 10 10 0 000-20zM12 4a8 8 0 110 16 8 8 0 010-16zm-1 5a1 1 0 012 0v5a1 1 0 01-2 0V9zm0 7a1 1 0 012 0v1a1 1 0 01-2 0v-1z"></path>
+        </svg>
+        <h1 class="fs-3 fw-bold text-danger mb-2">Thanh toán thất bại!</h1>
+        <p class="text-secondary">{{ errorMessage }}</p>
       </div>
       <div v-if="order && !isLoading">
         <div class="bg-white border rounded-lg p-4 mb-4">
@@ -33,7 +40,6 @@
             </div>
           </div>
         </div>
-
         <div class="mb-4">
           <h3 class="fs-5 fw-semibold text-dark mb-3">Sản phẩm đã đặt</h3>
           <div class="d-flex flex-column gap-3">
@@ -151,141 +157,146 @@
 
 <script>
 import axios from 'axios';
+import { useRoute } from 'vue-router';
+import { ref, onMounted } from 'vue';
 
 export default {
   name: 'paymentsuccess',
   props: {
-    orderId: { // This prop will receive the orderId from router params
+    orderId: {
       type: [String, Number],
-      required: true
+      required: false
     }
   },
-  data() {
-    return {
-      order: null, // Holds the mapped order data
-      isLoading: true, // Indicates loading state
-      // No need for lastPlacedOrderId here, as we get it from props.orderId
+  setup(props) {
+    const route = useRoute();
+    const order = ref(null);
+    const isLoading = ref(true);
+    const successMessage = ref(false);
+    const errorMessage = ref(null);
+
+    const getOrderId = () => {
+      // Ưu tiên lấy từ query parameter của VNPAY
+      if (route.query.vnp_TxnRef) {
+        return route.query.vnp_TxnRef;
+      }
+      // Nếu không, lấy từ route parameter (cho các trường hợp khác)
+      return props.orderId;
     };
-  },
-  async created() {
-    // Check if orderId is available from props
-    if (!this.orderId) {
-      console.error("No Order ID provided in route params. Cannot load order details.");
-      this.isLoading = false;
-      // Optionally redirect to home or show a generic error page
-      // this.$router.push('/');
-      return;
-    }
 
-    try {
-      const token = localStorage.getItem('token');
-      console.log(`Fetching order details for ID: ${this.orderId}`);
-      
-      // Call the API to get ALL orders (assuming backend handles loading relationships)
-      // If backend has a specific /api/orders/{id} endpoint, use it here for better efficiency.
-      const res = await axios.get(`http://localhost:8000/api/orders`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      // Backend's /api/orders returns a paginated object (`data` key) or directly an array.
-      // We need to find the specific order by ID.
-      const allOrders = res.data.data || res.data; 
-
-      // Find the specific order in the fetched list
-      // Convert ID to string for robust comparison, as one might be string and other number
-      this.order = allOrders.find(o => String(o.id) === String(this.orderId));
-
-      if (this.order) {
-        console.log("Raw order data found from API:", this.order);
-        this.order = this.mapOrderApiToView(this.order); // Map to frontend display structure
-        console.log("Mapped order data for display:", this.order);
-      } else {
-        console.warn(`Order with ID ${this.orderId} not found in the fetched list of orders.`);
-        // This could happen if the order is very old and not included in a limited list
-        // returned by /api/orders, or if the ID is invalid.
+    const fetchOrderDetails = async (id) => {
+      if (!id) {
+        console.error("No Order ID provided. Cannot load order details.");
+        isLoading.value = false;
+        return;
       }
 
-    } catch (err) {
-      console.error('Error fetching or processing order:', err.response?.data || err.message);
-      this.order = null; // Set order to null on error
-    } finally {
-      this.isLoading = false; // End loading state
-    }
-  },
-  methods: {
-    formatCurrency(value) {
-      return new Intl.NumberFormat('vi-VN', {
-        style: 'currency',
-        currency: 'VND'
-      }).format(value);
-    },
-    formatDate(dateStr) {
-      if (!dateStr) return '';
-      const d = new Date(dateStr);
-      if (isNaN(d.getTime())) { // Check for invalid date
-          return dateStr;
+      try {
+        const token = localStorage.getItem('token');
+        // Gọi đúng endpoint API để lấy chi tiết đơn hàng
+        const res = await axios.get(`http://localhost:8000/api/orders/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data) {
+          order.value = mapOrderApiToView(res.data);
+          // Kiểm tra và cập nhật thông báo thành công/thất bại
+          successMessage.value = route.query.success === '1' || route.query.vnp_ResponseCode === '00';
+          if (!successMessage.value) {
+            errorMessage.value = 'Thanh toán thất bại. Mã lỗi VNPAY: ' + route.query.vnp_ResponseCode;
+          }
+        }
+      } catch (err) {
+        console.error('Lỗi khi lấy thông tin đơn hàng:', err.response?.data || err.message);
+        errorMessage.value = 'Không thể tải thông tin đơn hàng. Vui lòng thử lại.';
+        order.value = null;
+      } finally {
+        isLoading.value = false;
       }
-      return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
-    },
-    mapOrderApiToView(apiOrder) {
-      // This mapping function assumes the backend has eager loaded the necessary relationships:
-      // user, diachi, payment_method, order_items.bien_the.sanPham.hinhAnhSanPham
-      // (or equivalent for image)
+    };
 
+    const mapOrderApiToView = (apiOrder) => {
       const subtotalCalc = (apiOrder.order_items || []).reduce((sum, item) => sum + (parseFloat(item.so_luong) * parseFloat(item.don_gia)), 0);
       const shippingFee = parseFloat(apiOrder.phi_van_chuyen || 0);
       const totalCalc = parseFloat(apiOrder.tong_tien || 0);
 
       return {
         id: apiOrder.id,
-        placedDate: this.formatDate(apiOrder.ngay_dat),
+        placedDate: formatDate(apiOrder.ngay_dat),
         items: (apiOrder.order_items || []).map(item => ({
-          id: item.id, // order_item_id
-        name: item.bien_the?.ten_bien_the || item.bien_the?.sanPham?.ten_san_pham || 'Sản phẩm không rõ',
-          color: item.bien_the?.mau_sac === 'Không' ? undefined : item.bien_the?.mau_sac, // Handle 'Không' value
-          size: item.bien_the?.kich_thuoc || item.bien_the?.ten_bien_the || undefined, // Prioritize kich_thuoc, then ten_bien_the
+          id: item.id,
+          name: item.product_variant?.product?.ten_san_pham || 'Sản phẩm không rõ',
+          color: item.product_variant?.mau_sac || 'Không',
+          size: item.product_variant?.kich_thuoc || 'Không',
           qty: item.so_luong,
           price: parseFloat(item.don_gia),
-          // --- Logic for product image ---
-          image: item.bien_the?.sanPham?.hinh_anh_san_pham && item.bien_the.sanPham.hinh_anh_san_pham.length > 0
-              ? `http://localhost:8000/storage/${item.bien_the.sanPham.hinh_anh_san_pham[0].duongdan}` // Get first image from hinh_anh_san_pham relationship
-              : (item.bien_the?.sanPham?.anh_dai_dien // Fallback: check for anh_dai_dien field directly in sanPham
-                  ? `http://localhost:8000/storage/${item.bien_the.sanPham.anh_dai_dien}`
-                  : '/images/no-image.png') // Default fallback image
+          image: item.product_variant?.product?.hinh_anh_san_pham && item.product_variant.product.hinh_anh_san_pham.length > 0
+            ? `http://localhost:8000/storage/${item.product_variant.product.hinh_anh_san_pham[0].duongdan}`
+            : '/images/no-image.png',
         })),
         subtotal: subtotalCalc,
         shipping: shippingFee,
-        // 'tax' field is not in your `don_hang` table. Assuming 0 or calculate if a rate exists.
-        tax: parseFloat(apiOrder.tax || 0), 
         total: totalCalc,
 
         deliveryInfo: {
-          // 'ngay_giao_du_kien' is not in `don_hang` table. Will be 'Chưa xác định'.
-          estimatedDelivery: apiOrder.ngay_giao_du_kien || '18-20 tháng 1, 2025', // Default to value in image
+          estimatedDelivery: apiOrder.ngay_giao_du_kien || 'Dự kiến trong 3-5 ngày làm việc',
           shippingAddress: {
-            name: apiOrder.user?.ho_ten || '',
-            street: apiOrder.diachi?.dia_chi || 'Chưa có địa chỉ chi tiết', // `dia_chi` is full string from DB
+            name: apiOrder.diachi?.ho_ten || apiOrder.user?.ho_ten || '',
+            street: apiOrder.diachi?.dia_chi || 'Chưa có địa chỉ chi tiết',
+            city: apiOrder.diachi?.tinh_thanh || '',
             zip: apiOrder.diachi?.ma_buu_dien || '',
-            country: apiOrder.diachi?.quoc_gia || 'Việt Nam' // Default to value in image
+            country: 'Việt Nam'
           }
         },
         paymentInfo: {
-          method: apiOrder.payment_method?.ten_pttt || 'Thẻ Visa kết thúc bằng 4242', // Default to value in image
-          // Billing address typically mirrors shipping if no separate one.
+          method: apiOrder.phuong_thuc_thanh_toan?.ten_pttt || 'Không xác định',
           billingAddress: {
-            name: apiOrder.user?.ho_ten || '',
+            name: apiOrder.diachi?.ho_ten || apiOrder.user?.ho_ten || '',
             street: apiOrder.diachi?.dia_chi || '',
+            city: apiOrder.diachi?.tinh_thanh || '',
             zip: apiOrder.diachi?.ma_buu_dien || '',
-            country: apiOrder.diachi?.quoc_gia || 'Việt Nam'
+            country: 'Việt Nam'
           }
         },
         contactInfo: {
-          email: apiOrder.user?.email || 'nguyenvanan@email.com', // Default to value in image
-          phone: apiOrder.user?.sdt || '+84 901 234 567' // Default to value in image
+          email: apiOrder.user?.email || '',
+          phone: apiOrder.user?.sdt || ''
         }
       };
-    }
-  }
+    };
+
+    const formatDate = (dateStr) => {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+    };
+
+    const formatCurrency = (value) => {
+      if (value === null || typeof value === 'undefined') return '0 VND';
+      return new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND'
+      }).format(value);
+    };
+
+    onMounted(() => {
+      const id = getOrderId();
+      if (id) {
+        fetchOrderDetails(id);
+      } else {
+        console.error("Không có ID đơn hàng để xử lý.");
+        errorMessage.value = 'Không có ID đơn hàng để xử lý. Vui lòng thử lại.';
+        isLoading.value = false;
+      }
+    });
+
+    return {
+      order,
+      isLoading,
+      successMessage,
+      errorMessage,
+      formatCurrency,
+    };
+  },
 };
 </script>
 

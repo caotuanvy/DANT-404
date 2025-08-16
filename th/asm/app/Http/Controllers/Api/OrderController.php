@@ -364,4 +364,85 @@ class OrderController extends Controller
             ], 500);
         }
     }
+    public function createVnPayPayment(Request $request)
+{
+    $cart = $request->cart;
+    $total = $request->total;
+    $userId = $request->user_id;
+    $addressId = $request->dia_chi_id;
+
+    // 1. Tạo đơn hàng tạm trong DB
+    $order = Order::create([
+        'user_id' => $userId,
+        'address_id' => $addressId,
+        'total_amount' => $total,
+        'status' => 'pending'
+    ]);
+
+    foreach ($cart as $item) {
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_variant_id' => $item['san_pham_bien_the_id'],
+            'quantity' => $item['so_luong'],
+            'price' => $item['don_gia'],
+            'total' => $item['thanh_tien']
+        ]);
+    }
+
+    // 2. Chuẩn bị dữ liệu VNPAY
+    $vnp_TmnCode = env('VNP_TMN_CODE');
+    $vnp_HashSecret = env('VNP_HASH_SECRET');
+    $vnp_Url = env('VNP_URL');
+    $vnp_Returnurl = env('VNP_RETURN_URL');
+
+    $vnp_TxnRef = $order->id;
+    $vnp_OrderInfo = "Thanh toán đơn hàng #$order->id";
+    $vnp_Amount = $total * 100; // VNPAY tính theo đồng nhỏ
+    $vnp_Locale = 'vn';
+    $vnp_BankCode = '';
+    $vnp_IpAddr = request()->ip();
+
+    $inputData = [
+        "vnp_Version" => "2.1.0",
+        "vnp_TmnCode" => $vnp_TmnCode,
+        "vnp_Amount" => $vnp_Amount,
+        "vnp_Command" => "pay",
+        "vnp_CreateDate" => date('YmdHis'),
+        "vnp_CurrCode" => "VND",
+        "vnp_IpAddr" => $vnp_IpAddr,
+        "vnp_Locale" => $vnp_Locale,
+        "vnp_OrderInfo" => $vnp_OrderInfo,
+        "vnp_ReturnUrl" => $vnp_Returnurl,
+        "vnp_TxnRef" => $vnp_TxnRef,
+    ];
+
+    ksort($inputData);
+    $query = http_build_query($inputData);
+    $hashdata = hash_hmac('sha512', urldecode($query), $vnp_HashSecret);
+    $vnp_Url .= '?' . $query . '&vnp_SecureHash=' . $hashdata;
+
+    return response()->json([
+        'payment_url' => $vnp_Url
+    ]);
+}
+public function show($id)
+    {
+        try {
+            $order = Order::with([
+                'user',
+                'paymentMethod',
+                'diachi',
+
+                'orderItems.bien_the.sanPham.hinhAnhSanPham',
+                'orderItems.bien_the.sanPham.danhMuc',
+            ])->findOrFail($id);
+            return response()->json($order);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['message' => 'Không tìm thấy đơn hàng.'], 404);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi lấy chi tiết đơn hàng: ' . $e->getMessage());
+            return response()->json(['message' => 'Lỗi server khi lấy thông tin đơn hàng.'], 500);
+        }
+    }
 }

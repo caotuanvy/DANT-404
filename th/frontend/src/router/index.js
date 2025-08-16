@@ -77,7 +77,7 @@ import GiamGiaManager from '@/components/admin/GiamGiaManager.vue';const routes 
     name: 'ChiTietTinTucCongKhai',
     component: () => import('../components/user/NewsDetails.vue')
   },
-    { path: '/payment-success', name: 'PaymentSuccess', component: PaymentSuccess },
+    
 
    {
   path: '/san-pham-ban-chay',
@@ -298,11 +298,11 @@ import GiamGiaManager from '@/components/admin/GiamGiaManager.vue';const routes 
     component: () => import('@/components/user/ProductDetail.vue')
   },
     {
-    path: '/paymentsuccess/:orderId',
+    path: '/paymentsuccess/:orderId?',
     name: 'paymentsuccess',
     component: PaymentSuccess,
     props: true
-  },
+},
 
 ];
 

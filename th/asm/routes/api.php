@@ -28,13 +28,18 @@ use App\Http\Controllers\Api\ParentCategoryProductController;
 use App\Http\Controllers\Api\SocialLinkController;
 use App\Http\Controllers\Api\GiamGiaController;
 use App\Http\Controllers\Api\CouponController;
+use App\Http\Controllers\Api\PaymentController;
 Route::get('/social-links/active', [SocialLinkController::class, 'getActiveLinks']);
 Route::patch('/admin/social-links/{id}/status', [SocialLinkController::class, 'updateStatus']);
 Route::apiResource('/admin/social-links', SocialLinkController::class);
+Route::get('/orders/{id}', [OrderController::class, 'show']);
+Route::post('/create-vnpay-payment', [PaymentController::class, 'createPayment']);
 
-
-
-
+Route::middleware('auth:sanctum')->post('/checkout', [PaymentController::class, 'createVnPayPayment']);
+Route::post('/create-vnpay-payment', [PaymentController::class, 'createVnpayPayment']);
+Route::post('/api/create-vnpay-payment', [OrderController::class, 'createVnPayPayment']);
+Route::post('/create-cod-order', [PaymentController::class, 'createCodOrder']);
+Route::get('/vnpay/callback', [PaymentController::class, 'handleCallback']);
 // Public Auth Routes
 Route::post('/auth/google', [GoogleAuthController::class, 'handleGoogleLogin']);
 Route::post('/auth/facebook', [AuthController::class, 'facebookLogin']);
