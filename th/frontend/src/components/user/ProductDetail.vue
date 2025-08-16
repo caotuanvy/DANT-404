@@ -28,14 +28,6 @@
 
       <div class="product-info">
         <h1 class="product-name">{{ product.product_name }}</h1>
-        
-        <div class="meta-info">
-          <div class="rating">
-            <span class="stars">★★★★☆</span>
-            <span class="rating-count">(249 đánh giá)</span>
-          </div>
-          <span class="featured-tag" v-if="product.noi_bat">Nổi bật</span>
-        </div>
 
         <div class="price-box">
           <template v-if="product.khuyen_mai > 0 && selectedVariant">
@@ -103,9 +95,6 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
           </button>
         </div>
-
-        <div class="commitments">
-          </div>
       </div>
     </div>
 
@@ -132,15 +121,18 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
+import Swal from 'sweetalert2'; // import SweetAlert2
 
 // --- STATE ---
 const product = ref(null);
 const selectedImage = ref(null);
 const quantity = ref(1);
 const route = useRoute();
+// Xóa router, không cần nữa
 const selectedSize = ref(null);
 const selectedColor = ref(null);
 const showFullDescription = ref(false);
+// Xóa showLoginWarning, không cần nữa
 // --- COMPUTED PROPERTIES ---
 
 const uniqueSizes = computed(() => {
@@ -247,12 +239,34 @@ const decreaseQuantity = () => {
 };
 
 const addToCart = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Bạn chưa đăng nhập',
+            text: 'Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.',
+            confirmButtonColor: '#0d6efd',
+            showCancelButton: true,
+            cancelButtonText: 'Đóng'
+        });
+        return;
+    }
     if (!selectedVariant.value) {
-        alert('Vui lòng chọn đầy đủ thuộc tính của sản phẩm.');
+        Swal.fire({
+            icon: 'info',
+            title: 'Thiếu thông tin',
+            text: 'Vui lòng chọn đầy đủ thuộc tính của sản phẩm.',
+            confirmButtonColor: '#0d6efd'
+        });
         return;
     }
     if (quantity.value > selectedVariant.value.so_luong_ton_kho) {
-        alert('Số lượng yêu cầu vượt quá số lượng tồn kho.');
+        Swal.fire({
+            icon: 'error',
+            title: 'Số lượng vượt quá tồn kho',
+            text: 'Số lượng yêu cầu vượt quá số lượng tồn kho.',
+            confirmButtonColor: '#0d6efd'
+        });
         return;
     }
     try {
@@ -260,19 +274,26 @@ const addToCart = async () => {
           san_pham_bien_the_id: selectedVariant.value.bien_the_id,
           quantity: quantity.value,
         };
-        const token = localStorage.getItem('token');
         const response = await axios.post('/cart/add', payload, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
-        alert(response.data.message);
+        Swal.fire({
+            icon: 'success',
+            title: 'Thành công',
+            text: response.data.message || 'Đã thêm sản phẩm vào giỏ hàng!',
+            confirmButtonColor: '#0d6efd'
+        });
     } catch (error) {
-        if (error.response && error.response.data && error.response.data.message) {
-            alert(error.response.data.message);
-        } else {
-            alert('Có lỗi xảy ra, vui lòng thử lại sau.');
-        }
+        Swal.fire({
+            icon: 'error',
+            title: 'Lỗi',
+            text: (error.response && error.response.data && error.response.data.message)
+                ? error.response.data.message
+                : 'Có lỗi xảy ra, vui lòng thử lại sau.',
+            confirmButtonColor: '#0d6efd'
+        });
         console.error("Lỗi khi thêm vào giỏ hàng:", error);
     }
 };
@@ -693,7 +714,7 @@ onMounted(async () => {
   .product-page {
     padding: 1rem;
   }
-  .product-container, .product-description-section {
+  .product-container, .product_description-section {
     padding: 1.5rem;
   }
   .product-name {

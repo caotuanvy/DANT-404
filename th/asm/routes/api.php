@@ -29,6 +29,8 @@ use App\Http\Controllers\Api\SocialLinkController;
 use App\Http\Controllers\Api\GiamGiaController;
 use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\ChatController;
+
 Route::get('/social-links/active', [SocialLinkController::class, 'getActiveLinks']);
 Route::patch('/admin/social-links/{id}/status', [SocialLinkController::class, 'updateStatus']);
 Route::apiResource('/admin/social-links', SocialLinkController::class);
@@ -74,6 +76,7 @@ Route::get('/tintuc/{id}', [TintucController::class, 'show']);
 Route::put('/tintuc/{id}', [TintucController::class, 'update']);
 Route::delete('/tintuc/{id}', [TintucController::class, 'destroy']);
 Route::get('/tintuc-cong-khai', [TintucController::class, 'tintucCongKhai']);
+Route::get('/tin-tuc-quan-trong', [TintucController::class, 'tinTucQuanTrong']);
 Route::get('tintuc-cong-khai/slug/{slug}', [TintucController::class, 'chitietCongKhaiBySlug']);
 Route::get('/tin-noi-bat', [TintucController::class, 'tinNoiBat']);
 Route::get('/xemtintuc-admin/{id}', [TintucController::class, 'xemchitiettintucadmin']);
@@ -91,6 +94,7 @@ Route::put('/danh-muc-tin-tuc/{id}/toggle-status', [DanhMucTtController::class, 
 Route::apiResource('danh-muc-tin-tuc', DanhMucTtController::class);
 Route::get('/xemdanhmuc-admin/{id}', [DanhMucTtController::class, 'xemChiTietDanhMucAdmin']);
 Route::get('tintuc-cong-khai/danh-muc/{id}', [DanhMucTtController::class, 'tintucCongKhaiTheoDanhMuc']);
+Route::get('danh-muc-cong-khai', [DanhMucTtController::class, 'danhMucCongKhai']);
 
 // Binh luan
 Route::prefix('admin/binhluan')->group(function () {
@@ -204,6 +208,12 @@ Route::delete('/users/{id}', [UserController::class, 'destroy']);
 Route::put('/users/{id}', [UserController::class, 'update']);
 Route::post('/users/{id}/avatar', [UserController::class, 'updateAvatar']);
 
+Route::prefix('chat')->group(function () {
+    Route::post('/send-message', [ChatController::class, 'sendMessage']);
+    Route::get('/get-messages', [ChatController::class, 'getMessages']);
+    Route::post('/get-or-create-conversation', [ChatController::class, 'getOrCreateConversation']);
+    Route::get('/admin/conversations', [ChatController::class, 'getConversationsForAdmin']);
+});
 
 // Product Variants
 Route::get('/products/{id}/variants', [SanPhamBienTheController::class, 'index']);

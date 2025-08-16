@@ -119,7 +119,14 @@ class CartController extends Controller
 
         $user = Auth::user();
         if (!$user) {
-            return response()->json(['message' => 'Vui lòng đăng nhập.'], 401);
+            // Lưu giỏ hàng tạm vào session
+            $cart = session()->get('cart', []);
+            $cart[$validated['san_pham_bien_the_id']] = ($cart[$validated['san_pham_bien_the_id']] ?? 0) + $validated['quantity'];
+            session(['cart' => $cart]);
+            return response()->json([
+                'message' => 'Đã thêm sản phẩm vào giỏ hàng tạm!',
+                'cart' => $cart,
+            ], 200);
         }
 
         $nguoiDungId = $user->nguoi_dung_id ?? $user->id;

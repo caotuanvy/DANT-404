@@ -154,13 +154,9 @@ const handleLogin = async () => {
         const user = res.data.user;
         const token = res.data.token;
 
-        // --- BẮT ĐẦU PHẦN THÊM MỚI/CẬP NHẬT ---
-        // ✅ KIỂM TRA TRẠNG THÁI TÀI KHOẢN SAU KHI ĐĂNG NHẬP THÀNH CÔNG
-        // Giả sử backend trả về trường `trang_thai` trong đối tượng user.
-        // Quy ước: 0 = hoạt động, 1 = vô hiệu hóa.
-        if (user.trang_thai === 1) { // Hoặc bất kỳ giá trị nào bạn quy định cho trạng thái vô hiệu hóa
+        if (user.trang_thai === 1) { 
             loginError.value = 'Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ bộ phận hỗ trợ.';
-            isSubmitting.value = false; // Bật lại nút submit
+            isSubmitting.value = false; 
             
             await Swal.fire({
                 icon: 'error',
@@ -171,9 +167,7 @@ const handleLogin = async () => {
                 timerProgressBar: true
             });
             
-            // Tùy chọn: Chuyển hướng đến một trang riêng để giải thích về tài khoản vô hiệu hóa
-            // router.push('/tai-khoan-vo-hieu-hoa'); 
-            return; // Dừng hàm, không tiến hành lưu token và chuyển hướng
+            return;
         }
         
         closeModal();
@@ -181,6 +175,19 @@ const handleLogin = async () => {
         localStorage.setItem('user', JSON.stringify(user));
         localStorage.setItem('vai_tro_id', user.vai_tro_id);
         localStorage.setItem('sdt', user.sdt);
+
+        // Nếu là admin thì lưu riêng vào localStorage
+        if (user.vai_tro_id === 1) {
+            localStorage.setItem('admin', JSON.stringify({
+                admin_id: user.nguoi_dung_id,
+                ho_ten: user.ho_ten,
+                email: user.email,
+                sdt: user.sdt
+            }));
+        }
+
+        // Cập nhật Authorization header cho Axios
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
         await Swal.fire({
             icon: 'success',
@@ -196,7 +203,6 @@ const handleLogin = async () => {
 
         const res = err.response;
 
-        // ✅ Kiểm tra lỗi kích hoạt từ backend (giữ nguyên logic cũ)
         if (res?.status === 403 && res.data?.require_activation) {
             loginError.value = 'Tài khoản chưa được kích hoạt.';
 
@@ -248,10 +254,9 @@ const handleLogin = async () => {
                 }
             }
 
-            return; // ❌ Không tiếp tục xử lý nữa
+            return;
         }
 
-        // Các lỗi khác (giữ nguyên logic cũ)
         if (res?.data?.errors) {
             loginError.value = getValidationErrorMessage(res.data.errors);
         } else {
@@ -259,6 +264,7 @@ const handleLogin = async () => {
         }
     }
 };
+
 
 const handleRegister = async () => {
     registerError.value = ''; // Reset lỗi
@@ -476,10 +482,6 @@ const handleResetPassword = async () => {
     }
 };
 
-
-// --- Thêm các hàm xử lý đăng nhập Google/Facebook ---
-// (Giữ nguyên các hàm này)
-// Google Login
 const handleGoogleLogin = () => {
     if (typeof window.google === 'undefined' || !window.google.accounts?.id) {
         console.error('Google One Tap SDK chưa được tải.');
@@ -496,14 +498,13 @@ const handleGoogleLogin = () => {
     }
 
     window.google.accounts.id.initialize({
-        client_id: '710318641931-iqof2cq4qcg68fnccru81o31n7gbdqc0.apps.googleusercontent.com', // <-- Đã thay thế client_id của bạn vào đây
+        client_id: '710318641931-iqof2cq4qcg68fnccru81o31n7gbdqc0.apps.googleusercontent.com', 
         callback: handleGoogleCredentialResponse,
         ux_mode: 'popup'
     });
 
     window.google.accounts.id.prompt();
 };
-
 
 const handleGoogleCredentialResponse = async (response) => {
     if (response.credential) {
@@ -515,8 +516,6 @@ const handleGoogleCredentialResponse = async (response) => {
             const user = res.data.user;
             const token = res.data.token;
 
-            // --- BẮT ĐẦU PHẦN THÊM MỚI/CẬP NHẬT CHO ĐĂNG NHẬP GOOGLE ---
-            // ✅ KIỂM TRA TRẠNG THÁI TÀI KHOẢN SAU KHI ĐĂNG NHẬP GOOGLE THÀNH CÔNG
             if (user.trang_thai === 1) { 
                 Swal.fire({
                     icon: 'error',
@@ -526,16 +525,19 @@ const handleGoogleCredentialResponse = async (response) => {
                     timer: 5000,
                     timerProgressBar: true
                 });
-                router.push('/tai-khoan-vo-hieu-hoa'); 
-                return; // Dừng hàm, không tiến hành lưu token và chuyển hướng
+                // Chuyển hướng đến một trang riêng để giải thích về tài khoản vô hiệu hóa
+                // router.push('/tai-khoan-vo-hieu-hoa'); 
+                return;
             }
-            // --- KẾT THÚC PHẦN THÊM MỚI/CẬP NHẬT ---
 
             closeModal();
             localStorage.setItem('token', token);
             localStorage.setItem('user', JSON.stringify(user));
             localStorage.setItem('vai_tro_id', user.vai_tro_id);
             localStorage.setItem('sdt', user.sdt);
+            
+            // --- Cập nhật Authorization header cho Axios sau khi đăng nhập thành công
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
             await Swal.fire({
                 icon: 'success',
@@ -549,8 +551,6 @@ const handleGoogleCredentialResponse = async (response) => {
             });
         } catch (error) {
             console.error('Đăng nhập Google thất bại:', error);
-            // Có thể thêm kiểm tra error.response?.data?.status === 'disabled' ở đây
-            // nếu backend cũng trả về lỗi 403 cho Google login
             Swal.fire({
                 toast: true,
                 position: 'top-end',
@@ -563,6 +563,7 @@ const handleGoogleCredentialResponse = async (response) => {
         }
     }
 };
+
 
 // Facebook Login
 const waitForFacebookSdk = () => {

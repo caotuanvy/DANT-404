@@ -27,7 +27,7 @@
           </h1>
           <div class="like-button-container">
             <button @click="handleLike" class="like-button" :class="{ 'liked': hasLiked }">
-              <i :class="hasLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart'"></i> 
+              <i :class="hasLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart'"></i>
               {{ hasLiked ? 'Đã thích' : 'Yêu thích' }}
             </button>
           </div>
@@ -108,6 +108,37 @@
           <i class="fa-solid fa-info-circle"></i> Không có tin liên quan nào.
         </div>
       </div>
+
+      <div class="sidebar-section popular-news">
+        <h3><i class="fa-solid fa-star"></i> TIN TỨC QUAN TRỌNG</h3>
+        <div v-if="importantNews.length > 0" class="popular-news-list">
+          <div
+            class="vohop-popular-post"
+            v-for="item in importantNews"
+            :key="item.id"
+            @click="goToNewsDetail(item.slug)"
+          >
+            <div class="vohop-post-image">
+              <img
+                :src="item.hinh_anh ? (item.hinh_anh.startsWith('http') ? item.hinh_anh : `http://localhost:8000/storage/${item.hinh_anh}`) : 'https://via.placeholder.com/60x60'"
+                alt=""
+                @error="handleImageError"
+              />
+            </div>
+            <div class="vohop-post-details">
+              <span class="vohop-popular-post-title">{{ item.tieude }}</span>
+              <div class="vohop-post-meta">
+                <span><i class="fa-regular fa-calendar"></i> {{ formatDateOnly(item.ngay_dang) }}</span>
+                <span><i class="fa-solid fa-eye"></i> {{ item.luot_xem || 0 }}</span>
+                <span><i class="fa-solid fa-thumbs-up"></i> {{ item.luot_like || 0 }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="no-related-news">
+          <i class="fa-solid fa-info-circle"></i> Không có tin tức quan trọng.
+        </div>
+      </div>
     </aside>
   </div>
 </template>
@@ -123,6 +154,7 @@ const router = useRouter()
 
 const news = ref(null)
 const relatedNews = ref([])
+const importantNews = ref([])
 const loading = ref(true)
 const error = ref(null)
 const hasLiked = ref(false)
@@ -130,11 +162,13 @@ const hasLiked = ref(false)
 watch(() => route.params.slug, (newSlug, oldSlug) => {
   if (newSlug && newSlug !== oldSlug) {
     fetchNewsDetails(newSlug);
+    fetchImportantNews();
   }
 });
 
 onMounted(() => {
   fetchNewsDetails(route.params.slug)
+  fetchImportantNews();
 })
 
 async function fetchNewsDetails(slug) {
@@ -188,6 +222,16 @@ async function fetchRelatedNews(currentNewsId, categoryId) {
 
 function goToNewsDetail(newsSlug) {
   router.push({ name: 'ChiTietTinTucCongKhaiSlug', params: { slug: newsSlug } });
+}
+
+async function fetchImportantNews() {
+  try {
+    const response = await axios.get('http://localhost:8000/api/tin-tuc-quan-trong'); // <-- Hãy kiểm tra kỹ URL này
+    importantNews.value = response.data;
+  } catch (err) {
+    console.error("Lỗi khi tải tin tức quan trọng:", err);
+    importantNews.value = [];
+  }
 }
 
 function formatDateOnly(dateString) {
@@ -440,9 +484,9 @@ function getNoiDungSnippet(noidung, maxLength = 100) {
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
 /*
-  ========================================================================
-  CÁC KIỂU DÁNG CHÍNH ĐƯỢC CẢI THIỆN
-  ========================================================================
+  ========================================================================
+  CÁC KIỂU DÁNG CHÍNH ĐƯỢC CẢI THIỆN
+  ========================================================================
 */
 .news-details-layout {
   display: flex;
@@ -575,9 +619,9 @@ function getNoiDungSnippet(noidung, maxLength = 100) {
 }
 
 /*
-  ========================================================================
-  KIỂU DÁNG CỦA SIDEBAR
-  ========================================================================
+  ========================================================================
+  KIỂU DÁNG CỦA SIDEBAR
+  ========================================================================
 */
 .news-sidebar {
   flex: 0 0 300px;
@@ -725,9 +769,9 @@ function getNoiDungSnippet(noidung, maxLength = 100) {
 }
 
 /*
-  ========================================================================
-  MEDIA QUERIES (RESPONSIVE)
-  ========================================================================
+  ========================================================================
+  MEDIA QUERIES (RESPONSIVE)
+  ========================================================================
 */
 @media (max-width: 992px) {
   .news-details-layout {
@@ -848,6 +892,14 @@ function getNoiDungSnippet(noidung, maxLength = 100) {
 
 .sidebar-section h3 i {
     color: #1a73e8;
+}
+
+.sidebar-section.popular-news h3 {
+    border-bottom-color: #fbbc05;
+}
+
+.sidebar-section.popular-news h3 i {
+    color: #fbbc05;
 }
 
 .no-related-news {

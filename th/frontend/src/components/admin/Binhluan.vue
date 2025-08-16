@@ -26,58 +26,65 @@
     </div>
 
     <div v-if="loading" class="loading-message">Đang tải dữ liệu...</div>
-    <table v-if="!loading && binhLuans.length > 0">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Nội dung</th>
-          <th>Người dùng</th>
-          <th>Đối tượng</th>
-          <th>Ngày bình luận</th>
-          <th class="toggle-cell">Hiển thị</th> <th class="text-center">Báo cáo</th> <th class="text-center">Lượt thích</th>
-          <th class="text-center">Lượt không thích</th>
-          <th class="text-center">Hành động</th> </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(binhLuan, index) in binhLuans" :key="binhLuan.binh_luan_id">
-          <td>{{ (currentPage - 1) * perPage + index + 1 }}</td>
-          <td class="content-cell" @click="showFullContent(binhLuan.noidung)">
-            <span v-if="binhLuan.noidung && binhLuan.noidung.length > 6">
-              {{ binhLuan.noidung.substring(0, 6) + '...' }}
-            </span>
-            <span v-else>
-              {{ binhLuan.noidung }}
-            </span>
-          </td>
-          <td>{{ binhLuan.nguoi_dung ? binhLuan.nguoi_dung.ho_ten : binhLuan.ho_ten_khach }}</td>
-          <td>
-            <span v-if="binhLuan.san_pham">{{ binhLuan.san_pham.ten_san_pham }} (SP)</span>
-            <span v-else-if="binhLuan.tin_tuc">Tin tức</span>
-            <span v-else>-</span>
-          </td>
-          <td>{{ binhLuan.ngay_binh_luan ? binhLuan.ngay_binh_luan.substring(0, 10) : '' }}</td>
-          <td class="toggle-cell"> <span class="switch" @click="toggleTrangThai(binhLuan)">
-              <span :class="['slider', binhLuan.trang_thai == 1 ? 'on' : 'off']"></span>
-            </span>
-          </td>
-          <td class="report-status-cell"> <i :class="getBaoCaoIcon(binhLuan.bao_cao)" :title="getBaoCaoStatus(binhLuan.bao_cao)"></i>
+    <div class="table-wrapper" v-if="!loading && binhLuans.length > 0">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nội dung</th>
+            <th>Người dùng</th>
+            <th>Đối tượng</th>
+            <th>Ngày bình luận</th>
+            <th class="toggle-cell">Hiển thị</th> 
+            <th class="text-center">Báo cáo</th> 
+            <th class="text-center">Lượt thích</th>
+            <th class="text-center">Lượt không thích</th>
+            <th class="text-center">Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(binhLuan, index) in binhLuans" :key="binhLuan.binh_luan_id">
+            <td data-label="#">{{ (currentPage - 1) * perPage + index + 1 }}</td>
+            <td data-label="Nội dung" class="content-cell" @click="showFullContent(binhLuan.noidung)">
+              <span v-if="binhLuan.noidung && binhLuan.noidung.length > 6">
+                {{ binhLuan.noidung.substring(0, 6) + '...' }}
+              </span>
+              <span v-else>
+                {{ binhLuan.noidung }}
+              </span>
             </td>
-          <td class="text-center">{{ binhLuan.luot_thich }}</td>
-          <td class="text-center">{{ binhLuan.luot_khong_thich }}</td>
-          <td class="action-icons-cell">
-            <i class="fas fa-check-circle action-icon action-icon-normal"
-               title="Đặt là Bình thường"
-               @click="showConfirmSetBaoCao(binhLuan, 0)"></i>
-            <i class="fas fa-ban action-icon action-icon-spam"
-               title="Đặt là Spam bình luận"
-               @click="showConfirmSetBaoCao(binhLuan, 1)"></i>
-            <i class="fas fa-triangle-exclamation action-icon action-icon-offensive"
-               title="Đặt là Dùng từ ngữ xúc phạm"
-               @click="showConfirmSetBaoCao(binhLuan, 2)"></i>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+            <td data-label="Người dùng">{{ binhLuan.nguoi_dung ? binhLuan.nguoi_dung.ho_ten : binhLuan.ho_ten_khach }}</td>
+            <td data-label="Đối tượng">
+              <span v-if="binhLuan.san_pham">{{ binhLuan.san_pham.ten_san_pham }} (SP)</span>
+              <span v-else-if="binhLuan.tin_tuc">Tin tức</span>
+              <span v-else>-</span>
+            </td>
+            <td data-label="Ngày bình luận">{{ binhLuan.ngay_binh_luan ? binhLuan.ngay_binh_luan.substring(0, 10) : '' }}</td>
+            <td data-label="Hiển thị" class="toggle-cell">
+              <span class="switch" @click="toggleTrangThai(binhLuan)">
+                <span :class="['slider', binhLuan.trang_thai == 1 ? 'on' : 'off']"></span>
+              </span>
+            </td>
+            <td data-label="Báo cáo" class="report-status-cell">
+              <i :class="getBaoCaoIcon(binhLuan.bao_cao)" :title="getBaoCaoStatus(binhLuan.bao_cao)"></i>
+            </td>
+            <td data-label="Lượt thích" class="text-center">{{ binhLuan.luot_thich }}</td>
+            <td data-label="Lượt không thích" class="text-center">{{ binhLuan.luot_khong_thich }}</td>
+            <td data-label="Hành động" class="action-icons-cell">
+              <i class="fas fa-check-circle action-icon action-icon-normal"
+                 title="Đặt là Bình thường"
+                 @click="showConfirmSetBaoCao(binhLuan, 0)"></i>
+              <i class="fas fa-ban action-icon action-icon-spam"
+                 title="Đặt là Spam bình luận"
+                 @click="showConfirmSetBaoCao(binhLuan, 1)"></i>
+              <i class="fas fa-triangle-exclamation action-icon action-icon-offensive"
+                 title="Đặt là Dùng từ ngữ xúc phạm"
+                 @click="showConfirmSetBaoCao(binhLuan, 2)"></i>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <p v-if="!loading && binhLuans.length === 0">Chưa có bình luận nào.</p>
     <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
@@ -128,7 +135,7 @@ import axios from 'axios';
 
 // State variables
 const binhLuans = ref([]);
-const errorMessage = ref(''); // Keep for initial data fetch error
+const errorMessage = ref('');
 const loading = ref(false);
 
 // Filter variables
@@ -138,56 +145,39 @@ const filterBaoCao = ref('');
 // Pagination variables
 const currentPage = ref(1);
 const lastPage = ref(1);
-const perPage = ref(15); // Default items per page, matches controller's paginate(15)
+const perPage = ref(15);
 
 // Modal variables
 const showConfirmModal = ref(false);
 const confirmModalMessage = ref('');
-let confirmModalResolve = null; // To store the resolve function of the confirmation promise
+let confirmModalResolve = null;
 
-// NEW: General Notification Modal variables
 const showNotificationModal = ref(false);
 const notificationTitle = ref('');
 const notificationMessage = ref('');
-const notificationType = ref(''); // 'success' or 'error'
+const notificationType = ref('');
 
-// Existing modal variables for full content
 const showFullContentModal = ref(false);
 const fullContentMessage = ref('');
 
-/**
- * @description Helper function to get the descriptive status for 'bao_cao' (report status).
- * @param {number} status - The numerical status of the report (0, 1, 2).
- * @returns {string} The descriptive string for the report status.
- */
 const getBaoCaoStatus = (status) => {
   switch (status) {
     case 0: return 'Bình thường';
-    case 1: return 'Spam bình luận'; // Cập nhật ý nghĩa
-    case 2: return 'Dùng từ ngữ xúc phạm'; // Cập nhật ý nghĩa
+    case 1: return 'Spam bình luận';
+    case 2: return 'Dùng từ ngữ xúc phạm';
     default: return 'Không xác định';
   }
 };
 
-/**
- * @description Helper function to get the Font Awesome icon class and color for 'bao_cao' (report status).
- * @param {number} status - The numerical status of the report (0, 1, 2).
- * @returns {string} The Font Awesome icon class and color class.
- */
 const getBaoCaoIcon = (status) => {
   switch (status) {
-    case 0: return 'fas fa-check-circle report-icon-normal'; // Bình thường (màu xanh lá)
-    case 1: return 'fas fa-ban report-icon-spam'; // Spam bình luận (màu đỏ)
-    case 2: return 'fas fa-exclamation-circle report-icon-offensive'; // Dùng từ ngữ xúc phạm (màu cam)
-    default: return 'fas fa-question-circle report-icon-unknown'; // Không xác định (màu xám)
+    case 0: return 'fas fa-check-circle report-icon-normal';
+    case 1: return 'fas fa-ban report-icon-spam';
+    case 2: return 'fas fa-exclamation-triangle report-icon-offensive';
+    default: return 'fas fa-question-circle report-icon-unknown';
   }
 };
 
-/**
- * @description Displays a custom confirmation modal to the user.
- * @param {string} message - The message to display in the confirmation modal.
- * @returns {Promise<boolean>} A promise that resolves to true if confirmed, false otherwise.
- */
 const showConfirmation = (message) => {
   confirmModalMessage.value = message;
   showConfirmModal.value = true;
@@ -196,10 +186,6 @@ const showConfirmation = (message) => {
   });
 };
 
-/**
- * @description Handles the action taken in the confirmation modal (confirm/cancel).
- * @param {boolean} confirmed - True if the user confirmed, false if canceled.
- */
 const handleConfirmAction = (confirmed) => {
   showConfirmModal.value = false;
   if (confirmModalResolve) {
@@ -208,13 +194,6 @@ const handleConfirmAction = (confirmed) => {
   }
 };
 
-// NEW: General Notification Modal functions
-/**
- * @description Displays a general notification modal (success or error).
- * @param {string} title - The title of the notification (e.g., "Thành công", "Lỗi").
- * @param {string} message - The message content of the notification.
- * @param {string} type - The type of notification ('success' or 'error').
- */
 const showNotification = (title, message, type) => {
   notificationTitle.value = title;
   notificationMessage.value = message;
@@ -222,9 +201,6 @@ const showNotification = (title, message, type) => {
   showNotificationModal.value = true;
 };
 
-/**
- * @description Closes the general notification modal.
- */
 const closeNotificationModal = () => {
   showNotificationModal.value = false;
   notificationTitle.value = '';
@@ -232,36 +208,24 @@ const closeNotificationModal = () => {
   notificationType.value = '';
 };
 
-/**
- * @description Displays the full content in a modal.
- * @param {string} content - The full content string to display.
- */
 const showFullContent = (content) => {
   fullContentMessage.value = content;
   showFullContentModal.value = true;
 };
 
-/**
- * @description Closes the full content modal.
- */
 const closeFullContentModal = () => {
   showFullContentModal.value = false;
   fullContentMessage.value = '';
 };
 
-/**
- * @description Fetches the list of comments from the API, with optional filters and pagination.
- * @param {number} [page=1] - The page number to fetch.
- */
 const getBinhLuans = async (page = 1) => {
   loading.value = true;
-  errorMessage.value = ''; // Clear previous error message
+  errorMessage.value = '';
   try {
     const params = { page: page };
     if (filterLoai.value) {
       params.loai = filterLoai.value;
     }
-    // Check for empty string to include '0' as a valid filter value
     if (filterBaoCao.value !== '') {
       params.bao_cao = filterBaoCao.value;
     }
@@ -272,82 +236,47 @@ const getBinhLuans = async (page = 1) => {
       },
       params: params,
     });
-    // Assuming the API returns paginated data under a 'data' key
     binhLuans.value = res.data.data;
     currentPage.value = res.data.current_page;
     lastPage.value = res.data.last_page;
     perPage.value = res.data.per_page;
-    // NEW: Show success message only if it's not the initial load (e.g., from filter/pagination)
-    // To avoid showing "Đã tải danh sách bình luận" on initial page load
-    if (page === 1 && (filterLoai.value || filterBaoCao.value)) { // If filters are applied on page 1
-      showNotification('Thành công', 'Đã tải danh sách bình luận.', 'success');
-    } else if (page > 1) { // If navigating to another page
-      showNotification('Thành công', `Đã chuyển đến trang ${page}.`, 'success');
-    } else if (binhLuans.value.length > 0) { // Initial load success, but only if there's data
-      // This is a bit tricky to distinguish initial load vs subsequent load
-      // For simplicity, we'll show it for any successful fetch unless it's a filter/pagination specific message
-      // A more robust solution might involve a `isInitialLoad` ref.
-      // For now, let's just show a general success for data load.
-      // Removed the general 'Đã tải danh sách bình luận' here to avoid double notifications with filter/pagination.
-    }
-
   } catch (error) {
     console.error('Lỗi khi lấy bình luận:', error);
-    showNotification('Lỗi', 'Lỗi khi lấy bình luận: ' + (error.response?.data?.message || error.message), 'error'); // NEW: Use showNotification
+    showNotification('Lỗi', 'Lỗi khi lấy bình luận: ' + (error.response?.data?.message || error.message), 'error');
   } finally {
     loading.value = false;
   }
 };
 
-/**
- * @description Applies the selected filters and reloads the comments from the first page.
- */
 const applyFilters = () => {
-  currentPage.value = 1; // Reset to first page when applying filters
+  currentPage.value = 1;
   getBinhLuans();
-  // The success message for filter application is now handled within getBinhLuans
 };
 
-/**
- * @description Changes the current page for pagination.
- * @param {number} page - The page number to navigate to.
- */
 const goToPage = (page) => {
   if (page >= 1 && page <= lastPage.value) {
     getBinhLuans(page);
-    // The success message for page change is now handled within getBinhLuans
   }
 };
 
-/**
- * @description Toggles the 'trang_thai' (display status) of a comment.
- * @param {object} binhLuan - The comment object to update.
- */
 const toggleTrangThai = async (binhLuan) => {
   const newTrangThai = binhLuan.trang_thai == 1 ? 0 : 1;
-  const originalTrangThai = binhLuan.trang_thai; // Store original state for rollback
+  const originalTrangThai = binhLuan.trang_thai;
   try {
-    // The PUT request body is empty as per the controller's toggleTrangThai method
     await axios.put(`http://localhost:8000/api/admin/binhluan/${binhLuan.binh_luan_id}/toggle`, {}, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
     });
-    binhLuan.trang_thai = newTrangThai; // Update locally on successful API call
-    showNotification('Thành công', 'Đã cập nhật trạng thái hiển thị.', 'success'); // NEW: Use showNotification
+    binhLuan.trang_thai = newTrangThai;
+    showNotification('Thành công', 'Đã cập nhật trạng thái hiển thị.', 'success');
   } catch (error) {
     console.error('Lỗi khi cập nhật trạng thái hiển thị:', error);
-    showNotification('Lỗi', 'Cập nhật trạng thái hiển thị thất bại: ' + (error.response?.data?.message || error.message), 'error'); // NEW: Use showNotification
-    // Revert local state if API call fails
-    binhLuan.trang_thai = originalTrangThai; // Rollback to original state
+    showNotification('Lỗi', 'Cập nhật trạng thái hiển thị thất bại: ' + (error.response?.data?.message || error.message), 'error');
+    binhLuan.trang_thai = originalTrangThai;
   }
 };
 
-/**
- * @description Shows a confirmation modal before setting the report status of a comment.
- * @param {object} binhLuan - The comment object to set report status for.
- * @param {number} newStatus - The new report status to set (0, 1, or 2).
- */
 const showConfirmSetBaoCao = async (binhLuan, newStatus) => {
   const statusText = getBaoCaoStatus(newStatus);
   const confirmed = await showConfirmation(`Bạn có chắc muốn đặt trạng thái báo cáo của bình luận này thành "${statusText}" không?`);
@@ -356,13 +285,8 @@ const showConfirmSetBaoCao = async (binhLuan, newStatus) => {
   }
 };
 
-/**
- * @description Sets the 'bao_cao' (report status) of a comment.
- * @param {object} binhLuan - The comment object to update.
- * @param {number} newStatus - The new report status to set (0, 1, or 2).
- */
 const setBaoCao = async (binhLuan, newStatus) => {
-  const originalBaoCao = binhLuan.bao_cao; // Store original state for rollback
+  const originalBaoCao = binhLuan.bao_cao;
   try {
     await axios.put(`http://localhost:8000/api/admin/binhluan/${binhLuan.binh_luan_id}/set-bao-cao`, {
       bao_cao: newStatus
@@ -380,29 +304,40 @@ const setBaoCao = async (binhLuan, newStatus) => {
   }
 };
 
-// Fetch comments when the component is mounted
 onMounted(() => {
   getBinhLuans();
 });
 </script>
 
 <style scoped>
-/* General content padding */
+/*
+ * BASE STYLES
+ */
 .content {
   padding: 20px;
-  font-family: 'Inter', sans-serif; /* Using Inter font */
+  font-family: 'Inter', sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+h2 {
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 20px;
 }
 
 /* Filter Section Styling */
 .filter-section {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 15px;
   margin-bottom: 20px;
   padding: 15px;
   background-color: #f9f9f9;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  justify-content: flex-start;
+  align-items: center;
 }
 
 .filter-group {
@@ -419,10 +354,9 @@ onMounted(() => {
   min-width: 150px;
 }
 
-/* Primary Button Styling */
 .btn-primary {
   padding: 8px 15px;
-  background-color: #4CAF50; /* Green */
+  background-color: #4CAF50;
   color: white;
   border: none;
   border-radius: 4px;
@@ -436,32 +370,19 @@ onMounted(() => {
   transform: translateY(-1px);
 }
 
-/* Reset Button Styling (now used for general set status) */
-.btn-reset {
-  padding: 5px 10px;
-  background-color: #f44336; /* Red */
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.85em;
-  margin-left: 8px;
-  transition: background-color 0.3s ease, transform 0.2s ease;
+/* Table and Responsive Card Styles */
+.table-wrapper {
+  overflow-x: auto;
+  width: 100%;
 }
 
-.btn-reset:hover {
-  background-color: #d32f2f;
-  transform: translateY(-1px);
-}
-
-/* Table Styling */
 table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   border-radius: 8px;
-  overflow: hidden; /* Ensures rounded corners apply to content */
+  overflow: hidden;
 }
 
 th, td {
@@ -475,6 +396,7 @@ th {
   background-color: #f2f2f2;
   font-weight: bold;
   color: #333;
+  white-space: nowrap; /* Prevent headers from wrapping */
 }
 
 tr:nth-child(even) {
@@ -485,51 +407,66 @@ tr:hover {
   background-color: #f1f1f1;
 }
 
-/* Toggle Switch Styling */
+.toggle-cell { text-align: center; }
+.report-status-cell { text-align: center; }
+.text-center { text-align: center; }
+.action-icons-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+/* Icon and Button Styles */
 .switch {
   display: flex;
   align-items: center;
-  gap: 0;
   cursor: pointer;
   user-select: none;
-  transition: background 0.05s ease; /* Giảm thời gian chuyển đổi rất nhanh */
 }
-
 .slider {
-  width: 40px;
-  height: 22px;
+  width: 40px; height: 22px;
   border-radius: 11px;
   background: #ccc;
   position: relative;
-  transition: background 0.05s ease; /* Giảm thời gian chuyển đổi rất nhanh */
-  flex-shrink: 0;
-  display: inline-block;
+  transition: background 0.05s ease;
 }
-
 .slider::before {
   content: "";
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 18px;
-  height: 18px;
+  position: absolute; top: 2px; left: 2px;
+  width: 18px; height: 18px;
   border-radius: 50%;
   background: #fff;
-  transition: left 0.05s ease, background 0.05s ease; /* Giảm thời gian chuyển đổi rất nhanh */
+  transition: left 0.05s ease;
   box-shadow: 0 1px 4px rgba(0,0,0,0.12);
 }
+.slider.on { background: #4CAF50; }
+.slider.on::before { left: 20px; }
 
-.slider.on {
-  background: #4CAF50; /* Green */
-}
-.slider.on::before {
-  left: 20px;
-  background: #fff;
-}
+.report-icon-normal { color: #4CAF50; font-size: 1.5em; }
+.report-icon-spam { color: #F44336; font-size: 1.5em; }
+.report-icon-offensive { color: #FF9800; font-size: 1.5em; }
+.report-icon-unknown { color: #9E9E9E; font-size: 1.5em; }
 
-/* Căn giữa nút toggle trong ô */
-.toggle-cell {
-  text-align: center;
+.action-icon {
+  font-size: 1.3em;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.action-icon:hover { transform: scale(1.2); }
+.action-icon-normal { color: #4CAF50; }
+.action-icon-spam { color: #F44336; }
+.action-icon-offensive { color: #FF9800; }
+
+.content-cell {
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+}
+.content-cell:hover {
+  color: inherit;
+  text-decoration: underline;
 }
 
 /* Pagination Styling */
@@ -540,7 +477,6 @@ tr:hover {
   margin-top: 20px;
   gap: 5px;
 }
-
 .btn-pagination {
   padding: 8px 12px;
   border: 1px solid #ddd;
@@ -549,216 +485,134 @@ tr:hover {
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
-
-.btn-pagination:hover:not(:disabled) {
-  background-color: #f0f0f0;
-}
-
+.btn-pagination:hover:not(:disabled) { background-color: #f0f0f0; }
 .btn-pagination.active {
-  background-color: #4FC3F7; /* Light Blue */
+  background-color: #4FC3F7;
   color: white;
   border-color: #4FC3F7;
 }
+.btn-pagination:disabled { opacity: 0.6; cursor: not-allowed; }
 
-.btn-pagination:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Modal Styling */
+/* Modal Styling (unchanged, as it's already responsive) */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
 }
-
 .modal-content {
   background-color: white;
   padding: 30px;
   border-radius: 8px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  width: 90%;
-  max-width: 400px;
+  width: 90%; max-width: 400px;
   text-align: center;
   transform: scale(0.95);
   animation: modal-open 0.3s forwards ease-out;
 }
-
-@keyframes modal-open {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.modal-content h3 {
-  margin-top: 0;
-  color: #333;
-  font-size: 1.5em;
-  margin-bottom: 15px;
-}
-
-.modal-content p {
-  color: #555;
-  margin-bottom: 25px;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-}
-
-.btn-confirm, .btn-cancel {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-}
-
-.btn-confirm {
-  background-color: #4CAF50; /* Green */
-  color: white;
-}
-
-.btn-confirm:hover {
-  background-color: #45a049;
-  transform: translateY(-1px);
-}
-
-.btn-cancel {
-  background-color: #f44336; /* Red */
-  color: white;
-}
-
-.btn-cancel:hover {
-  background-color: #d32f2f;
-  transform: translateY(-1px);
-}
-
-/* NEW: Notification Modal Styles */
-.modal-success {
-  border: 2px solid #4CAF50; /* Green border for success */
-}
-
-.modal-error {
-  border: 2px solid #f44336; /* Red border for error */
-}
-
-
-/* Loading and Error Messages */
-.loading-message, .error-message {
-  text-align: center;
-  margin-top: 20px;
-  font-size: 1.1em;
-  padding: 10px;
-  border-radius: 5px;
-  font-weight: bold;
-}
-
-.loading-message {
-  background-color: #e0f7fa; /* Light Cyan */
-  color: #00796b; /* Dark Cyan */
-  border: 1px solid #b2ebf2;
-}
-
-.error-message {
-  background-color: #ffebee; /* Light Red */
-  color: #c62828; /* Dark Red */
-  border: 1px solid #ef9a9a;
-}
-
-/* Custom styles for report status icons */
-.report-status-cell {
-  text-align: center; /* Căn giữa nội dung ô */
-}
-
-.report-icon-normal {
-  color: #4CAF50; /* Green */
-  font-size: 1.5em; /* Kích thước lớn hơn */
-}
-
-.report-icon-spam { /* New class for spam icon */
-  color: #F44336; /* Red */
-  font-size: 1.5em;
-}
-
-.report-icon-offensive { /* New class for offensive icon */
-  color: #FF9800; /* Orange */
-  font-size: 1.5em;
-}
-
-.report-icon-unknown {
-  color: #9E9E9E; /* Gray */
-  font-size: 1.5em; /* Kích thước lớn hơn */
-}
-
-/* Styles for action icons in the "Hành động" column */
-.action-icons-cell {
-  text-align: center; /* Căn giữa các icon */
-  display: flex; /* Sử dụng flexbox để căn giữa và tạo khoảng cách */
-  justify-content: center; /* Căn giữa theo chiều ngang */
-  align-items: center; /* Căn giữa theo chiều dọc */
-  gap: 10px; /* Khoảng cách giữa các icon */
-  border: none; /* Loại bỏ khung viền cho ô này */
-  padding-top: 20px; /* Thêm khoảng đệm trên để đẩy icon xuống */
-}
-
-.action-icon {
-  font-size: 1.3em; /* Kích thước icon hành động */
-  cursor: pointer;
-  transition: transform 0.2s ease;
-}
-
-.action-icon:hover {
-  transform: scale(1.2); /* Hiệu ứng phóng to khi hover */
-}
-
-.action-icon-normal {
-  color: #4CAF50; /* Green */
-}
-
-.action-icon-spam {
-  color: #F44336; /* Red */
-}
-
-.action-icon-offensive {
-  color: #FF9800; /* Orange */
-}
-
-
-/* Styles for full content modal */
 .full-content-modal {
-  max-width: 600px; /* Tăng chiều rộng tối đa cho modal nội dung */
-  text-align: left; /* Căn trái nội dung */
+  max-width: 600px;
+  text-align: left;
 }
-
 .full-content-modal .full-content-text {
-  white-space: pre-wrap; /* Giữ định dạng xuống dòng và khoảng trắng */
-  word-wrap: break-word; /* Ngắt từ nếu quá dài */
-  max-height: 400px; /* Giới hạn chiều cao */
-  overflow-y: auto; /* Thêm thanh cuộn nếu nội dung quá dài */
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 400px;
+  overflow-y: auto;
   background-color: #f5f5f5;
   padding: 15px;
   border-radius: 5px;
   line-height: 1.6;
 }
 
-.content-cell {
-  cursor: pointer; /* Thêm con trỏ để chỉ ra có thể nhấp */
-  text-decoration: none; /* Bỏ gạch chân */
-  color: inherit; /* Sử dụng màu chữ mặc định của bảng */
-}
+/*
+ * RESPONSIVE MOBILE STYLES (Dưới 768px)
+ */
+@media (max-width: 768px) {
+  .content {
+    padding: 10px;
+  }
+  h2 {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
 
-.content-cell:hover {
-  color: inherit; /* Giữ nguyên màu khi hover */
-  text-decoration: underline; /* Thêm gạch chân khi hover để chỉ ra có thể nhấp */
+  .filter-section {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px;
+  }
+  .filter-group {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .filter-select {
+    width: 100%;
+    min-width: unset;
+  }
+  .btn-primary {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  /* Ẩn header của bảng trên mobile */
+  table {
+    border: none;
+  }
+  thead {
+    display: none;
+  }
+  tr {
+    display: block;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border: none; /* Loại bỏ viền ô */
+    border-bottom: 1px solid #eee;
+  }
+  td:last-child {
+    border-bottom: none;
+  }
+  td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    color: #555;
+    flex-shrink: 0;
+    width: 120px;
+    text-align: left;
+  }
+  /* Ẩn cột # trên mobile */
+  td:first-child {
+    display: none;
+  }
+
+  .action-icons-cell {
+    justify-content: flex-end; /* Đẩy các icon sang phải */
+    gap: 12px;
+  }
+
+  .toggle-cell .switch {
+    margin-left: auto; /* Đẩy switch sang phải */
+  }
+
+  .report-status-cell i {
+    font-size: 1.2em; /* Giảm kích thước icon báo cáo */
+  }
+  
+  .action-icon {
+    font-size: 1.1em; /* Giảm kích thước icon hành động */
+  }
 }
 </style>

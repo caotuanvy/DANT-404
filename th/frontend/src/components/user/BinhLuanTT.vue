@@ -29,7 +29,7 @@
       <div class="comments-content">
         <div class="comment-form">
           <div class="user-avatar">
-            <img v-if="isLoggedIn" class="avatar" :src="user.avatar || 'https://i.pravatar.cc/50?u=' + user.nguoi_dung_id" alt="User Avatar">
+            <img v-if="isLoggedIn" class="avatar" :src="user.anh_dai_dien || 'https://i.pravatar.cc/50?u=' + user.nguoi_dung_id" alt="User Avatar">
             <i v-else class="fa-solid fa-user-circle"></i>
           </div>
           <div class="comment-input-area">
@@ -98,7 +98,7 @@
         <div v-else class="comment-list">
           <div v-for="comment in comments.data" :key="comment.binh_luan_id" class="comment-item">
             <div class="user-info">
-              <img class="avatar" :src="comment.nguoi_dung.avatar || 'https://i.pravatar.cc/50?u=' + comment.nguoi_dung.nguoi_dung_id" alt="User Avatar">
+              <img class="avatar" :src="comment.nguoi_dung.anh_dai_dien || 'https://i.pravatar.cc/50?u=' + comment.nguoi_dung.nguoi_dung_id" alt="User Avatar">
               <div class="user-meta">
                 <span class="username">{{ comment.nguoi_dung.ho_ten || 'Người dùng' }}</span>
                 <span class="timestamp">{{ timeAgo(comment.ngay_binh_luan) }}</span>

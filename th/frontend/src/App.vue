@@ -98,6 +98,13 @@
       <router-view />
     </main>
 
+    <!-- Logic hiển thị Chat Widget: -->
+    <!-- - ChatWidget cho người dùng thông thường: Chỉ hiển thị khi đã đăng nhập, không phải admin và KHÔNG ở trang admin. -->
+    <ChatWidget v-if="isLoggedIn && userRoleId !== 1 && !isAdminRoute" />
+    
+    <!-- - AdminChatWidget cho admin: Chỉ hiển thị khi đã đăng nhập VÀ là admin. -->
+    <AdminChatWidget v-if="isLoggedIn && userRoleId === 1" />
+    
     <footer class="footer" v-if="!isAdminRoute">
       <div class="container">
         <div class="footer-section footer-about">
@@ -153,6 +160,8 @@ import { useRouter } from "vue-router";
 import AuthModal from "./components/user/AuthModal.vue";
 import Swal from "sweetalert2";
 import axios from "axios";
+import ChatWidget from './components/user/ChatWidget.vue';
+import AdminChatWidget from './components/user/AdminChatWidget.vue'; // Import component chat của admin
 
 const router = useRouter();
 

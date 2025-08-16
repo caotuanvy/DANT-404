@@ -8,6 +8,7 @@ use App\Models\Tintuc;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class TintucController extends Controller
 {
@@ -384,6 +385,40 @@ class TintucController extends Controller
         return response()->json(['message' => 'Không thể tải tin tức liên quan.'], 500);
     }
    }
+
+   // Lấy tin tức quan trọng (duyet tin tuc) đã được duyệt
+    public function tinTucQuanTrong()
+    {
+        try {
+            $importantNews = Tintuc::with('danhMuc')
+                ->where('duyet_tin_tuc', 1) // Chỉ lấy các tin tức đã được admin duyệt
+                ->orderBy('ngay_dang', 'desc') // Sắp xếp theo ngày đăng mới nhất
+                ->where('trang_thai', 1) // Chỉ lấy các tin tức đang hiển thị
+                ->limit(5)                     // Giới hạn 5 tin tức
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'slug' => $item->slug,
+                        'tieude' => $item->tieude,
+                        'hinh_anh' => $item->hinh_anh,
+                        'ngay_dang' => $item->ngay_dang,
+                        'luot_like' => $item->luot_like,
+                        'luot_xem' => $item->luot_xem,
+                        'danhMuc' => $item->danhMuc ? [
+                            'id' => $item->danhMuc->id,
+                            'ten_danh_muc' => $item->danhMuc->ten_danh_muc,
+                        ] : null,
+                    ];
+                });
+
+            return response()->json($importantNews);
+
+        } catch (\Exception $e) {
+            Log::error("Lỗi khi lấy tin tức quan trọng: " . $e->getMessage());
+            return response()->json(['message' => 'Không thể tải tin tức quan trọng.'], 500);
+        }
+    }
 
     public function getAllTags()
     {
