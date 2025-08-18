@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use App\Models\BinhLuan;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use App\Models\SanPham;
+use App\Models\Tintuc;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 
 class BinhLuanController extends Controller
 {
@@ -83,42 +87,58 @@ class BinhLuanController extends Controller
  * @param  int  $tinTucId
  * @return \Illuminate\Http\JsonResponse
  */
-public function getCommentsForNews($tinTucId, Request $request)
-{
-    $perPage = $request->input('per_page', 4);
-    $sortBy = $request->input('sort_by', 'ngay_binh_luan');
-    $sortOrder = $request->input('sort_order', 'desc');
+public function getCommentsForNews(Request $request)
+    {
+        $request->validate([
+            'tin_tuc_id' => 'sometimes|exists:tin_tuc,id',
+            'san_pham_id' => 'sometimes|exists:san_pham,san_pham_id',
+        ]);
 
-    // Cập nhật dòng này: thêm 'anh_dai_dien' vào danh sách các trường cần lấy
-    $comments = BinhLuan::with('nguoiDung:nguoi_dung_id,ho_ten,anh_dai_dien')
-        ->where('tin_tuc_id', $tinTucId)
-        ->where('trang_thai', 1)
-        ->orderBy($sortBy, $sortOrder)
-        ->select(['binh_luan_id', 'tin_tuc_id', 'nguoi_dung_id', 'noidung', 'ngay_binh_luan', 'luot_thich', 'luot_khong_thich', 'danh_gia', 'bao_cao'])
-        ->paginate($perPage);
+        $perPage = $request->input('per_page', 4);
+        $sortBy = $request->input('sort_by', 'ngay_binh_luan');
+        $sortOrder = $request->input('sort_order', 'desc');
 
-    return response()->json($comments);
-}
+        $query = BinhLuan::with('nguoiDung:nguoi_dung_id,ho_ten,anh_dai_dien')
+            ->where('trang_thai', 1);
+
+        if ($request->has('tin_tuc_id')) {
+            $query->where('tin_tuc_id', $request->tin_tuc_id);
+        } elseif ($request->has('san_pham_id')) {
+            $query->where('san_pham_id', $request->san_pham_id);
+        } else {
+             return response()->json(['message' => 'Vui lòng cung cấp tin_tuc_id hoặc san_pham_id.'], 400);
+        }
+
+        $comments = $query->orderBy($sortBy, $sortOrder)
+            ->select(['binh_luan_id', 'tin_tuc_id', 'san_pham_id', 'nguoi_dung_id', 'noidung', 'ngay_binh_luan', 'luot_thich', 'luot_khong_thich', 'danh_gia', 'bao_cao'])
+            ->paginate($perPage);
+
+        return response()->json($comments);
+    }
 /**
  * Thêm một bình luận mới cho tin tức.
  *
  * @param  \Illuminate\Http\Request  $request
  * @return \Illuminate\Http\JsonResponse
  */
-public function addCommentForNews(Request $request)
+ public function addCommentForNews(Request $request)
     {
-        // Bước 1: Xác thực dữ liệu đầu vào
         $validatedData = $request->validate([
-            'tin_tuc_id' => 'required|integer|exists:tintuc,id',
+            'tin_tuc_id' => 'sometimes|integer|exists:tintuc,id',
+            'san_pham_id' => 'sometimes|integer|exists:san_pham,san_pham_id',
             'nguoi_dung_id' => 'required|integer|exists:nguoi_dung,nguoi_dung_id',
             'noidung' => 'required_without:file_anh|string|nullable|max:1000',
             'file_anh' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'danh_gia' => 'nullable|integer|min:1|max:5', // Thêm validation cho danh_gia
+            'danh_gia' => 'nullable|integer|min:1|max:5',
         ]);
+
+        if (!isset($validatedData['tin_tuc_id']) && !isset($validatedData['san_pham_id'])) {
+             return response()->json(['message' => 'Vui lòng cung cấp tin_tuc_id hoặc san_pham_id.'], 400);
+        }
 
         $noidung_text = $validatedData['noidung'] ?? '';
         $html_content_for_image = '';
-        $danh_gia = $validatedData['danh_gia'] ?? null; // Lấy giá trị danh_gia
+        $danh_gia = $validatedData['danh_gia'] ?? null;
 
         if ($request->hasFile('file_anh')) {
             $fileAnh = $request->file('file_anh');
@@ -138,16 +158,17 @@ public function addCommentForNews(Request $request)
         }
 
         if (empty(trim(strip_tags($finalContent))) && is_null($danh_gia)) {
-             return response()->json(['message' => 'Nội dung bình luận hoặc đánh giá không được để trống.'], 422);
+            return response()->json(['message' => 'Nội dung bình luận hoặc đánh giá không được để trống.'], 422);
         }
 
         try {
             DB::beginTransaction();
             $binhLuan = BinhLuan::create([
-                'tin_tuc_id' => $validatedData['tin_tuc_id'],
+                'tin_tuc_id' => $validatedData['tin_tuc_id'] ?? null,
+                'san_pham_id' => $validatedData['san_pham_id'] ?? null,
                 'nguoi_dung_id' => $validatedData['nguoi_dung_id'],
                 'noidung' => $finalContent,
-                'danh_gia' => $danh_gia, // Thêm giá trị đánh giá vào database
+                'danh_gia' => $danh_gia,
                 'ngay_binh_luan' => now(),
                 'trang_thai' => 1,
                 'bao_cao' => 0,
@@ -163,10 +184,7 @@ public function addCommentForNews(Request $request)
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Lỗi khi thêm bình luận: ' . $e->getMessage(), [
-                'request_data' => $request->all(),
-                'file_trace' => $e->getFile() . ' on line ' . $e->getLine()
-            ]);
+            \Log::error('Lỗi khi thêm bình luận: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Có lỗi xảy ra ở máy chủ khi thêm bình luận. Vui lòng thử lại!',
                 'error' => $e->getMessage()
@@ -201,27 +219,33 @@ public function toggleDislike($id)
     ]);
 }
 
-public function getCommentStatistics($tinTucId)
+public function getCommentStatistics(Request $request)
     {
-        // Giữ nguyên hàm này, không cần thay đổi
-        $statistics = BinhLuan::select('danh_gia', DB::raw('count(*) as total'))
-            ->where('tin_tuc_id', $tinTucId)
-            ->where('trang_thai', 1)
-            ->whereNotNull('danh_gia')
-            ->groupBy('danh_gia')
-            ->orderBy('danh_gia', 'desc')
-            ->get();
+        $request->validate([
+            'tin_tuc_id' => 'sometimes|exists:tin_tuc,id',
+            'san_pham_id' => 'sometimes|exists:san_pham,san_pham_id',
+        ]);
 
-        $formattedStats = [
-            '5' => 0, '4' => 0, '3' => 0, '2' => 0, '1' => 0
-        ];
+        $query = BinhLuan::select('danh_gia', DB::raw('count(*) as total'))
+            ->where('trang_thai', 1)
+            ->whereNotNull('danh_gia');
+
+        if ($request->has('tin_tuc_id')) {
+            $query->where('tin_tuc_id', $request->tin_tuc_id);
+        } elseif ($request->has('san_pham_id')) {
+            $query->where('san_pham_id', $request->san_pham_id);
+        } else {
+            return response()->json(['message' => 'Vui lòng cung cấp tin_tuc_id hoặc san_pham_id.'], 400);
+        }
+
+        $statistics = $query->groupBy('danh_gia')->orderBy('danh_gia', 'desc')->get();
+
+        $formattedStats = ['5' => 0, '4' => 0, '3' => 0, '2' => 0, '1' => 0];
         foreach ($statistics as $stat) {
             $formattedStats[$stat->danh_gia] = $stat->total;
         }
 
         $totalReviews = array_sum($formattedStats);
-
-        // Tính toán điểm đánh giá trung bình
         $weightedSum = 0;
         foreach ($statistics as $stat) {
             $weightedSum += $stat->danh_gia * $stat->total;
@@ -235,9 +259,11 @@ public function getCommentStatistics($tinTucId)
         ]);
     }
 
-public function getCommentsByRating(Request $request, $tinTucId)
+public function getCommentsByRating(Request $request)
     {
         $request->validate([
+            'tin_tuc_id' => 'sometimes|integer|exists:tintuc,id',
+            'san_pham_id' => 'sometimes|integer|exists:san_pham,san_pham_id',
             'rating' => 'required|integer|min:1|max:5',
             'page' => 'nullable|integer',
             'sort_by' => 'nullable|string|in:ngay_binh_luan,luot_thich,luot_khong_thich',
@@ -245,25 +271,32 @@ public function getCommentsByRating(Request $request, $tinTucId)
         ]);
 
         $rating = $request->input('rating');
-        $sortBy = $request->input('sort_by', 'ngay_binh_luan'); // Mặc định: 'ngay_binh_luan'
-        $sortOrder = $request->input('sort_order', 'desc'); // Mặc định: 'desc'
+        $sortBy = $request->input('sort_by', 'ngay_binh_luan');
+        $sortOrder = $request->input('sort_order', 'desc');
 
-        $comments = BinhLuan::with('nguoiDung:nguoi_dung_id,ho_ten')
-            ->where('tin_tuc_id', $tinTucId)
+        $query = BinhLuan::with('nguoiDung:nguoi_dung_id,ho_ten')
             ->where('trang_thai', 1)
-            ->where('danh_gia', $rating)
-            ->orderBy($sortBy, $sortOrder) // Áp dụng sắp xếp động
-            ->paginate(5);
+            ->where('danh_gia', $rating);
 
-        // API trả về dữ liệu phân trang. Frontend sẽ cần xử lý `current_page`, `last_page`, `data`
+        if ($request->has('tin_tuc_id')) {
+            $query->where('tin_tuc_id', $request->tin_tuc_id);
+        } elseif ($request->has('san_pham_id')) {
+            $query->where('san_pham_id', $request->san_pham_id);
+        } else {
+             return response()->json(['message' => 'Vui lòng cung cấp tin_tuc_id hoặc san_pham_id.'], 400);
+        }
+
+        $comments = $query->orderBy($sortBy, $sortOrder)->paginate(5);
         return response()->json($comments);
     }
 
     // Bạn có thể cần một hàm để lấy tất cả bình luận (không cần lọc theo sao)
     // để dùng cho các nút "Mới nhất", "Phổ biến", "Cũ nhất" trên giao diện chính
-    public function getCommentsByNewsId(Request $request, $tinTucId)
+   public function getCommentsByNewsId(Request $request)
     {
         $request->validate([
+            'tin_tuc_id' => 'sometimes|integer|exists:tintuc,id',
+            'san_pham_id' => 'sometimes|integer|exists:san_pham,san_pham_id',
             'sort_by' => 'nullable|string|in:ngay_binh_luan,luot_thich,luot_khong_thich',
             'sort_order' => 'nullable|string|in:asc,desc',
         ]);
@@ -271,11 +304,51 @@ public function getCommentsByRating(Request $request, $tinTucId)
         $sortBy = $request->input('sort_by', 'ngay_binh_luan');
         $sortOrder = $request->input('sort_order', 'desc');
 
-        $comments = BinhLuan::with('nguoiDung:nguoi_dung_id,ho_ten')
-            ->where('tin_tuc_id', $tinTucId)
-            ->where('trang_thai', 1)
-            ->orderBy($sortBy, $sortOrder)
-            ->paginate(10); // Phân trang cho trang chính
+        $query = BinhLuan::with('nguoiDung:nguoi_dung_id,ho_ten')
+            ->where('trang_thai', 1);
+
+        if ($request->has('tin_tuc_id')) {
+            $query->where('tin_tuc_id', $request->tin_tuc_id);
+        } elseif ($request->has('san_pham_id')) {
+            $query->where('san_pham_id', $request->san_pham_id);
+        } else {
+             return response()->json(['message' => 'Vui lòng cung cấp tin_tuc_id hoặc san_pham_id.'], 400);
+        }
+
+        $comments = $query->orderBy($sortBy, $sortOrder)->paginate(10);
+        return response()->json($comments);
+    }
+
+    public function getCommentsByProductId($san_pham_id)
+    {
+        // Lấy tất cả bình luận cho một sản phẩm cụ thể
+        $comments = BinhLuan::where('san_pham_id', $san_pham_id)
+                            ->orderBy('created_at', 'desc') // Sắp xếp theo ngày mới nhất
+                            ->get();
+
+        return response()->json($comments);
+    }
+
+    public function getComments(Request $request)
+    {
+        // Lấy các tham số từ request
+        $sanPhamId = $request->query('san_pham_id');
+        $sortBy = $request->query('sort_by', 'ngay_binh_luan'); // Mặc định là 'ngay_binh_luan'
+        $sortOrder = $request->query('sort_order', 'desc'); // Mặc định là 'desc'
+        $perPage = $request->query('per_page', 4); // Mặc định là 4
+
+        // Bắt đầu truy vấn bình luận
+        $query = BinhLuan::query();
+
+        // Thêm điều kiện lọc theo san_pham_id nếu có
+        if ($sanPhamId) {
+            $query->where('san_pham_id', $sanPhamId);
+        }
+
+        // Thêm sắp xếp và eager load quan hệ với người dùng
+        $comments = $query->with('nguoiDung')
+                          ->orderBy($sortBy, $sortOrder)
+                          ->paginate($perPage);
 
         return response()->json($comments);
     }
