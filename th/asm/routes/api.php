@@ -117,7 +117,11 @@ Route::prefix('binh-luan')->group(function () {
 Route::get('comments', [BinhLuanController::class, 'getComments']);
 Route::post('comments/add', [BinhLuanController::class, 'addCommentForNews']);
 Route::get('san-pham-cong-khai/slug/{slug}', [ProductController::class, 'showBySlug']);
+Route::get('binh-luan/tin-tuc/{tinTucId}', [BinhLuanController::class, 'getByTinTucId']);
 Route::get('comments/product/{san_pham_id}', [BinhLuanController::class, 'getCommentsByProductId']);
+Route::post('binh-luan/{id}/toggle-like', [BinhLuanController::class, 'toggleLike']);
+Route::post('binh-luan/{id}/toggle-dislike', [BinhLuanController::class, 'toggleDislike']);
+Route::post('binh-luan/{id}/bao-cao', [BinhLuanController::class, 'setBaoCao']);
 
 // Dia chi
 Route::apiResource('addresses', DiaChiController::class);

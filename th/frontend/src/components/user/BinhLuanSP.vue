@@ -478,9 +478,9 @@ async function toggleLike(comment) {
             }
         });
         comment.luot_thich = response.data.luot_thich;
-        comment.luot_khong_thich = response.data.luot_khong_thich;
+        // comment.luot_khong_thich = response.data.luot_khong_thich; // Dòng này có thể không cần nếu backend chỉ trả về luot_thich
         comment.liked = true;
-        comment.disliked = false;
+        // Bỏ dòng này: comment.disliked = false;
     } catch (error) {
         openAlertModal("Có lỗi khi thích bình luận.");
     }
@@ -499,29 +499,30 @@ async function toggleDislike(comment) {
             }
         });
         comment.luot_khong_thich = response.data.luot_khong_thich;
-        comment.luot_thich = response.data.luot_thich;
+        // comment.luot_thich = response.data.luot_thich; // Dòng này có thể không cần nếu backend chỉ trả về luot_khong_thich
         comment.disliked = true;
-        comment.liked = false;
+        // Bỏ dòng này: comment.liked = false;
     } catch (error) {
         openAlertModal("Có lỗi khi không thích bình luận.");
     }
 }
 
 async function setBaoCao(commentId, baoCaoValue) {
-  try {
-    const token = localStorage.getItem('token');
-    await axios.post(`http://localhost:8000/api/admin/binh-luan/${commentId}/set-bao-cao`, {
-      bao_cao: baoCaoValue
-    }, {
-      headers: {
-        'Authorization': token ? `Bearer ${token}` : '',
-      },
-    });
-    openAlertModal(`Bạn đã tố cáo bình luận thành công!`);
-  } catch (error) {
-    console.error("Lỗi khi báo cáo bình luận:", error);
-    openAlertModal("Đã xảy ra lỗi khi báo cáo bình luận. Vui lòng thử lại.");
-  }
+    try {
+        const token = localStorage.getItem('token');
+        // Sửa URL và phương thức từ POST sang PUT
+        await axios.put(`http://localhost:8000/api/admin/binhluan/${commentId}/set-bao-cao`, {
+            bao_cao: baoCaoValue
+        }, {
+            headers: {
+                'Authorization': token ? `Bearer ${token}` : '',
+            },
+        });
+        openAlertModal(`Bạn đã tố cáo bình luận thành công!`);
+    } catch (error) {
+        console.error("Lỗi khi báo cáo bình luận:", error);
+        openAlertModal("Đã xảy ra lỗi khi báo cáo bình luận. Vui lòng thử lại.");
+    }
 }
 
 function reportComment(comment, type) {

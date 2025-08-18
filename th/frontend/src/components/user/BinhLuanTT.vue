@@ -78,9 +78,10 @@
             </div>
             
             <button
-                class="submit-button"
-                :class="{ 'active': isLoggedIn }"
-                @click="submitComment"
+              class="submit-button"
+              :class="{ 'active': isLoggedIn && newComment.noidung.trim() }"
+              @click="submitComment"
+              :disabled="isSubmitDisabled"
             >
               <i v-if="isSubmitting" class="fa-solid fa-spinner fa-spin"></i>
               <span v-else>{{ isLoggedIn ? 'Đăng' : 'Đăng nhập để bình luận' }}</span>
@@ -91,7 +92,7 @@
         <div v-if="loading" class="info-message loading">
           <i class="fa-solid fa-spinner fa-spin"></i> Đang tải bình luận...
         </div>
-        <div v-else-if="comments.data && comments.data.length === 0" class="info-message no-comments">
+        <div v-else-if="!loading && comments.data && comments.data.length === 0" class="info-message no-comments">
           <i class="fa-regular fa-comment-dots"></i> Chưa có bình luận nào.
         </div>
         
@@ -158,10 +159,9 @@ import axios from 'axios';
 const route = useRoute();
 const user = JSON.parse(localStorage.getItem('user')) || null;
 const isLoggedIn = computed(() => !!user);
-const comments = ref({ data: [], total: 0, current_page: 1 });
+const comments = ref({ data: [], total: 0, current_page: 1, last_page: 1 });
 const loading = ref(false);
 const isSubmitting = ref(false);
-const showAllComments = ref(false);
 
 const placeholderText = computed(() => {
     return isLoggedIn.value ? 'Viết bình luận...' : 'Bạn cần đăng nhập để bình luận.';
@@ -199,11 +199,12 @@ function closeAlertModal() {
   alertMessage.value = '';
 }
 
-watch(() => route.params.slug, (newSlug) => {
-    if (newSlug) {
-      newComment.value.tin_tuc_id = null;
-      fetchComments();
-    }
+watch(() => route.params.slug, async (newSlug) => {
+  if (newSlug) {
+    const newsId = await getNewsIdFromSlug(newSlug);
+    newComment.value.tin_tuc_id = newsId; 
+    fetchComments();
+  }
 }, { immediate: true });
 
 async function getNewsIdFromSlug(slug) {
@@ -217,35 +218,38 @@ async function getNewsIdFromSlug(slug) {
 }
 
 async function fetchComments() {
-    const newsId = await getNewsIdFromSlug(route.params.slug);
-    if (!newsId) {
-      comments.value = { data: [], total: 0, current_page: 1 };
-      return;
+    if (!newComment.value.tin_tuc_id) {
+        comments.value = { data: [], total: 0, current_page: 1, last_page: 1 };
+        loading.value = false;
+        return;
     }
-    newComment.value.tin_tuc_id = newsId;
 
     loading.value = true;
     try {
-      let url = `http://localhost:8000/api/binh-luan/tin-tuc/${newsId}`;
-      let params = { per_page: 4 };
+        let url = `http://localhost:8000/api/binh-luan/tin-tuc/${newComment.value.tin_tuc_id}`;
+        let params = { per_page: 4 };
 
-      if (currentSort.value === 'popular') {
-        params.sort_by = 'luot_thich';
-        params.sort_order = 'desc';
-      } else { // default to newest
-        params.sort_by = 'ngay_binh_luan';
-        params.sort_order = 'desc';
-      }
+        if (currentSort.value === 'popular') {
+            params.sort_by = 'luot_thich';
+            params.sort_order = 'desc';
+        } else {
+            params.sort_by = 'ngay_binh_luan';
+            params.sort_order = 'desc';
+        }
 
-      const response = await axios.get(url, { params });
-      
-      comments.value = response.data;
-      
-      comments.value.data.forEach(comment => {
-          comment.liked = false;
-          comment.disliked = false;
-      });
-      showAllComments.value = false;
+        const response = await axios.get(url, { params });
+
+        // Thêm kiểm tra an toàn tại đây
+        if (response.data && response.data.data) {
+            comments.value = response.data;
+            comments.value.data.forEach(comment => { // Dòng 242
+                comment.liked = false;
+                comment.disliked = false;
+            });
+        } else {
+            // Trường hợp dữ liệu trả về không hợp lệ, gán comments về giá trị mặc định
+            comments.value = { data: [], total: 0, current_page: 1, last_page: 1 };
+        }
     } catch (error) {
         console.error("Lỗi khi tải bình luận:", error);
     } finally {
@@ -483,7 +487,7 @@ async function toggleDislike(comment) {
 async function setBaoCao(commentId, baoCaoValue) {
   try {
     const token = localStorage.getItem('token');
-    await axios.post(`http://localhost:8000/api/binh-luan/${commentId}/bao-cao`, {
+    await axios.put(`http://localhost:8000/api/admin/binhluan/${commentId}/set-bao-cao`, {
       bao_cao: baoCaoValue
     }, {
       headers: {
@@ -527,12 +531,24 @@ function timeAgo(dateString) {
     return 'vài giây trước';
 }
 </script>
+Tệp bạn gửi có các lỗi cú pháp CSS, gây ra việc hiển thị lỗi trên giao diện. Các lỗi này thường liên quan đến việc thiếu dấu chấm phẩy hoặc cú pháp không đúng chuẩn.
+
+Vấn đề
+Trong tệp CSS, nhiều dòng bị gạch chân màu đỏ, cho thấy lỗi cú pháp. Cụ thể, các thuộc tính CSS có thể thiếu dấu chấm phẩy (;) ở cuối mỗi dòng.
+
+Hướng giải quyết
+Bạn cần kiểm tra và thêm dấu chấm phẩy vào cuối mỗi thuộc tính CSS trong các khối {} để trình duyệt có thể đọc và áp dụng chúng một cách chính xác.
+
+Code đã sửa
+Dưới đây là toàn bộ code CSS đã được sửa lỗi, đảm bảo mỗi thuộc tính đều kết thúc bằng dấu chấm phẩy.
+
+CSS
 
 <style scoped>
 /*
-  Lưu ý: Bạn có thể xóa toàn bộ các style liên quan đến rating
-  như .ratings-sidebar, .rating-display, .star-rating, .rating-bar-row, v.v.
-  để dọn dẹp code CSS.
+  Lưu ý: Bạn có thể xóa toàn bộ các style liên quan đến rating
+  như .ratings-sidebar, .rating-display, .star-rating, .rating-bar-row, v.v.
+  để dọn dẹp code CSS.
 */
 .comment-input.disabled-input {
     background-color: #f5f5f5;
@@ -773,7 +789,6 @@ body {
     display: flex;
     align-items: flex-start;
     gap: 12px;
-    margin-bottom: -12px;
 }
 .avatar {
     width: 40px;
@@ -946,71 +961,71 @@ body {
     animation: fadeInScale 0.2s ease-out;
 }
 .modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #f0f2f5;
-  padding-bottom: 12px;
-  margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f0f2f5;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
 }
 .modal-header h4 {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
 }
 .close-button {
-  font-size: 1.5rem;
-  color: #777;
-  cursor: pointer;
-  transition: color 0.2s;
+    font-size: 1.5rem;
+    color: #777;
+    cursor: pointer;
+    transition: color 0.2s;
 }
 .close-button:hover {
-  color: #333;
+    color: #333;
 }
 .modal-options {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 .section-title {
-  font-weight: 600;
-  color: #555;
-  margin-bottom: 10px;
-  font-size: 1rem;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 10px;
+    font-size: 1rem;
 }
 .sort-options-group, .rating-options-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 .sort-option, .rating-option {
-  padding: 10px 16px;
-  border: 1px solid #e0e6ed;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 14px;
-  color: #555;
-  transition: all 0.2s;
+    padding: 10px 16px;
+    border: 1px solid #e0e6ed;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #555;
+    transition: all 0.2s;
 }
 .sort-option:hover, .rating-option:hover {
-  background-color: #f0f4f8;
-  border-color: #4a90e2;
-  color: #4a90e2;
+    background-color: #f0f4f8;
+    border-color: #4a90e2;
+    color: #4a90e2;
 }
 .rating-option.active-rating {
-  background-color: #4a90e2;
-  color: white;
-  border-color: #4a90e2;
+    background-color: #4a90e2;
+    color: white;
+    border-color: #4a90e2;
 }
 @keyframes fadeInScale {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 .alert-modal-overlay {
     position: fixed;
@@ -1067,21 +1082,21 @@ body {
     to { opacity: 1; transform: scale(1); }
 }
 .view-more-container {
-  display: flex;
-  justify-content: center;
-  margin-top: 16px;
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
 }
 .view-more-button {
-  background-color: #f0f4f8;
-  color: #55a8e0;
-  border: 1px solid #e0e6ed;
-  padding: 10px 24px;
-  border-radius: 20px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
+    background-color: #f0f4f8;
+    color: #55a8e0;
+    border: 1px solid #e0e6ed;
+    padding: 10px 24px;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 .view-more-button:hover {
-  background-color: #e0e6ed;
+    background-color: #e0e6ed;
 }
 </style>

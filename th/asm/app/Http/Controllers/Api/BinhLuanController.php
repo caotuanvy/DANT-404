@@ -54,6 +54,17 @@ class BinhLuanController extends Controller
         ]);
     }
 
+
+    public function getByTinTucId($tinTucId)
+{
+    $comments = BinhLuan::where('tin_tuc_id', $tinTucId)
+                       ->with('nguoiDung') // Sửa lỗi ở đây
+                       ->orderBy('ngay_binh_luan', 'desc')
+                       ->get();
+
+    return response()->json($comments);
+}
+
     /**
      * Cập nhật trạng thái báo cáo của bình luận.
      *
@@ -352,6 +363,7 @@ public function getCommentsByRating(Request $request)
 
         return response()->json($comments);
     }
+
 
 
 }
