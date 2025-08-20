@@ -114,6 +114,9 @@ Route::prefix('binh-luan')->group(function () {
      Route::post('{id}/bao-cao', [BinhLuanController::class, 'setBaoCao']);
 });
 
+Route::get('/comments-by-rating', [BinhLuanController::class, 'getCommentsByRating']);
+Route::get('ratings/statistics', [BinhLuanController::class, 'getCommentStatistics']);
+Route::get('/binh-luan/tin-tuc', [BinhLuanController::class, 'getCommentsForNews']);
 Route::get('comments', [BinhLuanController::class, 'getComments']);
 Route::post('comments/add', [BinhLuanController::class, 'addCommentForNews']);
 Route::get('san-pham-cong-khai/slug/{slug}', [ProductController::class, 'showBySlug']);

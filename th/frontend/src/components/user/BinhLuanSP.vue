@@ -25,6 +25,59 @@
       </div>
     </div>
     
+    <div class="ratings-sidebar">
+      <div class="ratings-summary">
+        <h4>Đánh giá tổng quan</h4>
+        <div class="rating-display">
+          <span class="overall-rating">{{ overallRating.toFixed(1) }}</span>
+          <div class="star-rating">
+            <i
+              v-for="star in 5"
+              :key="star"
+              class="fa-solid fa-star star-icon"
+              :class="{ 'filled': star <= overallRating }"
+            ></i>
+          </div>
+          <span class="review-count">({{ totalRatings }} lượt đánh giá)</span>
+        </div>
+        <div class="rating-breakdown">
+          <div 
+            v-for="n in 5" 
+            :key="n" 
+            class="rating-bar-row"
+          >
+            <span class="rating-label">{{ 6 - n }} sao</span>
+            <div class="rating-bar-container">
+              <div
+                class="rating-bar"
+                :style="{ width: getRatingPercentage(6 - n) + '%' }"
+              ></div>
+            </div>
+            <span class="rating-number">{{ ratingsByStar[6 - n] || 0 }}</span>
+          </div>
+        </div>
+        
+        <div class="rating-filter-buttons">
+          <button 
+            class="filter-button" 
+            :class="{ 'active': currentFilterRating === null }"
+            @click="filterByRating(null)"
+          >
+            Tất cả
+          </button>
+          <button 
+            v-for="star in 5" 
+            :key="star" 
+            class="filter-button"
+            :class="{ 'active': currentFilterRating === star }"
+            @click="filterByRating(star)"
+          >
+            {{ star }} sao
+          </button>
+        </div>
+        </div>
+    </div>
+
     <div class="main-content">
       <div class="comments-content">
         <div class="comment-form">
@@ -42,6 +95,17 @@
               :class="{ 'disabled-input': !isLoggedIn }"
             ></div>
             
+            <div class="user-rating">
+              <span class="rating-label">Đánh giá:</span>
+              <i
+                v-for="star in 5"
+                :key="star"
+                class="fa-solid fa-star star-icon"
+                :class="{ 'filled': star <= newComment.danh_gia }"
+                @click="setRating(star)"
+              ></i>
+            </div>
+
             <div class="toolbar" v-if="isLoggedIn">
               <label for="image-upload">
                 <i class="fa-regular fa-image toolbar-icon"></i>
@@ -79,7 +143,7 @@
             
             <button
                 class="submit-button"
-                :class="{ 'active': isLoggedIn && newComment.noidung.trim() }"
+                :class="{ 'active': isLoggedIn && (newComment.noidung.trim() || newComment.danh_gia > 0) }"
                 @click="submitComment"
                 :disabled="isSubmitDisabled"
             >
@@ -103,6 +167,14 @@
               <div class="user-meta">
                 <span class="username">{{ comment.nguoi_dung.ho_ten || 'Người dùng' }}</span>
                 <span class="timestamp">{{ timeAgo(comment.ngay_binh_luan) }}</span>
+                <div v-if="comment.danh_gia > 0" class="user-rating-display">
+                  <i 
+                    v-for="star in 5"
+                    :key="star"
+                    class="fa-solid fa-star"
+                    :class="{ 'filled': star <= comment.danh_gia }"
+                  ></i>
+                </div>
               </div>
             </div>
             <div class="comment-body" v-html="comment.noidung"></div>
@@ -163,6 +235,12 @@ const comments = ref({ data: [], total: 0, current_page: 1, last_page: 1 });
 const loading = ref(false);
 const isSubmitting = ref(false);
 
+const ratingsByStar = ref({});
+const totalRatings = ref(0);
+const overallRating = ref(0);
+
+const currentFilterRating = ref(null); // Biến để lưu số sao đang được lọc
+
 const placeholderText = computed(() => {
     return isLoggedIn.value ? 'Viết bình luận...' : 'Bạn cần đăng nhập để bình luận.';
 });
@@ -180,10 +258,11 @@ const newComment = ref({
     san_pham_id: null,
     nguoi_dung_id: user ? user.nguoi_dung_id : null,
     noidung: '',
+    danh_gia: 0, // Đổi từ so_sao sang danh_gia
 });
 
 const isSubmitDisabled = computed(() => {
-    return !isLoggedIn.value || isSubmitting.value || !newComment.value.noidung.trim();
+    return !isLoggedIn.value || isSubmitting.value || (!newComment.value.noidung.trim() && newComment.value.danh_gia === 0);
 });
 
 const showAlertModal = ref(false);
@@ -199,49 +278,42 @@ function closeAlertModal() {
     alertMessage.value = '';
 }
 
-// Watcher để theo dõi sự thay đổi của slug và tải bình luận mới
 watch(() => route.params.slug, async (newSlug) => {
     if (newSlug) {
-        newComment.value.san_pham_id = null; // Reset ID để lấy ID mới
-        await fetchComments();
+        newComment.value.san_pham_id = null;
+        await getProductIdAndFetchData();
     }
 }, { immediate: true });
 
+async function getProductIdAndFetchData() {
+    const productId = await getProductIdFromSlug(route.params.slug);
+    if (!productId) {
+        comments.value = { data: [], total: 0, current_page: 1, last_page: 1 };
+        totalRatings.value = 0;
+        overallRating.value = 0;
+        ratingsByStar.value = {};
+        return;
+    }
+    newComment.value.san_pham_id = productId;
+    await Promise.all([
+        fetchComments(),
+        fetchRatings()
+    ]);
+}
+
 async function getProductIdFromSlug(slug) {
     try {
-        if (!slug) {
-            console.error("Lỗi: Slug không hợp lệ.");
-            return null;
-        }
+        if (!slug) return null;
         const response = await axios.get(`http://localhost:8000/api/san-pham-cong-khai/slug/${slug}`);
-        const productId = response.data.product_id;
-        if (productId) {
-            console.log("Tìm thấy ID sản phẩm:", productId);
-            return productId;
-        } else {
-            console.error("Lỗi: Phản hồi API không chứa 'product_id'.");
-            return null;
-        }
+        return response.data.product_id;
     } catch (error) {
         console.error("Lỗi khi lấy ID sản phẩm từ slug:", error);
-        if (error.response && error.response.status === 404) {
-            console.error("Sản phẩm với slug này không tồn tại.");
-        }
         return null;
     }
 }
 
 async function fetchComments(page = 1) {
-    // Chỉ lấy ID sản phẩm nếu nó chưa được gán
-    if (!newComment.value.san_pham_id) {
-        const productId = await getProductIdFromSlug(route.params.slug);
-        if (!productId) {
-            comments.value = { data: [], total: 0, current_page: 1, last_page: 1 };
-            return;
-        }
-        newComment.value.san_pham_id = productId;
-    }
-
+    if (!newComment.value.san_pham_id) return;
     loading.value = true;
     try {
         const params = {
@@ -249,22 +321,53 @@ async function fetchComments(page = 1) {
             page: page,
             per_page: 4,
             sort_by: currentSort.value === 'popular' ? 'luot_thich' : 'ngay_binh_luan',
-            sort_order: 'desc'
+            sort_order: 'desc',
         };
 
-        const response = await axios.get(`http://localhost:8000/api/comments`, { params });
+        let url = `http://localhost:8000/api/comments`;
+
+        // Thêm tham số và đổi URL nếu đang lọc theo sao
+        if (currentFilterRating.value) {
+            params.rating = currentFilterRating.value;
+            url = `http://localhost:8000/api/comments-by-rating`;
+        }
         
-        // Cập nhật biến comments với dữ liệu phân trang mới
+        const response = await axios.get(url, { params });
         comments.value.data = page === 1 ? response.data.data : comments.value.data.concat(response.data.data);
         comments.value.total = response.data.total;
         comments.value.current_page = response.data.current_page;
         comments.value.last_page = response.data.last_page;
-        
     } catch (error) {
         console.error("Lỗi khi tải bình luận:", error);
     } finally {
         loading.value = false;
     }
+}
+
+async function fetchRatings() {
+    if (!newComment.value.san_pham_id) return;
+    try {
+        const response = await axios.get(`http://localhost:8000/api/ratings/statistics`, {
+            params: {
+                san_pham_id: newComment.value.san_pham_id
+            }
+        });
+        const { total, average, stats } = response.data;
+        totalRatings.value = total;
+        overallRating.value = average;
+        ratingsByStar.value = stats;
+    } catch (error) {
+        console.error("Lỗi khi tải dữ liệu đánh giá:", error);
+        totalRatings.value = 0;
+        overallRating.value = 0;
+        ratingsByStar.value = {};
+    }
+}
+
+function getRatingPercentage(star) {
+  if (totalRatings.value === 0) return 0;
+  const count = ratingsByStar.value[star] || 0;
+  return (count / totalRatings.value) * 100;
 }
 
 function loadMoreComments() {
@@ -276,6 +379,15 @@ function loadMoreComments() {
 function changeSort(sortBy) {
     currentSort.value = sortBy;
     fetchComments();
+}
+
+function filterByRating(rating) {
+    if (currentFilterRating.value === rating) {
+        currentFilterRating.value = null; // Bỏ lọc nếu click lần nữa
+    } else {
+        currentFilterRating.value = rating;
+    }
+    fetchComments(); // Tải lại bình luận với bộ lọc mới
 }
 
 function onInput(event) {
@@ -299,32 +411,40 @@ function onPaste(event) {
     document.execCommand('insertText', false, text);
 }
 
-function toggleEmojiPicker() {
+function setRating(star) {
     if (!isLoggedIn.value) {
-        openAlertModal('Bạn cần đăng nhập để sử dụng tính năng này.');
+        openAlertModal("Bạn cần đăng nhập để đánh giá.");
         return;
     }
-    showEmojiPicker.value = !showEmojiPicker.value;
+    newComment.value.danh_gia = star;
+}
+
+function toggleEmojiPicker() {
+  if (!isLoggedIn.value) {
+    openAlertModal('Bạn cần đăng nhập để sử dụng tính năng này.');
+    return;
+  }
+  showEmojiPicker.value = !showEmojiPicker.value;
 }
 
 function insertEmoji(emoji) {
-    if (!isLoggedIn.value) return;
-    const inputElement = document.querySelector('.comment-input');
-    inputElement.focus();
-    let currentContent = inputElement.innerHTML;
-    currentContent += emoji;
-    inputElement.innerHTML = currentContent;
-    const selection = window.getSelection();
-    const range = document.createRange();
-    const childNodes = inputElement.childNodes;
-    if (childNodes.length > 0) {
-        range.setStartAfter(childNodes[childNodes.length - 1]);
-        range.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(range);
-    }
-    newComment.value.noidung = currentContent;
-    showEmojiPicker.value = false;
+  if (!isLoggedIn.value) return;
+  const inputElement = document.querySelector('.comment-input');
+  inputElement.focus();
+  let currentContent = inputElement.innerHTML;
+  currentContent += emoji;
+  inputElement.innerHTML = currentContent;
+  const selection = window.getSelection();
+  const range = document.createRange();
+  const childNodes = inputElement.childNodes;
+  if (childNodes.length > 0) {
+      range.setStartAfter(childNodes[childNodes.length - 1]);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+  }
+  newComment.value.noidung = currentContent;
+  showEmojiPicker.value = false;
 }
 
 async function handleImageFile(event) {
@@ -436,6 +556,7 @@ async function submitComment() {
         const inputElement = document.querySelector('.comment-input');
         const images = inputElement.querySelectorAll('img');
         let finalContent = inputElement.innerHTML;
+        finalContent = finalContent.replace(/(<br\s*\/?>)+$/i, '');
         if (images.length > 0) {
             for (const img of images) {
                 const imageUrl = await uploadImageToServer(img.src);
@@ -446,6 +567,7 @@ async function submitComment() {
             san_pham_id: newComment.value.san_pham_id,
             nguoi_dung_id: newComment.value.nguoi_dung_id,
             noidung: finalContent,
+            danh_gia: newComment.value.danh_gia,
         };
         await axios.post(`http://localhost:8000/api/comments/add`, payload, {
             headers: {
@@ -453,8 +575,13 @@ async function submitComment() {
             }
         });
         
-        await fetchComments();
+        await Promise.all([
+            fetchComments(),
+            fetchRatings()
+        ]);
+        
         newComment.value.noidung = '';
+        newComment.value.danh_gia = 0;
         inputElement.innerHTML = '';
         inputElement.blur();
     } catch (error) {
@@ -466,63 +593,58 @@ async function submitComment() {
 }
 
 async function toggleLike(comment) {
-    if (!isLoggedIn.value) {
-        openAlertModal("Bạn cần đăng nhập để thích bình luận.");
-        return;
-    }
-    if (comment.liked) return;
-    try {
-        const response = await axios.post(`http://localhost:8000/api/binh-luan/${comment.binh_luan_id}/toggle-like`, {}, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-        comment.luot_thich = response.data.luot_thich;
-        // comment.luot_khong_thich = response.data.luot_khong_thich; // Dòng này có thể không cần nếu backend chỉ trả về luot_thich
-        comment.liked = true;
-        // Bỏ dòng này: comment.disliked = false;
-    } catch (error) {
-        openAlertModal("Có lỗi khi thích bình luận.");
-    }
+  if (!isLoggedIn.value) {
+      openAlertModal("Bạn cần đăng nhập để thích bình luận.");
+      return;
+  }
+  if (comment.liked) return;
+  try {
+      const response = await axios.post(`http://localhost:8000/api/binh-luan/${comment.binh_luan_id}/toggle-like`, {}, {
+          headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+      });
+      comment.luot_thich = response.data.luot_thich;
+      comment.liked = true;
+  } catch (error) {
+      openAlertModal("Có lỗi khi thích bình luận.");
+  }
 }
 
 async function toggleDislike(comment) {
-    if (!isLoggedIn.value) {
-        openAlertModal("Bạn cần đăng nhập để không thích bình luận.");
-        return;
-    }
-    if (comment.disliked) return;
-    try {
-        const response = await axios.post(`http://localhost:8000/api/binh-luan/${comment.binh_luan_id}/toggle-dislike`, {}, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-        comment.luot_khong_thich = response.data.luot_khong_thich;
-        // comment.luot_thich = response.data.luot_thich; // Dòng này có thể không cần nếu backend chỉ trả về luot_khong_thich
-        comment.disliked = true;
-        // Bỏ dòng này: comment.liked = false;
-    } catch (error) {
-        openAlertModal("Có lỗi khi không thích bình luận.");
-    }
+  if (!isLoggedIn.value) {
+      openAlertModal("Bạn cần đăng nhập để không thích bình luận.");
+      return;
+  }
+  if (comment.disliked) return;
+  try {
+      const response = await axios.post(`http://localhost:8000/api/binh-luan/${comment.binh_luan_id}/toggle-dislike`, {}, {
+          headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+      });
+      comment.luot_khong_thich = response.data.luot_khong_thich;
+      comment.disliked = true;
+  } catch (error) {
+      openAlertModal("Có lỗi khi không thích bình luận.");
+  }
 }
 
 async function setBaoCao(commentId, baoCaoValue) {
-    try {
-        const token = localStorage.getItem('token');
-        // Sửa URL và phương thức từ POST sang PUT
-        await axios.put(`http://localhost:8000/api/admin/binhluan/${commentId}/set-bao-cao`, {
-            bao_cao: baoCaoValue
-        }, {
-            headers: {
-                'Authorization': token ? `Bearer ${token}` : '',
-            },
-        });
-        openAlertModal(`Bạn đã tố cáo bình luận thành công!`);
-    } catch (error) {
-        console.error("Lỗi khi báo cáo bình luận:", error);
-        openAlertModal("Đã xảy ra lỗi khi báo cáo bình luận. Vui lòng thử lại.");
-    }
+  try {
+      const token = localStorage.getItem('token');
+      await axios.put(`http://localhost:8000/api/admin/binhluan/${commentId}/set-bao-cao`, {
+          bao_cao: baoCaoValue
+      }, {
+          headers: {
+              'Authorization': token ? `Bearer ${token}` : '',
+          },
+      });
+      openAlertModal(`Bạn đã tố cáo bình luận thành công!`);
+  } catch (error) {
+      console.error("Lỗi khi báo cáo bình luận:", error);
+      openAlertModal("Đã xảy ra lỗi khi báo cáo bình luận. Vui lòng thử lại.");
+  }
 }
 
 function reportComment(comment, type) {
@@ -557,6 +679,37 @@ function timeAgo(dateString) {
 </script>
 
 <style scoped>
+/* Existing styles... */
+
+.rating-filter-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+}
+
+.filter-button {
+    background-color: #e9ecef;
+    color: #495057;
+    border: 1px solid #dee2e6;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-button:hover {
+    background-color: #d0d6dd;
+}
+
+.filter-button.active {
+    background-color: #55a8e0;
+    color: white;
+    border-color: #55a8e0;
+}
+/* Existing styles... */
+
 .comment-input.disabled-input {
     background-color: #f5f5f5;
     cursor: not-allowed;
@@ -671,6 +824,7 @@ body {
 .review-count {
     font-size: 0.9rem;
     color: #777;
+    margin-left: 5px;
 }
 .rating-breakdown {
     display: flex;
@@ -681,9 +835,24 @@ body {
     display: flex;
     align-items: center;
     font-size: 14px;
+    cursor: pointer;
+    padding: 4px 0;
+    transition: background-color 0.2s ease;
+    border-radius: 4px;
+}
+.rating-bar-row:hover {
+    background-color: #e9ecef;
+}
+.rating-bar-row.active {
+    background-color: #55a8e0;
+    color: white;
+}
+.rating-bar-row.active .rating-label,
+.rating-bar-row.active .rating-number {
+    color: white;
 }
 .rating-label {
-    width: 50px;
+    width: 70px;
     flex-shrink: 0;
     color: #555;
 }
@@ -699,8 +868,8 @@ body {
     background-color: #ffc107;
     transition: width 0.5s ease;
 }
-.rating-bar:not(.filled) {
-    background-color: #e0e0e0;
+.rating-bar-row.active .rating-bar {
+    background-color: #fff;
 }
 .rating-number {
     width: 30px;
@@ -772,6 +941,23 @@ body {
 .user-rating .star-icon.filled {
     color: #ffc107;
 }
+.user-rating-display {
+    display: flex;
+    gap: 2px;
+    margin-top: 4px;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+.user-rating-display .filled {
+  color: #ffc107;
+}
+.user-rating-display .fa-star {
+  color: #e0e0e0;
+  margin-right: 3px;
+}
+.fa-star.filled {
+  color: #ffc107;
+}
 .submit-button {
     align-self: flex-end;
     padding: 8px 20px;
@@ -816,15 +1002,11 @@ body {
     font-size: 12px;
     color: #777;
 }
-.user-rating-display {
-    margin-top: 4px;
-    display: flex;
-    gap: 2px;
-}
 .comment-body {
     margin-left: 52px;
     margin-top: 8px;
     font-size: 16px;
+    line-height: 1.5;
 }
 .comment-body :deep(p) {
     margin: 0;
@@ -835,6 +1017,7 @@ body {
     border-radius: 4px;
     margin-top: 4px;
     display: block;
+    margin: 10px 0;
 }
 .comment-body :deep(a) {
     color: #4a90e2;
@@ -947,94 +1130,6 @@ body {
 .modal-button:hover {
     opacity: 0.8;
 }
-.rating-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-.rating-modal {
-    background-color: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    width: 90%;
-    max-width: 400px;
-    padding: 24px;
-    animation: fadeInScale 0.2s ease-out;
-}
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #f0f2f5;
-  padding-bottom: 12px;
-  margin-bottom: 12px;
-}
-.modal-header h4 {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-.close-button {
-  font-size: 1.5rem;
-  color: #777;
-  cursor: pointer;
-  transition: color 0.2s;
-}
-.close-button:hover {
-  color: #333;
-}
-.modal-options {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-.section-title {
-  font-weight: 600;
-  color: #555;
-  margin-bottom: 10px;
-  font-size: 1rem;
-}
-.sort-options-group, .rating-options-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.sort-option, .rating-option {
-  padding: 10px 16px;
-  border: 1px solid #e0e6ed;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 14px;
-  color: #555;
-  transition: all 0.2s;
-}
-.sort-option:hover, .rating-option:hover {
-  background-color: #f0f4f8;
-  border-color: #4a90e2;
-  color: #4a90e2;
-}
-.rating-option.active-rating {
-  background-color: #4a90e2;
-  color: white;
-  border-color: #4a90e2;
-}
-@keyframes fadeInScale {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
 .alert-modal-overlay {
     position: fixed;
     top: 0;
@@ -1090,21 +1185,21 @@ body {
     to { opacity: 1; transform: scale(1); }
 }
 .view-more-container {
-  display: flex;
-  justify-content: center;
-  margin-top: 16px;
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
 }
 .view-more-button {
-  background-color: #f0f4f8;
-  color: #55a8e0;
-  border: 1px solid #e0e6ed;
-  padding: 10px 24px;
-  border-radius: 20px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
+    background-color: #f0f4f8;
+    color: #55a8e0;
+    border: 1px solid #e0e6ed;
+    padding: 10px 24px;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 .view-more-button:hover {
-  background-color: #e0e6ed;
+    background-color: #e0e6ed;
 }
 </style>

@@ -57,12 +57,16 @@ class BinhLuanController extends Controller
 
     public function getByTinTucId($tinTucId)
 {
-    $comments = BinhLuan::where('tin_tuc_id', $tinTucId)
-                       ->with('nguoiDung') // Sửa lỗi ở đây
-                       ->orderBy('ngay_binh_luan', 'desc')
-                       ->get();
+    try {
+        $comments = BinhLuan::where('tin_tuc_id', $tinTucId)
+                           ->with('nguoiDung')
+                           ->orderBy('ngay_binh_luan', 'desc')
+                           ->get();
 
-    return response()->json($comments);
+        return response()->json($comments);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
 }
 
     /**
@@ -285,7 +289,7 @@ public function getCommentsByRating(Request $request)
         $sortBy = $request->input('sort_by', 'ngay_binh_luan');
         $sortOrder = $request->input('sort_order', 'desc');
 
-        $query = BinhLuan::with('nguoiDung:nguoi_dung_id,ho_ten')
+        $query = BinhLuan::with('nguoiDung:nguoi_dung_id,ho_ten,anh_dai_dien')
             ->where('trang_thai', 1)
             ->where('danh_gia', $rating);
 
@@ -363,6 +367,21 @@ public function getCommentsByRating(Request $request)
 
         return response()->json($comments);
     }
+
+    public function getCommentstintuc(Request $request)
+{
+    $tinTucId = $request->input('tin_tuc_id');
+    $perPage = $request->input('per_page', 4);
+    $sortBy = $request->input('sort_by', 'ngay_binh_luan');
+    $sortOrder = $request->input('sort_order', 'desc');
+
+    // Đây là code đúng để lấy bình luận
+    $binhLuans = BinhLuan::where('tin_tuc_id', $tinTucId)
+                       ->orderBy($sortBy, $sortOrder)
+                       ->paginate($perPage);
+
+    return response()->json($binhLuans);
+}
 
 
 
