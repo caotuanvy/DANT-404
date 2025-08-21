@@ -224,15 +224,15 @@ export default {
         placedDate: formatDate(apiOrder.ngay_dat),
         items: (apiOrder.order_items || []).map(item => ({
           id: item.id,
-          name: item.product_variant?.product?.ten_san_pham || 'Sản phẩm không rõ',
-          color: item.product_variant?.mau_sac || 'Không',
-          size: item.product_variant?.kich_thuoc || 'Không',
+          name: item.bien_the?.san_pham?.ten_san_pham || 'Sản phẩm không rõ',
+          color: item.bien_the?.mau_sac || 'Không',
+          size: item.bien_the?.kich_thuoc || 'Không',
           qty: item.so_luong,
           price: parseFloat(item.don_gia),
-          image: item.product_variant?.product?.hinh_anh_san_pham && item.product_variant.product.hinh_anh_san_pham.length > 0
-            ? `http://localhost:8000/storage/${item.product_variant.product.hinh_anh_san_pham[0].duongdan}`
-            : '/images/no-image.png',
-        })),
+          image: item.bien_the?.san_pham?.hinh_anh_san_pham && item.bien_the.san_pham.hinh_anh_san_pham.length > 0
+                ? `http://localhost:8000/storage/${item.bien_the.san_pham.hinh_anh_san_pham[0].duongdan}`
+                : '/images/no-image.png',
+            })),
         subtotal: subtotalCalc,
         shipping: shippingFee,
         total: totalCalc,
@@ -248,7 +248,7 @@ export default {
           }
         },
         paymentInfo: {
-          method: apiOrder.phuong_thuc_thanh_toan?.ten_pttt || 'Không xác định',
+          method: apiOrder.payment_method?.ten_pttt || 'Không xác định',
           billingAddress: {
             name: apiOrder.diachi?.ho_ten || apiOrder.user?.ho_ten || '',
             street: apiOrder.diachi?.dia_chi || '',

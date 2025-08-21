@@ -360,7 +360,6 @@ export default {
         return;
       }
       
-      // Thêm kiểm tra địa chỉ
       if (!displayedAddress.value.id_dia_chi) {
           Swal.fire("Lỗi địa chỉ", "Vui lòng chọn hoặc thêm địa chỉ giao hàng.", "error");
           isPlacingOrder.value = false;
@@ -375,8 +374,8 @@ export default {
         ghi_chu: 'Đặt hàng'
       };
 
-      if (paymentMethod.value === 'vnpay') {
-        try {
+      try {
+        if (paymentMethod.value === 'vnpay') {
           const cartPayload = products.value.map(p => ({
             san_pham_bien_the_id: p.id,
             so_luong: p.quantity,
@@ -384,53 +383,54 @@ export default {
             thanh_tien: p.total_item_price ?? p.price * p.quantity
           }));
           
-          // Gửi payload VNPAY
           const { data } = await axios.post('http://localhost:8000/api/create-vnpay-payment', {
-            ...payload, // Truyền các thông tin đơn hàng sang backend
+            ...payload, 
             cart: cartPayload,
             total: totalAmount.value,
             user_id: user?.nguoi_dung_id || user?.id,
           });
 
           if (data.payment_url) {
-            window.location.href = data.payment_url; // Chuyển hướng trực tiếp để không mở tab mới
+            window.location.href = data.payment_url;
           } else {
             throw new Error("Không lấy được URL thanh toán");
           }
-        } catch (err) {
-          console.error(err);
-          Swal.fire("Lỗi", "Không thể tạo đơn hàng. Thử lại.", "error");
-        } finally {
-          isPlacingOrder.value = false;
-        }
-      } else if (paymentMethod.value === 'cod') {
-        try {
+        } else if (paymentMethod.value === 'cod') {
           const response = await axios.post('http://localhost:8000/api/orders/store', payload, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem('token')}`
             }
           });
 
-          Swal.fire({
-            icon: 'success',
-            title: 'Đặt hàng thành công!',
-            text: 'Đơn hàng của bạn đã được ghi nhận và sẽ được giao sớm nhất có thể.',
-            showConfirmButton: false,
-            timer: 3000
-          });
-          
-          // Xóa giỏ hàng trên frontend
-          products.value = [];
-          
-          router.push({ name: 'paymentsuccess', params: { orderId: response.data.order_id }, query: { success: '1' } });
-        } catch (err) {
-          console.error("Lỗi khi tạo đơn hàng COD:", err.response?.data || err.message);
-          Swal.fire("Lỗi", "Không thể tạo đơn hàng COD. Thử lại.", "error");
-        } finally {
-          isPlacingOrder.value = false;
+          if (response.data.order_id) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Đặt hàng thành công!',
+              text: 'Đơn hàng của bạn đã được ghi nhận và sẽ được giao sớm nhất có thể.',
+              showConfirmButton: false,
+              timer: 3000
+            });
+            
+            products.value = [];
+            
+            router.push({
+              name: 'paymentsuccess', 
+              query: { 
+                success: '1', 
+                order_id: response.data.order_id,
+                payment_method: 'cod'
+              } 
+            });
+          } else {
+            throw new Error("Không nhận được mã đơn hàng từ server.");
+          }
+        } else {
+          Swal.fire("Lỗi", "Vui lòng chọn phương thức thanh toán.", "warning");
         }
-      } else {
-        Swal.fire("Lỗi", "Vui lòng chọn phương thức thanh toán.", "warning");
+      } catch (err) {
+        console.error("Lỗi khi tạo đơn hàng:", err.response?.data || err.message);
+        Swal.fire("Lỗi", err.response?.data?.message || "Không thể tạo đơn hàng. Vui lòng thử lại.", "error");
+      } finally {
         isPlacingOrder.value = false;
       }
     };
