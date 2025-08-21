@@ -76,6 +76,7 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import GiamGiaForm from './GiamGiaForm.vue';
 import SendCouponModal from './SendCouponModal.vue';
+import Swal from 'sweetalert2'; // Thêm SweetAlert2
 
 const coupons = ref([]);
 const isLoading = ref(true);
@@ -91,7 +92,12 @@ const fetchCoupons = async () => {
     coupons.value = response.data;
   } catch (error) {
     console.error("Lỗi khi tải danh sách mã giảm giá:", error);
-    alert('Không thể tải dữ liệu từ máy chủ. Vui lòng kiểm tra lại đường truyền hoặc token xác thực.');
+    Swal.fire({
+      icon: 'error',
+      title: 'Lỗi tải dữ liệu',
+      text: 'Không thể tải dữ liệu từ máy chủ. Vui lòng kiểm tra lại đường truyền hoặc token xác thực.',
+      confirmButtonColor: '#0d6efd'
+    });
   } finally {
     isLoading.value = false;
   }
@@ -99,7 +105,16 @@ const fetchCoupons = async () => {
 
 const toggleCouponStatus = async (coupon) => {
   const actionText = coupon.trang_thai ? 'vô hiệu hóa' : 'kích hoạt';
-  if (confirm(`Bạn có chắc muốn ${actionText} mã giảm giá "${coupon.ma_giam_gia}" không?`)) {
+  const result = await Swal.fire({
+    icon: 'question',
+    title: 'Xác nhận',
+    text: `Bạn có chắc muốn ${actionText} mã giảm giá "${coupon.ma_giam_gia}" không?`,
+    showCancelButton: true,
+    confirmButtonText: 'Đồng ý',
+    cancelButtonText: 'Hủy',
+    confirmButtonColor: '#0d6efd'
+  });
+  if (result.isConfirmed) {
     try {
       const response = await axios.patch(`/admin/giam-gia/${coupon.giam_gia_id}/toggle-status`);
       const updatedCoupon = response.data.coupon;
@@ -107,10 +122,20 @@ const toggleCouponStatus = async (coupon) => {
       if (index !== -1) {
         coupons.value[index] = updatedCoupon;
       }
-      alert(`Đã ${actionText} mã giảm giá thành công!`);
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công',
+        text: `Đã ${actionText} mã giảm giá thành công!`,
+        confirmButtonColor: '#0d6efd'
+      });
     } catch (error) {
       console.error("Lỗi khi cập nhật trạng thái:", error);
-      alert(error.response?.data?.message || 'Có lỗi xảy ra.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: error.response?.data?.message || 'Có lỗi xảy ra.',
+        confirmButtonColor: '#0d6efd'
+      });
     }
   }
 };

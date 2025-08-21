@@ -51,6 +51,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import Swal from 'sweetalert2' // thêm SweetAlert2
 
 const products = ref([])
 
@@ -82,7 +83,12 @@ const formatCurrency = (amount) => {
 const addToCart = async (product) => {
   const token = localStorage.getItem('token');
   if (!token) {
-    alert('Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng!');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Bạn chưa đăng nhập',
+      text: 'Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng!',
+      confirmButtonColor: '#03A2DC'
+    });
     return;
   }
 
@@ -98,14 +104,29 @@ const addToCart = async (product) => {
         },
       }
     );
-    alert(`Đã thêm "${product.ten_san_pham}" vào giỏ hàng thành công!`);
+    Swal.fire({
+      icon: 'success',
+      title: 'Thành công',
+      text: `Đã thêm "${product.ten_san_pham}" vào giỏ hàng!`,
+      confirmButtonColor: '#03A2DC'
+    });
     console.log(response.data); 
   } catch (err) {
     if (err.response && err.response.status === 401) {
-      alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Phiên đăng nhập hết hạn',
+        text: 'Vui lòng đăng nhập lại.',
+        confirmButtonColor: '#03A2DC'
+      });
     } else {
       console.error('Lỗi khi thêm vào giỏ hàng:', err);
-      alert('Đã xảy ra lỗi khi thêm sản phẩm vào giỏ hàng.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Đã xảy ra lỗi khi thêm sản phẩm vào giỏ hàng.',
+        confirmButtonColor: '#03A2DC'
+      });
     }
   }
 };

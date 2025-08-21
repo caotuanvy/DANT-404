@@ -48,9 +48,6 @@
           </div>
         </div>
       </div>
-      <div>
-        <BinhLuanTT />
-      </div>
     </div>
     
     <aside class="news-sidebar" v-if="news">
@@ -147,7 +144,6 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
-import BinhLuanTT from '@/components/user/BinhLuanTT.vue';
 
 const route = useRoute()
 const router = useRouter()

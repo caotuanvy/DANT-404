@@ -112,6 +112,9 @@
             {{ showFullDescription ? 'Thu gọn' : 'Xem thêm' }}
         </button>
     </div>
+    <div>
+        <BinhLuanSP />
+    </div>
   </div>
   <div v-else class="loading-state">
     <p>Đang tải thông tin sản phẩm...</p>
@@ -122,6 +125,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
 import Swal from 'sweetalert2'; // import SweetAlert2
+import BinhLuanSP from './BinhLuanSP.vue'; // Import component for product reviews
 
 // --- STATE ---
 const product = ref(null);
