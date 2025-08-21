@@ -35,8 +35,8 @@
             <th>Người dùng</th>
             <th>Đối tượng</th>
             <th>Ngày bình luận</th>
-            <th class="toggle-cell">Hiển thị</th> 
-            <th class="text-center">Báo cáo</th> 
+            <th class="toggle-cell">Hiển thị</th>
+            <th class="text-center">Báo cáo</th>
             <th class="text-center">Lượt thích</th>
             <th class="text-center">Lượt không thích</th>
             <th class="text-center">Hành động</th>
@@ -72,14 +72,14 @@
             <td data-label="Lượt không thích" class="text-center">{{ binhLuan.luot_khong_thich }}</td>
             <td data-label="Hành động" class="action-icons-cell">
               <i class="fas fa-check-circle action-icon action-icon-normal"
-                 title="Đặt là Bình thường"
-                 @click="showConfirmSetBaoCao(binhLuan, 0)"></i>
+                title="Đặt là Bình thường"
+                @click="showConfirmSetBaoCao(binhLuan, 0)"></i>
               <i class="fas fa-ban action-icon action-icon-spam"
-                 title="Đặt là Spam bình luận"
-                 @click="showConfirmSetBaoCao(binhLuan, 1)"></i>
+                title="Đặt là Spam bình luận"
+                @click="showConfirmSetBaoCao(binhLuan, 1)"></i>
               <i class="fas fa-triangle-exclamation action-icon action-icon-offensive"
-                 title="Đặt là Dùng từ ngữ xúc phạm"
-                 @click="showConfirmSetBaoCao(binhLuan, 2)"></i>
+                title="Đặt là Dùng từ ngữ xúc phạm"
+                @click="showConfirmSetBaoCao(binhLuan, 2)"></i>
             </td>
           </tr>
         </tbody>
@@ -96,31 +96,10 @@
       <button @click="goToPage(currentPage + 1)" :disabled="currentPage === lastPage" class="btn-pagination">Sau</button>
     </div>
 
-    <div v-if="showConfirmModal" class="modal-overlay">
-      <div class="modal-content">
-        <h3>Xác nhận</h3>
-        <p>{{ confirmModalMessage }}</p>
-        <div class="modal-actions">
-          <button @click="handleConfirmAction(true)" class="btn-confirm">Đồng ý</button>
-          <button @click="handleConfirmAction(false)" class="btn-cancel">Hủy</button>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showNotificationModal" class="modal-overlay">
-      <div :class="['modal-content', notificationType === 'success' ? 'modal-success' : 'modal-error']">
-        <h3>{{ notificationTitle }}</h3>
-        <p>{{ notificationMessage }}</p>
-        <div class="modal-actions">
-          <button @click="closeNotificationModal" class="btn-confirm">Đóng</button>
-        </div>
-      </div>
-    </div>
-
     <div v-if="showFullContentModal" class="modal-overlay">
       <div class="modal-content full-content-modal">
         <h3>Nội dung đầy đủ</h3>
-        <p class="full-content-text">{{ fullContentMessage }}</p>
+        <div class="full-content-text" v-html="fullContentMessage"></div>
         <div class="modal-actions">
           <button @click="closeFullContentModal" class="btn-confirm">Đóng</button>
         </div>
@@ -132,6 +111,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
+import Swal from 'sweetalert2'; // Nhập SweetAlert2
 
 // State variables
 const binhLuans = ref([]);
@@ -148,15 +128,6 @@ const lastPage = ref(1);
 const perPage = ref(15);
 
 // Modal variables
-const showConfirmModal = ref(false);
-const confirmModalMessage = ref('');
-let confirmModalResolve = null;
-
-const showNotificationModal = ref(false);
-const notificationTitle = ref('');
-const notificationMessage = ref('');
-const notificationType = ref('');
-
 const showFullContentModal = ref(false);
 const fullContentMessage = ref('');
 
@@ -178,34 +149,31 @@ const getBaoCaoIcon = (status) => {
   }
 };
 
-const showConfirmation = (message) => {
-  confirmModalMessage.value = message;
-  showConfirmModal.value = true;
-  return new Promise((resolve) => {
-    confirmModalResolve = resolve;
+const showNotification = (title, message, type) => {
+  Swal.fire({
+    title: title,
+    text: message,
+    icon: type === 'success' ? 'success' : 'error',
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
   });
 };
 
-const handleConfirmAction = (confirmed) => {
-  showConfirmModal.value = false;
-  if (confirmModalResolve) {
-    confirmModalResolve(confirmed);
-    confirmModalResolve = null;
-  }
-};
-
-const showNotification = (title, message, type) => {
-  notificationTitle.value = title;
-  notificationMessage.value = message;
-  notificationType.value = type;
-  showNotificationModal.value = true;
-};
-
-const closeNotificationModal = () => {
-  showNotificationModal.value = false;
-  notificationTitle.value = '';
-  notificationMessage.value = '';
-  notificationType.value = '';
+const showConfirmation = async (message) => {
+  const result = await Swal.fire({
+    title: 'Xác nhận',
+    text: message,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Đồng ý',
+    cancelButtonText: 'Hủy',
+  });
+  return result.isConfirmed;
 };
 
 const showFullContent = (content) => {
@@ -263,6 +231,10 @@ const toggleTrangThai = async (binhLuan) => {
   const newTrangThai = binhLuan.trang_thai == 1 ? 0 : 1;
   const originalTrangThai = binhLuan.trang_thai;
   try {
+    const confirmed = await showConfirmation(`Bạn có chắc muốn ${newTrangThai === 1 ? 'hiển thị' : 'ẩn'} bình luận này không?`);
+    if (!confirmed) {
+      return;
+    }
     await axios.put(`http://localhost:8000/api/admin/binhluan/${binhLuan.binh_luan_id}/toggle`, {}, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -493,7 +465,7 @@ tr:hover {
 }
 .btn-pagination:disabled { opacity: 0.6; cursor: not-allowed; }
 
-/* Modal Styling (unchanged, as it's already responsive) */
+/* Modal Styling (giữ lại cho modal xem nội dung đầy đủ) */
 .modal-overlay {
   position: fixed;
   top: 0; left: 0;
@@ -519,6 +491,8 @@ tr:hover {
   text-align: left;
 }
 .full-content-modal .full-content-text {
+  display: flex;
+  flex-direction: column;
   white-space: pre-wrap;
   word-wrap: break-word;
   max-height: 400px;
@@ -527,6 +501,38 @@ tr:hover {
   padding: 15px;
   border-radius: 5px;
   line-height: 1.6;
+}
+.full-content-modal .full-content-text img {
+  max-width: 100%;
+  max-height: 120px;
+  height: auto;
+  display: block;
+  margin-top: 15px;
+  border-radius: 5px;
+  align-self: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  object-fit: contain;
+}
+.modal-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.btn-confirm, .btn-cancel {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.btn-confirm {
+  background-color: #4CAF50;
+  color: white;
+}
+.btn-cancel {
+  background-color: #f44336;
+  color: white;
 }
 
 /*

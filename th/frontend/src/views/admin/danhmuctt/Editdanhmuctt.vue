@@ -41,6 +41,7 @@
 
 <script>
 import axios from "axios";
+import Swal from "sweetalert2"; // Import SweetAlert2
 
 export default {
   data() {
@@ -77,7 +78,11 @@ export default {
         }
       } catch (error) {
         console.error("Lỗi khi lấy danh mục:", error);
-        alert("Không thể tải dữ liệu danh mục.");
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi',
+          text: 'Không thể tải dữ liệu danh mục.',
+        });
       }
     },
     onFileChange(e) {
@@ -109,12 +114,25 @@ export default {
         );
 
         if (res.status === 200) {
-          alert("Cập nhật danh mục thành công!");
-          this.$router.push("/admin/danhmuctintuc");
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Cập nhật danh mục thành công!',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+          }).then(() => {
+            this.$router.push("/admin/danhmuctintuc");
+          });
         }
       } catch (error) {
         console.error("Lỗi khi cập nhật danh mục:", error);
-        alert("Có lỗi xảy ra khi cập nhật.");
+        Swal.fire({
+          icon: 'error',
+          title: 'Thất bại',
+          text: 'Có lỗi xảy ra khi cập nhật.',
+        });
       }
     },
   },

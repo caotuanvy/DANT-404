@@ -363,6 +363,7 @@ public function getCommentsByRating(Request $request)
         // Thêm sắp xếp và eager load quan hệ với người dùng
         $comments = $query->with('nguoiDung')
                           ->orderBy($sortBy, $sortOrder)
+                          ->where('trang_thai', 1)
                           ->paginate($perPage);
 
         return response()->json($comments);

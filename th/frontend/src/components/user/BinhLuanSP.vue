@@ -227,6 +227,14 @@
 import { ref, watch, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
+import Swal from "sweetalert2";
+
+/**
+ * Hiển thị một modal thông báo tùy chỉnh.
+ * @param {string} title Tiêu đề của modal.
+ * @param {string} text Nội dung tin nhắn.
+ * @param {string} icon Icon hiển thị (ví dụ: 'warning', 'info', 'error').
+ */
 
 const route = useRoute();
 const user = JSON.parse(localStorage.getItem('user')) || null;
@@ -268,9 +276,30 @@ const isSubmitDisabled = computed(() => {
 const showAlertModal = ref(false);
 const alertMessage = ref('');
 
+const showCustomModal = (title, text, icon = 'warning') => {
+  Swal.fire({
+    title: title,
+    text: text,
+    icon: icon,
+    confirmButtonText: 'Đã hiểu',
+    confirmButtonColor: '#55a8e0', // Màu nút giống trong hình
+    customClass: {
+      popup: 'alert-modal',
+      icon: 'alert-icon',
+      title: 'alert-message',
+      confirmButton: 'alert-button'
+    },
+    showClass: {
+      popup: 'animate__animated animate__fadeIn'
+    },
+    hideClass: {
+      popup: 'animate__animated animate__fadeOut'
+    }
+  });
+};
+
 function openAlertModal(message) {
-    alertMessage.value = message;
-    showAlertModal.value = true;
+  showCustomModal('Thông báo', message, 'warning'); // Sử dụng 'warning' để có icon dấu chấm than màu cam
 }
 
 function closeAlertModal() {
