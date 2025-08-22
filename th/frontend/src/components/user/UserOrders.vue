@@ -26,7 +26,9 @@
         </div>
 
         <div class="order-address">
-          Giao đến: {{ order.diachi?.dia_chi || "Không rõ địa chỉ" }}
+          Người nhận: {{ order.ten_nguoi_nhan }} <br />
+          SĐT: {{ order.sdt_nguoi_nhan }} <br />
+          Địa chỉ: {{ order.dia_chi_giao_hang || "Không rõ địa chỉ" }}
         </div>
 
         <div
@@ -260,13 +262,19 @@ const confirmCancelOrder = async () => {
     order.trang_thai_don_hang = 5;
     closeCancelModal();
 
+    // ✅ Kiểm tra phương thức thanh toán
+    let successMessage = "Hủy đơn hàng thành công!";
+    if (order.payment_method?.ten_pttt?.toLowerCase().includes("ngân hàng")) {
+      successMessage = "Hủy đơn hàng thành công! Tiền sẽ được hoàn trả trong 3 ngày.";
+    }
+
     Swal.fire({
       icon: 'success',
-      title: 'Hủy đơn hàng thành công!',
+      title: successMessage,
       toast: true,
       position: 'top-end',
       showConfirmButton: false,
-      timer: 3000,
+      timer: 4000,
       timerProgressBar: true,
       didOpen: (toast) => {
         toast.addEventListener('mouseenter', Swal.stopTimer);
@@ -289,6 +297,7 @@ const confirmCancelOrder = async () => {
     closeCancelModal();
   }
 };
+
 </script>
 
 <style scoped>
@@ -337,7 +346,8 @@ hr {
   transition: all 0.3s ease;
   white-space: nowrap;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  flex-shrink: 0; /* Prevent shrinking on smaller screens */
+  flex-shrink: 0;
+  /* Prevent shrinking on smaller screens */
 }
 
 .order-status-tabs button:hover {
@@ -403,7 +413,8 @@ hr {
 
 .order-current-status {
   font-weight: bold;
-  color: #28a745; /* Success color for status */
+  color: #28a745;
+  /* Success color for status */
   font-size: 15px;
 }
 
@@ -417,7 +428,8 @@ hr {
 /* --- Order Product Item --- */
 .order-product-item {
   display: flex;
-  align-items: flex-start; /* Align items to the top */
+  align-items: flex-start;
+  /* Align items to the top */
   padding: 15px 20px;
   border-bottom: 1px dashed #e9ecef;
 }
@@ -433,7 +445,8 @@ hr {
   border-radius: 6px;
   margin-right: 18px;
   border: 1px solid #ddd;
-  flex-shrink: 0; /* Prevent image from shrinking */
+  flex-shrink: 0;
+  /* Prevent image from shrinking */
 }
 
 .product-details {
@@ -460,7 +473,8 @@ hr {
 .product-subtotal {
   font-size: 15px;
   font-weight: bold;
-  color: #dc3545; /* Red for individual item total */
+  color: #dc3545;
+  /* Red for individual item total */
   margin-top: 8px;
 }
 
@@ -471,7 +485,8 @@ hr {
   border-top: 1px solid #e0e0e0;
   display: flex;
   flex-direction: column;
-  align-items: flex-end; /* Align content to the right */
+  align-items: flex-end;
+  /* Align content to the right */
   gap: 8px;
   font-size: 15px;
   color: #333;
@@ -487,14 +502,17 @@ hr {
   align-items: center;
   gap: 20px;
   margin-top: 10px;
-  width: 100%; /* Take full width for alignment */
-  justify-content: flex-end; /* Align content to the right */
+  width: 100%;
+  /* Take full width for alignment */
+  justify-content: flex-end;
+  /* Align content to the right */
 }
 
 .order-total-amount {
   font-size: 18px;
   font-weight: bold;
-  color: #007bff; /* Blue for total amount */
+  color: #007bff;
+  /* Blue for total amount */
 }
 
 .btn-cancel-order {
@@ -528,7 +546,8 @@ hr {
   }
 
   .order-status-tabs {
-    justify-content: center; /* Center tabs on smaller screens */
+    justify-content: center;
+    /* Center tabs on smaller screens */
     gap: 8px;
   }
 
@@ -549,17 +568,20 @@ hr {
     align-items: flex-start;
     padding: 15px;
   }
+
   .product-image {
     margin-right: 0;
     margin-bottom: 12px;
   }
 
   .product-details {
-    width: 100%; /* Take full width */
+    width: 100%;
+    /* Take full width */
   }
 
   .order-footer {
-    align-items: center; /* Center content in footer on smaller screens */
+    align-items: center;
+    /* Center content in footer on smaller screens */
     text-align: center;
     padding: 15px;
   }
@@ -568,28 +590,34 @@ hr {
     flex-direction: column;
     gap: 10px;
     width: 100%;
-    align-items: center; /* Center items in action block */
+    align-items: center;
+    /* Center items in action block */
   }
 
   .btn-cancel-order {
-    width: 80%; /* Make button wider */
-    max-width: 250px; /* Limit max width */
+    width: 80%;
+    /* Make button wider */
+    max-width: 250px;
+    /* Limit max width */
   }
 }
 
 @media (max-width: 480px) {
   .order-status-tabs button {
-    width: 100%; /* Full width buttons for very small screens */
+    width: 100%;
+    /* Full width buttons for very small screens */
     text-align: center;
   }
 }
+
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* Tối hơn một chút để nổi bật modal */
+  background-color: rgba(0, 0, 0, 0.5);
+  /* Tối hơn một chút để nổi bật modal */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -598,8 +626,13 @@ hr {
 }
 
 @keyframes fadeInOverlay {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* Nội dung modal */
@@ -607,29 +640,42 @@ hr {
   background-color: #ffffff;
   padding: 40px;
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); /* Shadow rõ hơn */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  /* Shadow rõ hơn */
   width: 90%;
-  max-width: 500px; /* Rộng hơn một chút */
+  max-width: 500px;
+  /* Rộng hơn một chút */
   text-align: center;
-  animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Hiệu ứng scale đẹp hơn */
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Font hiện đại hơn */
+  animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  /* Hiệu ứng scale đẹp hơn */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  /* Font hiện đại hơn */
 }
 
 @keyframes scaleIn {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .modal-content h2 {
   margin-top: 0;
   font-size: 26px;
-  color: #2c3e50; /* Màu đậm hơn */
+  color: #2c3e50;
+  /* Màu đậm hơn */
   font-weight: 700;
   margin-bottom: 10px;
 }
 
 .modal-content p {
-  color: #7f8c8d; /* Màu xám hiện đại */
+  color: #7f8c8d;
+  /* Màu xám hiện đại */
   font-size: 15px;
   margin-bottom: 25px;
   line-height: 1.6;
@@ -656,7 +702,8 @@ hr {
   border-radius: 8px;
   background-color: #f8f9fa;
   color: #34495e;
-  appearance: none; /* Ẩn mũi tên mặc định */
+  appearance: none;
+  /* Ẩn mũi tên mặc định */
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%237f8c8d'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 15px center;
@@ -723,10 +770,12 @@ hr {
   .modal-content {
     padding: 30px 20px;
   }
+
   .modal-actions {
     flex-direction: column;
     gap: 10px;
   }
+
   .modal-actions .btn {
     width: 100%;
   }
