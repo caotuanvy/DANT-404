@@ -103,7 +103,7 @@
               </td>
               <td data-label="Hành động" class="text-center">
                 <div class="action-buttons">
-                  <router-link :to="`/tintuc/${news.slug}`" class="action-icon" title="Xem chi tiết">
+                  <router-link :to="`/tin-tuc-chi-tiet/${news.slug}`" class="action-icon" title="Xem chi tiết">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
                   </router-link>
                   <router-link :to="`/admin/tintuc/${news.id}/edit`" class="action-icon" title="Sửa">
@@ -132,6 +132,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 const newsList = ref([]);
 const errorMessage = ref('');
@@ -209,57 +210,129 @@ const getCategories = async () => {
 const toggleNoiBat = async (news) => {
   const oldStatus = news.noi_bat;
   const newStatus = oldStatus === 1 ? 0 : 1;
-  news.noi_bat = newStatus;
-  try {
-    await axios.put(`http://localhost:8000/api/tintuc/${news.id}`, {
-      noi_bat: newStatus,
-    }, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
-  } catch (error) {
-    news.noi_bat = oldStatus;
-    alert('Cập nhật trạng thái nổi bật thất bại!');
+  const actionText = newStatus === 1 ? 'ghim trang chủ' : 'bỏ ghim trang chủ';
+
+  const result = await Swal.fire({
+    title: `Xác nhận thay đổi trạng thái`,
+    text: `Bạn có chắc muốn đặt tin "${news.tieude}" ở trạng thái ${actionText} không?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Đồng ý',
+    cancelButtonText: 'Hủy',
+  });
+
+  if (result.isConfirmed) {
+    try {
+      news.noi_bat = newStatus;
+      await axios.put(`http://localhost:8000/api/tintuc/${news.id}`, {
+        noi_bat: newStatus,
+      }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      Swal.fire({
+        title: 'Thành công!',
+        text: `Đã cập nhật tin tức thành công!`,
+        icon: 'success',
+      });
+    } catch (error) {
+      news.noi_bat = oldStatus;
+      console.error('Lỗi khi cập nhật trạng thái nổi bật:', error);
+      Swal.fire({
+        title: 'Thất bại!',
+        text: `Cập nhật trạng thái nổi bật thất bại: ` + (error.response?.data?.message || error.message),
+        icon: 'error',
+      });
+    }
   }
 };
 
 const toggleDuyet = async (news) => {
   const oldStatus = news.duyet_tin_tuc;
   const newStatus = oldStatus === 1 ? 0 : 1;
-  news.duyet_tin_tuc = newStatus;
-  try {
-    await axios.put(`http://localhost:8000/api/tintuc/${news.id}`, {
-      duyet_tin_tuc: newStatus,
-    }, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
-  } catch (error) {
-    news.duyet_tin_tuc = oldStatus;
-    alert('Cập nhật trạng thái duyệt thất bại!');
+  const actionText = newStatus === 1 ? 'hiển thị ở mục Quan Trọng' : 'bỏ hiển thị ở mục Quan Trọng';
+
+  const result = await Swal.fire({
+    title: `Xác nhận ${actionText} tin`,
+    text: `Bạn có chắc muốn tin tức ${actionText} "${news.tieude}" này không?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Đồng ý',
+    cancelButtonText: 'Hủy',
+  });
+
+  if (result.isConfirmed) {
+    try {
+      news.duyet_tin_tuc = newStatus;
+      await axios.put(`http://localhost:8000/api/tintuc/${news.id}`, {
+        duyet_tin_tuc: newStatus,
+      }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      Swal.fire({
+        title: 'Thành công!',
+        text: `Đã ${actionText} tin tức thành công!`,
+        icon: 'success',
+      });
+    } catch (error) {
+      news.duyet_tin_tuc = oldStatus;
+      console.error('Lỗi khi cập nhật trạng thái duyệt:', error);
+      Swal.fire({
+        title: 'Thất bại!',
+        text: `Cập nhật trạng thái duyệt thất bại: ` + (error.response?.data?.message || error.message),
+        icon: 'error',
+      });
+    }
   }
 };
 
 const toggleTrangThai = async (news) => {
   const oldStatus = news.trang_thai;
   const newStatus = oldStatus === 1 ? 0 : 1;
-  const action = newStatus === 1 ? 'hiển thị' : 'vô hiệu hóa';
-  if (!confirm(`Bạn có chắc muốn ${action} tin tức này?`)) return;
-  news.trang_thai = newStatus;
-  try {
-    await axios.put(`http://localhost:8000/api/tintuc/${news.id}`, {
-      trang_thai: newStatus,
-    }, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
-    alert(`Đã ${action} tin tức thành công!`);
-  } catch (error) {
-    news.trang_thai = oldStatus;
-    alert('Thao tác thất bại!');
+  const actionText = newStatus === 1 ? 'hiển thị' : 'ẩn';
+
+  const result = await Swal.fire({
+    title: `Xác nhận thay đổi trạng thái`,
+    text: `Bạn có chắc muốn ${actionText} tin tức "${news.tieude}" này không?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Đồng ý',
+    cancelButtonText: 'Hủy',
+  });
+
+  if (result.isConfirmed) {
+    try {
+      news.trang_thai = newStatus;
+      await axios.put(`http://localhost:8000/api/tintuc/${news.id}`, {
+        trang_thai: newStatus,
+      }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      Swal.fire({
+        title: 'Thành công!',
+        text: `Đã ${actionText} tin tức thành công!`,
+        icon: 'success',
+      });
+    } catch (error) {
+      news.trang_thai = oldStatus;
+      console.error('Lỗi khi cập nhật trạng thái:', error);
+      Swal.fire({
+        title: 'Thất bại!',
+        text: `Cập nhật trạng thái thất bại: ` + (error.response?.data?.message || error.message),
+        icon: 'error',
+      });
+    }
   }
 };
 

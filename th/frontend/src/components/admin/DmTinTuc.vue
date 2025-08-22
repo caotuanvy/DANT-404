@@ -5,7 +5,9 @@
         <h1 class="page-title">Danh sách danh mục tin tức</h1>
       </div>
       <router-link to="/admin/danh-muc-tin-tuc/add" class="btn-add">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+        </svg>
         <span>Thêm danh mục</span>
       </router-link>
     </header>
@@ -14,18 +16,8 @@
       <div class="row mb-3 g-2 filter-bar">
         <div class="col-md-6">
           <div class="search-input-wrapper">
-            <input
-              type="text"
-              class="form-control search-input"
-              placeholder="Tìm kiếm theo tên danh mục hoặc mô tả..."
-              v-model="searchQuery"
-            />
-            <button
-              v-if="searchQuery"
-              class="clear-search-btn"
-              @click="clearSearch"
-              aria-label="Xóa tìm kiếm"
-            >
+            <input type="text" class="form-control search-input" placeholder="Tìm kiếm theo tên danh mục hoặc mô tả..." v-model="searchQuery" />
+            <button v-if="searchQuery" class="clear-search-btn" @click="clearSearch" aria-label="Xóa tìm kiếm">
               &times;
             </button>
           </div>
@@ -43,7 +35,9 @@
         <table class="danhmuc-table">
           <thead>
             <tr>
-              <th class="w-12"><input type="checkbox"></th>
+              <th class="w-12">
+                <input type="checkbox" />
+              </th>
               <th>Tên danh mục</th>
               <th class="text-center">Hình ảnh</th>
               <th class="text-center">Trạng thái</th>
@@ -56,8 +50,10 @@
             <tr v-if="loading">
               <td colspan="7" class="text-center py-8">Đang tải dữ liệu...</td>
             </tr>
-            <tr v-for="(item,) in filteredDanhMuc" :key="item.id_danh_muc_tin_tuc" class="table-row" :class="{'is-inactive-row': item.trang_thai != 1}">
-              <td data-label="Chọn"><input type="checkbox"></td>
+            <tr v-for="item in filteredDanhMuc" :key="item.id_danh_muc_tin_tuc" class="table-row" :class="{ 'is-inactive-row': item.trang_thai != 1 }">
+              <td data-label="Chọn">
+                <input type="checkbox" />
+              </td>
               <td data-label="Tên danh mục">
                 <div class="danhmuc-title-cell">
                   <router-link :to="`/admin/danh-muc-tin-tuc/${item.id_danh_muc_tin_tuc}`" class="danhmuc-title danhmuc-title-link">
@@ -67,11 +63,7 @@
                 </div>
               </td>
               <td data-label="Hình ảnh" class="text-center">
-                <img
-                  :src="getImageUrl(item.hinh_anh)"
-                  :alt="item.ten_danh_muc"
-                  class="danhmuc-thumbnail"
-                />
+                <img :src="getImageUrl(item.hinh_anh)" :alt="item.ten_danh_muc" class="danhmuc-thumbnail" />
               </td>
               <td data-label="Trạng thái" class="text-center">
                 <span class="status-badge" :class="item.trang_thai == 1 ? 'is-active' : 'is-inactive'">
@@ -117,6 +109,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 const danhMuc = ref([]);
 const errorMessage = ref('');
@@ -141,7 +134,7 @@ const filteredDanhMuc = computed(() => {
 
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
-    currentDanhMuc = currentDanhMuc.filter(item => {
+    currentDanhMuc = currentDanhMuc.filter((item) => {
       const tenDanhMuc = item.ten_danh_muc ? String(item.ten_danh_muc).toLowerCase() : '';
       const moTa = item.mo_ta ? String(item.mo_ta).toLowerCase() : '';
       return tenDanhMuc.includes(query) || moTa.includes(query);
@@ -149,7 +142,7 @@ const filteredDanhMuc = computed(() => {
   }
 
   if (statusFilter.value !== '') {
-    currentDanhMuc = currentDanhMuc.filter(item => String(item.trang_thai) === statusFilter.value);
+    currentDanhMuc = currentDanhMuc.filter((item) => String(item.trang_thai) === statusFilter.value);
   }
 
   return currentDanhMuc;
@@ -177,31 +170,46 @@ const toggleTrangThai = async (item) => {
   const oldStatus = item.trang_thai;
   const newStatus = oldStatus === 1 ? 0 : 1;
   const actionText = newStatus === 1 ? 'hiện' : 'ẩn';
-  const confirmMessage = newStatus === 1
-    ? `Bạn có chắc muốn hiện lại danh mục "${item.ten_danh_muc}" này không?`
-    : `Bạn có chắc muốn ẩn danh mục "${item.ten_danh_muc}" này không?`;
 
-  if (!confirm(confirmMessage)) {
-    return;
-  }
+  const result = await Swal.fire({
+    title: `Xác nhận ${actionText} danh mục`,
+    text: `Bạn có chắc muốn ${actionText} danh mục "${item.ten_danh_muc}" này không?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: `Đồng ý, ${actionText}!`,
+    cancelButtonText: 'Hủy',
+  });
 
-  item.trang_thai = newStatus;
-
-  try {
-    await axios.put(`http://localhost:8000/api/danh-muc-tin-tuc/${item.id_danh_muc_tin_tuc}/toggle-status`, {
-      trang_thai: newStatus,
-    }, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
-
-    alert(`Đã ${actionText} danh mục "${item.ten_danh_muc}" thành công!`);
-
-  } catch (error) {
-    item.trang_thai = oldStatus;
-    console.error('Lỗi khi cập nhật trạng thái danh mục:', error);
-    alert(`Thao tác ${actionText} danh mục "${item.ten_danh_muc}" thất bại: ` + (error.response?.data?.message || error.message));
+  if (result.isConfirmed) {
+    try {
+      item.trang_thai = newStatus;
+      await axios.put(
+        `http://localhost:8000/api/danh-muc-tin-tuc/${item.id_danh_muc_tin_tuc}/toggle-status`,
+        {
+          trang_thai: newStatus,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+      Swal.fire({
+        title: 'Thành công!',
+        text: `Đã ${actionText} danh mục "${item.ten_danh_muc}" thành công!`,
+        icon: 'success',
+      });
+    } catch (error) {
+      item.trang_thai = oldStatus;
+      console.error('Lỗi khi cập nhật trạng thái danh mục:', error);
+      Swal.fire({
+        title: 'Thất bại!',
+        text: `Thao tác ${actionText} danh mục "${item.ten_danh_muc}" thất bại: ` + (error.response?.data?.message || error.message),
+        icon: 'error',
+      });
+    }
   }
 };
 
@@ -244,7 +252,7 @@ onMounted(() => {
 
 /* --- BUTTONS & INPUTS --- */
 .btn-add {
-  background-color: #4FC3F7;
+  background-color: #4fc3f7;
   color: white;
   display: inline-flex;
   align-items: center;
@@ -265,7 +273,7 @@ onMounted(() => {
   height: 20px;
 }
 .btn-add:hover {
-  background-color:#3b82f6;
+  background-color: #3b82f6;
   transform: scale(1.05);
 }
 .filter-bar {
@@ -349,7 +357,8 @@ onMounted(() => {
   border-collapse: collapse;
   white-space: nowrap;
 }
-.danhmuc-table th, .danhmuc-table td {
+.danhmuc-table th,
+.danhmuc-table td {
   padding: 1rem;
   text-align: left;
   vertical-align: middle;
@@ -366,9 +375,16 @@ onMounted(() => {
 .danhmuc-table tbody tr:last-child td {
   border-bottom: none;
 }
-.w-12 { width: 3rem; }
-.text-center { text-align: center; }
-.py-8 { padding-top: 2rem; padding-bottom: 2rem; }
+.w-12 {
+  width: 3rem;
+}
+.text-center {
+  text-align: center;
+}
+.py-8 {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
 .danhmuc-title-cell {
   display: flex;
   flex-direction: column;
@@ -514,7 +530,10 @@ onMounted(() => {
   .danhmuc-table thead {
     display: none; /* Ẩn header của bảng */
   }
-  .danhmuc-table, .danhmuc-table tbody, .danhmuc-table tr, .danhmuc-table td {
+  .danhmuc-table,
+  .danhmuc-table tbody,
+  .danhmuc-table tr,
+  .danhmuc-table td {
     display: block; /* Hiển thị các thành phần như block để chúng xuống dòng */
     width: 100%;
   }
