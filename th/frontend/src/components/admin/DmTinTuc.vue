@@ -50,7 +50,7 @@
             <tr v-if="loading">
               <td colspan="7" class="text-center py-8">Đang tải dữ liệu...</td>
             </tr>
-            <tr v-for="item in filteredDanhMuc" :key="item.id_danh_muc_tin_tuc" class="table-row" :class="{ 'is-inactive-row': item.trang_thai != 1 }">
+            <tr v-for="item in paginatedDanhMuc" :key="item.id_danh_muc_tin_tuc" class="table-row" :class="{ 'is-inactive-row': item.trang_thai != 1 }">
               <td data-label="Chọn">
                 <input type="checkbox" />
               </td>
@@ -102,6 +102,18 @@
       </div>
       <p v-if="!loading && filteredDanhMuc.length === 0" class="no-data-message">Chưa có danh mục nào phù hợp.</p>
       <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+
+      <div class="pagination-container" v-if="totalPages > 1">
+        <button @click="prevPage" :disabled="currentPage === 1" class="pagination-btn">
+          Trước
+        </button>
+        <span class="pagination-info">
+          Trang {{ currentPage }} trên {{ totalPages }}
+        </span>
+        <button @click="nextPage" :disabled="currentPage === totalPages" class="pagination-btn">
+          Sau
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -111,12 +123,18 @@ import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 
+// State Variables
 const danhMuc = ref([]);
 const errorMessage = ref('');
 const loading = ref(false);
 const searchQuery = ref('');
 const statusFilter = ref('');
 
+// Pagination variables
+const currentPage = ref(1);
+const itemsPerPage = ref(10);
+
+// Functions & Computed Properties
 const clearSearch = () => {
   searchQuery.value = '';
 };
@@ -129,6 +147,7 @@ const truncateText = (text, maxLength) => {
   return text;
 };
 
+// Filtered and sorted data (before pagination)
 const filteredDanhMuc = computed(() => {
   let currentDanhMuc = danhMuc.value;
 
@@ -148,6 +167,32 @@ const filteredDanhMuc = computed(() => {
   return currentDanhMuc;
 });
 
+// Paginated data (displayed on the current page)
+const paginatedDanhMuc = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  return filteredDanhMuc.value.slice(start, end);
+});
+
+// Total pages for pagination
+const totalPages = computed(() => {
+  return Math.ceil(filteredDanhMuc.value.length / itemsPerPage.value);
+});
+
+// Pagination navigation functions
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+  }
+};
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
+};
+
+// Data fetching function
 const fetchDanhMuc = async () => {
   loading.value = true;
   errorMessage.value = '';
@@ -496,7 +541,37 @@ onMounted(() => {
   color: #6b7280;
 }
 
-/* * MOBILE STYLES 
+/* --- PAGINATION STYLES --- */
+.pagination-container {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+}
+.pagination-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #fff;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+.pagination-btn:hover:not(:disabled) {
+    background-color: #f0f0f0;
+    border-color: #aaa;
+}
+.pagination-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+.pagination-info {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+/*
+ * MOBILE STYLES
  */
 @media (max-width: 768px) {
   .page-header {
@@ -525,7 +600,7 @@ onMounted(() => {
     width: 100%;
   }
 
-  /* * TABLE RESPONSIVE STYLES 
+  /* * TABLE RESPONSIVE STYLES
    */
   .danhmuc-table thead {
     display: none; /* Ẩn header của bảng */

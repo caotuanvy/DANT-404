@@ -5,7 +5,9 @@
         <h1 class="page-title">Danh sách tin tức</h1>
       </div>
       <router-link to="/admin/tintuc/add" class="btn-add">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+        </svg>
         <span>Thêm tin tức</span>
       </router-link>
     </header>
@@ -59,7 +61,7 @@
             <tr v-if="loading">
               <td colspan="10" class="text-center py-8">Đang tải dữ liệu...</td>
             </tr>
-            <tr v-for="news in filteredNews" :key="news.id" class="table-row" :class="{'is-inactive-row': news.trang_thai != 1}">
+            <tr v-for="news in paginatedNews" :key="news.id" class="table-row" :class="{'is-inactive-row': news.trang_thai != 1}">
               <td data-label="Chọn"><input type="checkbox"></td>
               <td data-label="Tiêu đề">
                 <div class="news-title-cell">
@@ -125,6 +127,18 @@
       </div>
       <p v-if="!loading && filteredNews.length === 0" class="no-data-message">Không có tin tức nào phù hợp.</p>
       <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+
+      <div class="pagination-container" v-if="totalPages > 1">
+        <button @click="prevPage" :disabled="currentPage === 1" class="pagination-btn">
+          Trước
+        </button>
+        <span class="pagination-info">
+          Trang {{ currentPage }} trên {{ totalPages }}
+        </span>
+        <button @click="nextPage" :disabled="currentPage === totalPages" class="pagination-btn">
+          Sau
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -134,6 +148,7 @@ import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 
+// State Variables
 const newsList = ref([]);
 const errorMessage = ref('');
 const loading = ref(false);
@@ -142,6 +157,11 @@ const categoryFilter = ref('');
 const statusFilter = ref('');
 const categories = ref([]);
 
+// Pagination variables
+const currentPage = ref(1);
+const itemsPerPage = ref(10); // phan trang 10 tin mỗi trang
+
+// Functions & Computed Properties
 const clearSearch = () => {
   searchQuery.value = '';
 };
@@ -154,6 +174,7 @@ const truncateText = (text, maxLength) => {
   return text;
 };
 
+// Filtered data (before pagination)
 const filteredNews = computed(() => {
   let currentNews = newsList.value;
 
@@ -177,10 +198,38 @@ const filteredNews = computed(() => {
   if (statusFilter.value !== '') {
     currentNews = currentNews.filter(news => String(news.trang_thai) === statusFilter.value);
   }
-
+  
+  // Reset page to 1 whenever filters change
+  currentPage.value = 1;
   return currentNews;
 });
 
+// Paginated data (displayed on the current page)
+const paginatedNews = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  return filteredNews.value.slice(start, end);
+});
+
+// Total pages for pagination
+const totalPages = computed(() => {
+  return Math.ceil(filteredNews.value.length / itemsPerPage.value);
+});
+
+// Pagination navigation functions
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+  }
+};
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
+};
+
+// Data fetching function
 const getNews = async () => {
   loading.value = true;
   errorMessage.value = '';
@@ -207,6 +256,7 @@ const getCategories = async () => {
   }
 };
 
+// Toggle functions
 const toggleNoiBat = async (news) => {
   const oldStatus = news.noi_bat;
   const newStatus = oldStatus === 1 ? 0 : 1;
@@ -349,8 +399,8 @@ onMounted(() => {
 
 <style scoped>
 /*
- * BASE STYLES
- */
+ * BASE STYLES
+ */
 .page-wrapper {
   background-color: #f3f4f6;
   padding: 2rem;
@@ -598,9 +648,39 @@ onMounted(() => {
   color: #9ca3af;
 }
 
+/* --- PAGINATION STYLES --- */
+.pagination-container {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+}
+.pagination-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #fff;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+.pagination-btn:hover:not(:disabled) {
+    background-color: #f0f0f0;
+    border-color: #aaa;
+}
+.pagination-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+.pagination-info {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+
 /*
- * RESPONSIVE MOBILE STYLES (Dưới 768px)
- */
+ * RESPONSIVE MOBILE STYLES (Dưới 768px)
+ */
 @media (max-width: 768px) {
   .page-wrapper {
     padding: 1rem;
