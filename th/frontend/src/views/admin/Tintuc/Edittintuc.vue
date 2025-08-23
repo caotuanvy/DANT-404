@@ -296,7 +296,7 @@ export default {
     async getDanhMucs() {
       try {
         const res = await axios.get("http://localhost:8000/api/danh-muc-tin-tuc");
-        this.danhMucs = res.data;
+        this.danhMucs = res.data.filter(dm => dm.trang_thai === 1);
       } catch (error) {
         Swal.fire({
             toast: true,
