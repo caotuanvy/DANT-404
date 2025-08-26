@@ -11,7 +11,7 @@ use App\Models\DiaChi;
 use App\Models\Notifications;
 use App\Models\SanPham; // Import model SanPham
 use App\Models\HinhAnhSanPham; // Import model HinhAnhSanPham
-use App\Models\GiamGia; // Import model GiamGia]
+use App\Models\GiamGia; // Import model GiamGia
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -27,11 +27,9 @@ class OrderController extends Controller
     {
         $query = Order::whereNull('ngay_xoa')
             ->with([
-                'user', // Load thông tin người dùng
-                'paymentMethod', // Load thông tin phương thức thanh toán
-                'diachi', // Load thông tin địa chỉ
-                'orderItems.bien_the.sanPham.hinhAnhSanPham', // Load hình ảnh sản phẩm từ sản phẩm cha
-                // Hoặc 'orderItems.bien_the.hinhAnhDaiDien' nếu bạn có mối quan hệ đó
+                'user',
+                'paymentMethod',
+                'orderItems.bien_the.sanPham.hinhAnhSanPham',
             ]);
 
         if ($request->has('status') && $request->status) {
@@ -42,9 +40,9 @@ class OrderController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('id', 'like', "%$search%")
-                ->orWhereHas('user', function ($userQuery) use ($search) {
-                    $userQuery->where('ho_ten', 'like', "%$search%");
-                });
+                    ->orWhereHas('user', function ($userQuery) use ($search) {
+                        $userQuery->where('ho_ten', 'like', "%$search%");
+                    });
             });
         }
 
@@ -70,21 +68,19 @@ class OrderController extends Controller
             }
         }
 
-        $perPage = $request->input('per_page', 10); // Mặc định 10 nếu không có
+        $perPage = $request->input('per_page', 10);
         if ($request->has('get_latest_for_user') && $request->get_latest_for_user) {
-            // Logic để chỉ lấy N đơn hàng gần nhất cho một user cụ thể
-            $userId = Auth::id(); // Lấy ID của người dùng hiện tại
+            $userId = Auth::id();
             if ($userId) {
                 $query->where('nguoi_dung_id', $userId);
             }
             $orders = $query->orderBy('ngay_dat', 'desc')
-                             ->limit(20) // Giới hạn 20 đơn hàng gần nhất
+                             ->limit(20)
                              ->get();
-            return response()->json(['data' => $orders]); // Trả về dạng data: [...]
+            return response()->json(['data' => $orders]);
         } else {
-            // Mặc định cho admin hoặc các trường hợp khác, sử dụng phân trang đầy đủ
             $orders = $query->orderBy('ngay_dat', 'desc')->paginate($perPage);
-            return response()->json($orders); // Laravel paginate() trả về cấu trúc đầy đủ
+            return response()->json($orders);
         }
     }
 
@@ -104,7 +100,7 @@ class OrderController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'trang_thai_don_hang' => 'required|integer|min:1|max:5', // <-- Validate là số nguyên từ 1-5
+            'trang_thai_don_hang' => 'required|integer|min:1|max:5',
         ]);
 
         try {
@@ -126,7 +122,7 @@ class OrderController extends Controller
         }
 
         $query = Order::where('nguoi_dung_id', $userId)
-            ->with('paymentMethod', 'diachi', 'orderItems.bien_the.sanPham.hinhAnhSanPham'); // Thêm eager loading
+            ->with('paymentMethod', 'orderItems.bien_the.sanPham.hinhAnhSanPham');
 
         if ($request->has('search') && $request->search) {
             $search = $request->search;
@@ -160,7 +156,8 @@ class OrderController extends Controller
             return response()->json(['message' => 'Không thể xác nhận thanh toán. Vui lòng thử lại.'], 500);
         }
     }
- public function store(Request $request)
+
+    public function store(Request $request)
     {
         $user = Auth::user();
         if (!$user) {
@@ -170,13 +167,15 @@ class OrderController extends Controller
         // BƯỚC 1: Validate dữ liệu đầu vào từ frontend
         $validatedData = $request->validate([
             'phuong_thuc_thanh_toan_id' => 'required|integer|exists:phuong_thuc_thanh_toan,phuong_thuc_thanh_toan_id',
-            'dia_chi_id' => 'required|integer|exists:dia_chi,id_dia_chi',
+            'dia_chi_giao_hang' => 'required|string|max:255',
             'phi_van_chuyen' => 'required|numeric|min:0',
             'ma_giam_gia' => 'nullable|string|max:255',
             'ghi_chu' => 'nullable|string',
+            'ten_nguoi_nhan' => 'required|string|max:100',
+            'sdt_nguoi_nhan' => 'required|string|max:20',
         ]);
 
-        // Bắt đầu transaction để đảm bảo an toàn dữ liệu: nếu có lỗi, mọi thứ sẽ được hoàn tác.
+        // Bắt đầu transaction để đảm bảo an toàn dữ liệu
         DB::beginTransaction();
 
         try {
@@ -196,29 +195,26 @@ class OrderController extends Controller
             // BƯỚC 3: Kiểm tra số lượng tồn kho trước khi xử lý
             foreach ($cartItems as $item) {
                 if ($item->so_luong > $item->so_luong_ton_kho) {
-                    DB::rollBack(); // Hủy bỏ transaction
+                    DB::rollBack();
                     return response()->json(['message' => 'Sản phẩm "' . $item->ten_bien_the . '" không đủ số lượng tồn kho. Chỉ còn ' . $item->so_luong_ton_kho . ' sản phẩm.'], 400);
                 }
             }
 
-            // BƯỚC 4: Tính tổng tiền hàng (subtotal)
+            // BƯỚC 4: Tính tổng tiền hàng và xác thực mã giảm giá
             $subtotal = $cartItems->sum(fn($item) => $item->gia * $item->so_luong);
             $coupon = null;
             $discountAmount = 0;
 
-            // BƯỚC 5: Xác thực lại toàn bộ mã giảm giá ở backend
             if (!empty($validatedData['ma_giam_gia'])) {
                 $coupon = GiamGia::where('ma_giam_gia', $validatedData['ma_giam_gia'])->first();
 
-                // 5.1. Kiểm tra các điều kiện cơ bản của mã
                 if (!$coupon || !$coupon->trang_thai || $coupon->ngay_ket_thuc < now() || $coupon->so_luong_da_dung >= $coupon->so_luong) {
-                     return response()->json(['message' => 'Mã giảm giá không hợp lệ hoặc đã hết hạn.'], 400);
+                    return response()->json(['message' => 'Mã giảm giá không hợp lệ hoặc đã hết hạn.'], 400);
                 }
                 if ($coupon->gia_tri_don_hang_toi_thieu && $subtotal < $coupon->gia_tri_don_hang_toi_thieu) {
-                     return response()->json(['message' => 'Đơn hàng chưa đạt giá trị tối thiểu để áp dụng mã.'], 400);
+                    return response()->json(['message' => 'Đơn hàng chưa đạt giá trị tối thiểu để áp dụng mã.'], 400);
                 }
 
-                // 5.2. Kiểm tra nếu là mã cá nhân (đã được gửi riêng)
                 $isPrivateCouponQuery = DB::table('nguoi_dung_giam_gia')->where('giam_gia_id', $coupon->giam_gia_id);
                 if ($isPrivateCouponQuery->exists()) {
                     $userHasCoupon = $isPrivateCouponQuery->where('nguoi_dung_id', $user->nguoi_dung_id)->first();
@@ -227,7 +223,6 @@ class OrderController extends Controller
                     }
                 }
 
-                // 5.3. Tính toán lại số tiền giảm giá một cách an toàn
                 if ($coupon->loai_giam_gia == 'percentage') {
                     $discountAmount = ($subtotal * $coupon->gia_tri) / 100;
                     if ($coupon->gia_tri_giam_toi_da && $discountAmount > $coupon->gia_tri_giam_toi_da) {
@@ -238,25 +233,27 @@ class OrderController extends Controller
                 }
             }
 
-            // BƯỚC 6: Tính toán tổng tiền cuối cùng
+            // BƯỚC 5: Tính toán tổng tiền cuối cùng
             $finalTotal = $subtotal - $discountAmount + $validatedData['phi_van_chuyen'];
             if ($finalTotal < 0) $finalTotal = 0;
 
-            // BƯỚC 7: Tạo đơn hàng
+            // BƯỚC 6: Tạo đơn hàng
             $order = Order::create([
                 'nguoi_dung_id' => $user->nguoi_dung_id,
                 'phuong_thuc_thanh_toan_id' => $validatedData['phuong_thuc_thanh_toan_id'],
                 'id_giam_gia' => $coupon ? $coupon->giam_gia_id : null,
                 'so_tien_giam' => $discountAmount,
-                'dia_chi_id' => $validatedData['dia_chi_id'],
-                'trang_thai_don_hang' => 1, // 1 = Chờ xác nhận
+                'ten_nguoi_nhan' => $validatedData['ten_nguoi_nhan'],
+                'sdt_nguoi_nhan' => $validatedData['sdt_nguoi_nhan'],
+                'dia_chi_giao_hang' => $validatedData['dia_chi_giao_hang'],
+                'trang_thai_don_hang' => 1,
                 'ghi_chu' => $validatedData['ghi_chu'] ?? null,
                 'phi_van_chuyen' => $validatedData['phi_van_chuyen'],
                 'tong_tien' => $finalTotal,
                 'ngay_dat' => now(),
             ]);
 
-            // BƯỚC 8: Tạo chi tiết đơn hàng và cập nhật tồn kho
+            // BƯỚC 7: Tạo chi tiết đơn hàng và cập nhật tồn kho
             foreach ($cartItems as $item) {
                 OrderItem::create([
                     'don_hang_id' => $order->id,
@@ -265,179 +262,178 @@ class OrderController extends Controller
                     'don_gia' => $item->gia,
                     'thanh_tien' => $item->gia * $item->so_luong
                 ]);
-                // Trừ số lượng tồn kho
                 SanPhamBienThe::where('bien_the_id', $item->bien_the_id)->decrement('so_luong_ton_kho', $item->so_luong);
             }
 
-            // BƯỚC 9: Cập nhật số lượt sử dụng mã giảm giá
+            // BƯỚC 8: Cập nhật số lượt sử dụng mã giảm giá và đánh dấu đã dùng
             if ($coupon) {
                 $coupon->increment('so_luong_da_dung');
-                // Nếu là mã cá nhân, đánh dấu đã sử dụng
                 DB::table('nguoi_dung_giam_gia')
                     ->where('nguoi_dung_id', $user->nguoi_dung_id)
                     ->where('giam_gia_id', $coupon->giam_gia_id)
                     ->update(['da_su_dung' => true]);
             }
 
-            // BƯỚC 10: Xóa giỏ hàng
-            DB::table('gio_hang_chi_tiet')->whereIn('gio_hang_chi_tiet_id', function($query) use ($user) {
-                $query->select('ghct.gio_hang_chi_tiet_id')->from('gio_hang_chi_tiet as ghct')
-                    ->join('gio_hang as gh', 'ghct.gio_hang_id', '=', 'gh.gio_hang_id')
-                    ->where('gh.nguoi_dung_id', $user->nguoi_dung_id);
-            })->delete();
+            // BƯỚC 9: Xóa giỏ hàng
+            $cart = Cart::where('nguoi_dung_id', $user->nguoi_dung_id)->first();
+            if ($cart) {
+                 DB::table('gio_hang_chi_tiet')->where('gio_hang_id', $cart->gio_hang_id)->delete();
+            }
 
-            // Hoàn tất và lưu mọi thay đổi vào CSDL
             DB::commit();
-
             return response()->json(['message' => 'Đặt hàng thành công!', 'order_id' => $order->id], 201);
-
         } catch (\Exception $e) {
-            // Nếu có bất kỳ lỗi nào xảy ra, hủy bỏ mọi thay đổi đã thực hiện
             DB::rollBack();
             Log::error('Lỗi khi tạo đơn hàng: ' . $e->getMessage());
             return response()->json(['message' => 'Hệ thống đã xảy ra lỗi, vui lòng thử lại sau.', 'error' => $e->getMessage()], 500);
         }
     }
-
+    
     public function cancel(Request $request, $id)
-{
-    $order = Order::find($id);
+    {
+        $order = Order::find($id);
 
-    // Kiểm tra và debug
-    Log::info('Hủy đơn:', [
-        'id' => $id,
-        'order_user_id' => $order?->nguoi_dung_id,
-        'auth_user_id' => Auth::id(),
-        'ly_do_huy_request' => $request->input('ly_do_huy') // Lấy lý do từ request
-    ]);
+        Log::info('Hủy đơn:', [
+            'id' => $id,
+            'order_user_id' => $order?->nguoi_dung_id,
+            'auth_user_id' => Auth::id(),
+            'ly_do_huy_request' => $request->input('ly_do_huy')
+        ]);
 
-    if (!$order || $order->nguoi_dung_id !== Auth::id()) {
-        return response()->json(['message' => 'Đơn hàng không tồn tại hoặc không thuộc về bạn'], 404);
+        if (!$order || $order->nguoi_dung_id !== Auth::id()) {
+            return response()->json(['message' => 'Đơn hàng không tồn tại hoặc không thuộc về bạn'], 404);
+        }
+        
+        if ($order->trang_thai_don_hang !== 1) {
+            return response()->json(['message' => 'Không thể hủy đơn hàng này'], 400);
+        }
+
+        $order->trang_thai_don_hang = 5;
+        $order->ly_do_huy = $request->input('ly_do_huy');
+        $order->save();
+
+        return response()->json(['message' => 'Đơn hàng đã được hủy thành công']);
     }
-}
+
     public function getStatusCounts(Request $request)
     {
         try {
-            // 1. Định nghĩa các key mà frontend mong đợi
             $statusKeys = [
-                1 => 'pending',     // Chờ xác nhận
-                2 => 'confirmed',   // Đã xác nhận
-                3 => 'shipping',    // Đang giao
-                4 => 'completed',   // Hoàn thành
-                5 => 'cancelled',   // Đã hủy
+                1 => 'pending',
+                2 => 'confirmed',
+                3 => 'shipping',
+                4 => 'completed',
+                5 => 'cancelled',
             ];
 
-            // 2. Khởi tạo mảng đếm với giá trị ban đầu là 0
             $counts = array_fill_keys(array_values($statusKeys), 0);
 
-            // 3. Truy vấn CSDL để lấy số lượng theo từng 'trang_thai_don_hang'
-            // Đây là một truy vấn rất hiệu quả
             $dbCounts = Order::query()
                 ->select('trang_thai_don_hang', DB::raw('count(*) as total'))
                 ->groupBy('trang_thai_don_hang')
                 ->get();
 
-            // 4. Lặp qua kết quả từ CSDL và điền vào mảng $counts
             foreach ($dbCounts as $row) {
-                // Kiểm tra xem trạng thái từ CSDL có trong định nghĩa của chúng ta không
                 if (isset($statusKeys[$row->trang_thai_don_hang])) {
                     $statusKey = $statusKeys[$row->trang_thai_don_hang];
                     $counts[$statusKey] = $row->total;
                 }
             }
 
-            // 5. Tính tổng số đơn hàng và thêm vào mảng
             $counts['all'] = array_sum($counts);
-
-            // Hoặc nếu bạn muốn 'all' là tổng tất cả đơn hàng không phân biệt trạng thái
-            // $counts['all'] = Order::count();
-
-
-            // 6. Trả về kết quả dưới dạng JSON
             return response()->json($counts);
-
         } catch (\Exception $e) {
-            // Xử lý nếu có lỗi xảy ra
             return response()->json([
                 'message' => 'Không thể lấy dữ liệu thống kê.',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
+
     public function createVnPayPayment(Request $request)
-{
-    $cart = $request->cart;
-    $total = $request->total;
-    $userId = $request->user_id;
-    $addressId = $request->dia_chi_id;
+    {
+        $cart = $request->cart;
+        $total = $request->total;
+        $userId = $request->user_id;
+        $ten_nguoi_nhan = $request->ten_nguoi_nhan;
+        $sdt_nguoi_nhan = $request->sdt_nguoi_nhan;
+        $dia_chi_giao_hang = $request->dia_chi_giao_hang;
+        $phi_van_chuyen = $request->phi_van_chuyen;
+        $ma_giam_gia = $request->ma_giam_gia;
+        $ghi_chu = $request->ghi_chu;
 
-    // 1. Tạo đơn hàng tạm trong DB
-    $order = Order::create([
-        'user_id' => $userId,
-        'address_id' => $addressId,
-        'total_amount' => $total,
-        'status' => 'pending'
-    ]);
+        // BƯỚC 1: Tạo đơn hàng tạm trong DB với các thông tin mới
+        $order = Order::create([
+            'nguoi_dung_id' => $userId,
+            'dia_chi_giao_hang' => $dia_chi_giao_hang,
+            'phi_van_chuyen' => $phi_van_chuyen,
+            'ten_nguoi_nhan' => $ten_nguoi_nhan,
+            'sdt_nguoi_nhan' => $sdt_nguoi_nhan,
+            'ma_giam_gia' => $ma_giam_gia,
+            'ghi_chu' => $ghi_chu,
+            'tong_tien' => $total,
+            'trang_thai_don_hang' => 1,
+            'phuong_thuc_thanh_toan_id' => 2, // VNPAY
+            'is_paid' => 0,
+        ]);
 
-    foreach ($cart as $item) {
-        OrderItem::create([
-            'order_id' => $order->id,
-            'product_variant_id' => $item['san_pham_bien_the_id'],
-            'quantity' => $item['so_luong'],
-            'price' => $item['don_gia'],
-            'total' => $item['thanh_tien']
+        foreach ($cart as $item) {
+            OrderItem::create([
+                'don_hang_id' => $order->id,
+                'san_pham_bien_the_id' => $item['san_pham_bien_the_id'],
+                'so_luong' => $item['so_luong'],
+                'don_gia' => $item['don_gia'],
+                'thanh_tien' => $item['thanh_tien']
+            ]);
+        }
+
+        // BƯỚC 2: Chuẩn bị dữ liệu VNPAY
+        $vnp_TmnCode = env('VNP_TMN_CODE');
+        $vnp_HashSecret = env('VNP_HASH_SECRET');
+        $vnp_Url = env('VNP_URL');
+        $vnp_Returnurl = env('VNP_RETURN_URL');
+
+        $vnp_TxnRef = $order->id;
+        $vnp_OrderInfo = "Thanh toán đơn hàng #$order->id";
+        $vnp_Amount = $total * 100;
+        $vnp_Locale = 'vn';
+        $vnp_BankCode = '';
+        $vnp_IpAddr = request()->ip();
+
+        $inputData = [
+            "vnp_Version" => "2.1.0",
+            "vnp_TmnCode" => $vnp_TmnCode,
+            "vnp_Amount" => $vnp_Amount,
+            "vnp_Command" => "pay",
+            "vnp_CreateDate" => date('YmdHis'),
+            "vnp_CurrCode" => "VND",
+            "vnp_IpAddr" => $vnp_IpAddr,
+            "vnp_Locale" => $vnp_Locale,
+            "vnp_OrderInfo" => $vnp_OrderInfo,
+            "vnp_ReturnUrl" => $vnp_Returnurl,
+            "vnp_TxnRef" => $vnp_TxnRef,
+        ];
+
+        ksort($inputData);
+        $query = http_build_query($inputData);
+        $hashdata = hash_hmac('sha512', urldecode($query), $vnp_HashSecret);
+        $vnp_Url .= '?' . $query . '&vnp_SecureHash=' . $hashdata;
+
+        return response()->json([
+            'payment_url' => $vnp_Url
         ]);
     }
 
-    // 2. Chuẩn bị dữ liệu VNPAY
-    $vnp_TmnCode = env('VNP_TMN_CODE');
-    $vnp_HashSecret = env('VNP_HASH_SECRET');
-    $vnp_Url = env('VNP_URL');
-    $vnp_Returnurl = env('VNP_RETURN_URL');
-
-    $vnp_TxnRef = $order->id;
-    $vnp_OrderInfo = "Thanh toán đơn hàng #$order->id";
-    $vnp_Amount = $total * 100; // VNPAY tính theo đồng nhỏ
-    $vnp_Locale = 'vn';
-    $vnp_BankCode = '';
-    $vnp_IpAddr = request()->ip();
-
-    $inputData = [
-        "vnp_Version" => "2.1.0",
-        "vnp_TmnCode" => $vnp_TmnCode,
-        "vnp_Amount" => $vnp_Amount,
-        "vnp_Command" => "pay",
-        "vnp_CreateDate" => date('YmdHis'),
-        "vnp_CurrCode" => "VND",
-        "vnp_IpAddr" => $vnp_IpAddr,
-        "vnp_Locale" => $vnp_Locale,
-        "vnp_OrderInfo" => $vnp_OrderInfo,
-        "vnp_ReturnUrl" => $vnp_Returnurl,
-        "vnp_TxnRef" => $vnp_TxnRef,
-    ];
-
-    ksort($inputData);
-    $query = http_build_query($inputData);
-    $hashdata = hash_hmac('sha512', urldecode($query), $vnp_HashSecret);
-    $vnp_Url .= '?' . $query . '&vnp_SecureHash=' . $hashdata;
-
-    return response()->json([
-        'payment_url' => $vnp_Url
-    ]);
-}
-public function show($id)
+    public function show($id)
     {
         try {
             $order = Order::with([
                 'user',
                 'paymentMethod',
-                'diachi',
-
                 'orderItems.bien_the.sanPham.hinhAnhSanPham',
                 'orderItems.bien_the.sanPham.danhMuc',
             ])->findOrFail($id);
             return response()->json($order);
-
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['message' => 'Không tìm thấy đơn hàng.'], 404);
         } catch (\Exception $e) {

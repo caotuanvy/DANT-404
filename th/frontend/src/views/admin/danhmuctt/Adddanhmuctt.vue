@@ -41,6 +41,7 @@
 
 <script>
 import axios from "axios";
+import Swal from "sweetalert2"; // Import SweetAlert2
 
 export default {
   data() {
@@ -63,7 +64,13 @@ export default {
       try {
         const token = localStorage.getItem("token");
         if (!token) {
-          alert("Vui lòng đăng nhập trước!");
+          Swal.fire({
+            icon: 'warning',
+            title: 'Chưa đăng nhập',
+            text: 'Vui lòng đăng nhập trước!',
+            timer: 3000,
+            showConfirmButton: false,
+          });
           return;
         }
 
@@ -74,7 +81,6 @@ export default {
           formData.append("hinh_anh", this.file);
         }
 
-        // Không cần gửi ngày tạo, backend sẽ tự động thêm ngày tạo
         const response = await axios.post(
           "http://localhost:8000/api/danh-muc-tin-tuc",
           formData,
@@ -87,22 +93,34 @@ export default {
         );
 
         if (response.status === 201 || response.status === 200) {
-          alert("Danh mục tin tức đã được thêm thành công!");
-          this.$router.push("/admin/danhmuctintuc");
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Danh mục tin tức đã được thêm thành công!',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+          }).then(() => {
+            this.$router.push("/admin/danhmuctintuc");
+          });
         }
       } catch (error) {
         console.error("Lỗi khi thêm danh mục:", error);
+        let errorMessage = "Có lỗi xảy ra, vui lòng thử lại!";
         if (error.response) {
-          alert(`Lỗi: ${error.response.data.message || "Có lỗi xảy ra!"}`);
-        } else {
-          alert("Có lỗi xảy ra, vui lòng thử lại!");
+          errorMessage = `Lỗi: ${error.response.data.message || "Có lỗi xảy ra!"}`;
         }
+        Swal.fire({
+            icon: 'error',
+            title: 'Thất bại',
+            text: errorMessage,
+        });
       }
     },
   },
 };
 </script>
-
 
 <style scoped>
 form {

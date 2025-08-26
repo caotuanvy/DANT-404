@@ -32,13 +32,13 @@
                   <input type="text" class="form-control" v-model="seoKeywords" readonly />
                 </div>
               </div>
-
               <div class="form-group">
                 <label class="form-label">Nội dung *</label>
                 <editor
                   :api-key="'41eu6h6iewknwxlxtm1mh0dge0z3tg5ubvt2clbc0dq85wgo'"
                   v-model="newsDescriptionLong"
-                  :init="editorConfig" @input="checkSeoCriteria"
+                  :init="editorConfig"
+                  @input="checkSeoCriteria"
                 />
               </div>
             </div>
@@ -93,10 +93,9 @@
               </div>
             </div>
           </div>
-
           <div class="form-actions">
-            <button type="submit" class="btn btn-primary btn-large">
-              <span v-if="isSubmitting"><i class="fas fa fa-spinner fa-spin"></i> Đang lưu...</span>
+            <button type="submit" class="btn btn-primary btn-large" :disabled="isSubmitting">
+              <span v-if="isSubmitting"><i class="fas fa-spinner fa-spin"></i> Đang lưu...</span>
               <span v-else><i class="fas fa-save"></i> Thêm tin tức</span>
             </button>
           </div>
@@ -121,10 +120,9 @@
 
 <script>
 import axios from "axios";
-// Import TinyMCE Editor component
 import Editor from '@tinymce/tinymce-vue';
+import Swal from "sweetalert2"; // Import SweetAlert2
 
-// ĐỊNH NGHĨA editorConfig Ở ĐÂY (NGOÀI export default)
 const editorConfig = {
   height: 500,
   menubar: false,
@@ -133,36 +131,34 @@ const editorConfig = {
     'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview', 'anchor',
     'searchreplace', 'visualblocks', 'code', 'fullscreen',
     'insertdatetime', 'media', 'table', 'help', 'wordcount',
-    'emoticons', 'codesample', 'directionality', 'quickbars', 'charmap', // "charmap" bị lặp trong cấu hình gốc, chỉ giữ lại một
-    'imagetools' // RẤT QUAN TRỌNG: Thêm 'imagetools' để có chức năng upload ảnh và các công cụ chỉnh sửa ảnh
+    'emoticons', 'codesample', 'directionality', 'quickbars', 'charmap',
+    'imagetools'
   ],
   toolbar:
     'code | newdocument | cut copy | undo redo | searchreplace | ' +
     'bold italic underline strikethrough | superscript subscript | removeformat | ' +
     'alignleft aligncenter alignright alignjustify | ' +
     'bullist numlist outdent indent | ' +
-    'blockquote | link unlink anchor | ' + 
-    'image media table | emoticons codesample | fullscreen preview | help', 
-  images_upload_url: '/tinymce/upload-image', // Endpoint API để upload hình ảnh
+    'blockquote | link unlink anchor | ' +
+    'image media table | emoticons codesample | fullscreen preview | help',
+  images_upload_url: '/tinymce/upload-image',
   images_upload_handler: (blobInfo, progress) => new Promise((resolve, reject) => {
     const formData = new FormData();
     formData.append('file', blobInfo.blob(), blobInfo.filename());
 
-    // Lấy token từ localStorage (nếu API của bạn yêu cầu xác thực)
-    const token = localStorage.getItem('token'); 
+    const token = localStorage.getItem('token');
 
-    axios.post('/tinymce/upload-image', formData, { 
+    axios.post('/tinymce/upload-image', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
-        'Authorization': token ? `Bearer ${token}` : '', // Thêm header Authorization nếu có token
+        'Authorization': token ? `Bearer ${token}` : '',
       },
       onUploadProgress: (event) => {
         progress(event.loaded / event.total * 100);
       }
     })
     .then(response => {
-      // Đảm bảo response.data có thuộc tính 'location' chứa URL ảnh
-      resolve(response.data.location); 
+      resolve(response.data.location);
     })
     .catch(error => {
       console.error('TinyMCE Image Upload Error:', error);
@@ -201,11 +197,11 @@ const editorConfig = {
       { title: 'Justify', icon: 'alignjustify', format: 'alignjustify' }
     ]}
   ],
-  language: 'vi', // Đặt ngôn ngữ là tiếng Việt
-  skin: 'oxide', 
-  content_css: 'default', 
-  image_description: false, 
-  image_title: true, 
+  language: 'vi',
+  skin: 'oxide',
+  content_css: 'default',
+  image_description: false,
+  image_title: true,
   browser_spellcheck: true,
   contextmenu: 'link image table',
   quickbars_selection_toolbar: 'bold italic | quicklink h2 h3 blockquote',
@@ -216,9 +212,7 @@ const editorConfig = {
   }
 };
 
-
 export default {
-  // Đăng ký TinyMCE Editor component
   components: {
     Editor
   },
@@ -233,13 +227,12 @@ export default {
       file: null,
       previewImage: "",
       isSubmitting: false,
-      // SEO/AI
       isGeneratingSeo: false,
       globalError: "",
       seoTitle: "",
       seoDescription: "",
       seoKeywords: "",
-      newsDescriptionLong: "", // Biến này sẽ được bind với TinyMCE
+      newsDescriptionLong: "",
       seoCriteria: [
         { label: "Tiêu đề chứa từ khóa chính", passed: false },
         { label: "Tiêu đề dưới 60 ký tự", passed: false },
@@ -258,7 +251,7 @@ export default {
         { label: "Slug không quá dài", passed: false },
         { label: "Có mô tả ảnh (alt)", passed: false },
       ],
-      editorConfig: editorConfig, // DÒNG ĐÃ SỬA: GÁN editorConfig VÀO DATA
+      editorConfig: editorConfig,
     };
   },
   watch: {
@@ -277,7 +270,6 @@ export default {
     seoKeywords() {
       this.checkSeoCriteria();
     },
-    // Watch newsDescriptionLong để cập nhật tiêu chí SEO khi nội dung thay đổi trong TinyMCE
     newsDescriptionLong() {
       this.checkSeoCriteria();
     }
@@ -296,9 +288,13 @@ export default {
     async getDanhMucs() {
       try {
         const res = await axios.get("http://localhost:8000/api/danh-muc-tin-tuc");
-        this.danhMucs = res.data;
+        this.danhMucs = res.data.filter(dm => dm.trang_thai === 1);
       } catch (error) {
-        alert("Không thể tải danh mục tin tức!");
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi',
+          text: 'Không thể tải danh mục tin tức!',
+        });
       }
     },
     onFileChange(e) {
@@ -320,14 +316,23 @@ export default {
       this.isSubmitting = true;
       try {
         if (!this.tieude || !this.id_danh_muc_tin_tuc || !this.newsDescriptionLong) {
-          alert("Vui lòng nhập đầy đủ thông tin bắt buộc (Tiêu đề, Danh mục, Nội dung)!");
-          this.isSubmitting = false; // Đảm bảo trạng thái submitting được reset
+          Swal.fire({
+            icon: 'warning',
+            title: 'Thiếu thông tin',
+            text: 'Vui lòng nhập đầy đủ thông tin bắt buộc (Tiêu đề, Danh mục, Nội dung)!',
+          });
+          this.isSubmitting = false;
           return;
         }
+
         const token = localStorage.getItem("token");
         if (!token) {
-          alert("Bạn cần đăng nhập!");
-          this.isSubmitting = false; // Đảm bảo trạng thái submitting được reset
+          Swal.fire({
+            icon: 'warning',
+            title: 'Chưa đăng nhập',
+            text: 'Bạn cần đăng nhập!',
+          });
+          this.isSubmitting = false;
           return;
         }
 
@@ -339,7 +344,7 @@ export default {
         formData.append("tieu_de_seo", this.seoTitle || "");
         formData.append("mo_ta_seo", this.seoDescription || "");
         formData.append("tu_khoa_seo", this.seoKeywords || "");
-        formData.append("noidung", this.newsDescriptionLong || ""); // Gửi nội dung từ TinyMCE
+        formData.append("noidung", this.newsDescriptionLong || "");
         if (this.file) {
           formData.append("hinh_anh", this.file);
         }
@@ -352,30 +357,52 @@ export default {
         });
 
         if (res.status === 201) {
-          alert("Thêm tin tức thành công!");
-          this.$router.push("/admin/tintuc");
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Thêm tin tức thành công!',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+          }).then(() => {
+            this.$router.push("/admin/tintuc");
+          });
         }
       } catch (error) {
         console.error("Lỗi khi thêm tin tức:", error.response || error);
-        alert("Có lỗi xảy ra khi thêm tin tức! Vui lòng kiểm tra console để biết chi tiết.");
+        let errorMessage = "Có lỗi xảy ra khi thêm tin tức! Vui lòng kiểm tra console để biết chi tiết.";
+        if (error.response && error.response.data && error.response.data.message) {
+            errorMessage = error.response.data.message;
+        }
+        Swal.fire({
+          icon: 'error',
+          title: 'Thất bại',
+          text: errorMessage,
+        });
       } finally {
         this.isSubmitting = false;
       }
     },
     async generateSeoContent() {
       if (!this.tieude) {
-        alert('Vui lòng nhập Tiêu đề trước khi tạo nội dung SEO.');
+        Swal.fire({
+          icon: 'warning',
+          title: 'Thiếu tiêu đề',
+          text: 'Vui lòng nhập Tiêu đề trước khi tạo nội dung SEO.',
+        });
         return;
       }
-      // Sử dụng nội dung hiện tại trong TinyMCE (nếu có) để làm cơ sở cho AI
+
       const noidungInput = this.newsDescriptionLong.length > 0 ? this.newsDescriptionLong : (this.tieude + ' - Đây là tóm tắt nội dung tin tức mẫu để sinh AI SEO.');
       this.isGeneratingSeo = true;
       this.globalError = "";
+
       try {
         const token = localStorage.getItem("token");
         const response = await axios.post("http://localhost:8000/api/tintuc/generate-seo", {
           tieude: this.tieude,
-          noidung: noidungInput, // Gửi nội dung hiện tại (hoặc mẫu) cho API AI
+          noidung: noidungInput,
         }, {
           headers: {
             Authorization: `Bearer ${token}`
@@ -392,88 +419,76 @@ export default {
           this.seoKeywords = response.data.seo_keywords;
         }
         if (response.data.news_description_long) {
-          this.newsDescriptionLong = response.data.news_description_long; // Cập nhật TinyMCE với nội dung AI
+          this.newsDescriptionLong = response.data.news_description_long;
         }
-
         this.checkSeoCriteria();
-        alert('Tạo nội dung AI thành công!');
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'Tạo nội dung AI thành công!',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true
+        });
       } catch (error) {
         this.globalError = "Tạo SEO thất bại! Vui lòng thử lại.";
         console.error("Lỗi tạo SEO AI:", error.response || error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi AI',
+          text: 'Tạo nội dung AI thất bại. Vui lòng thử lại sau.',
+        });
       } finally {
         this.isGeneratingSeo = false;
       }
     },
     checkSeoCriteria() {
-      // Lấy từ khóa chính đầu tiên
       const keyword = this.seoKeywords?.split(',')[0]?.trim() || '';
-      const newsDescriptionText = this.newsDescriptionLong.replace(/<[^>]+>/g, ' '); // Loại bỏ HTML tags để đếm từ
-      const totalWords = newsDescriptionText.trim().split(/\s+/).filter(Boolean).length; // Filter(Boolean) để loại bỏ các chuỗi rỗng
+      const newsDescriptionText = this.newsDescriptionLong.replace(/<[^>]+>/g, ' ');
+      const totalWords = newsDescriptionText.trim().split(/\s+/).filter(Boolean).length;
 
-      // Tiêu đề chứa từ khóa chính
       this.seoCriteria[0].passed = keyword && this.tieude.toLowerCase().includes(keyword.toLowerCase());
-      // Tiêu đề dưới 60 ký tự
       this.seoCriteria[1].passed = this.tieude.length > 0 && this.tieude.length <= 60;
-      // Meta description chứa từ khóa
       this.seoCriteria[2].passed = keyword && this.seoDescription.toLowerCase().includes(keyword.toLowerCase());
-      // Meta description 140-155 ký tự
       this.seoCriteria[3].passed = this.seoDescription.length >= 140 && this.seoDescription.length <= 155;
-      // Có từ khóa SEO
       this.seoCriteria[4].passed = !!this.seoKeywords && this.seoKeywords.length > 0;
-      // Từ khóa không trùng lặp
       if (this.seoKeywords) {
         const arr = this.seoKeywords.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
         this.seoCriteria[5].passed = arr.length === new Set(arr).size;
       } else {
         this.seoCriteria[5].passed = false;
       }
-      // Nội dung trên 300 từ (dựa vào nội dung từ TinyMCE)
       this.seoCriteria[6].passed = totalWords >= 300;
-      // Nội dung có tiêu đề phụ (H2, H3)
       this.seoCriteria[7].passed = /<h2[\s>]/i.test(this.newsDescriptionLong) || /<h3[\s>]/i.test(this.newsDescriptionLong);
-      // Có hình ảnh minh họa
       this.seoCriteria[8].passed = !!this.file || (this.previewImage && this.previewImage.length > 0) || /<img[\s>]/i.test(this.newsDescriptionLong);
-      // Có liên kết nội bộ (ví dụ: liên kết đến localhost:8000)
       this.seoCriteria[9].passed = new RegExp(`href=["'](?:https?://)?(?:www\\.)?localhost:8000[^"']*["']`, 'i').test(this.newsDescriptionLong);
-      // Có liên kết ngoài (liên kết không phải localhost:8000)
       this.seoCriteria[10].passed = /<a[^>]+href=["']https?:\/\/(?!.*localhost:8000)[^"']+["']/i.test(this.newsDescriptionLong);
-      // Không lạm dụng từ khóa (tần suất < 5%)
       if (newsDescriptionText && keyword) {
         const keywordCount = (newsDescriptionText.match(new RegExp(keyword, 'gi')) || []).length;
         this.seoCriteria[11].passed = totalWords > 0 ? (keywordCount / totalWords) < 0.05 : true;
       } else {
-        this.seoCriteria[11].passed = true; // Nếu không có nội dung hoặc từ khóa, mặc định là true
+        this.seoCriteria[11].passed = true;
       }
-      // Không có lỗi chính tả (giả lập: luôn true, TinyMCE có thể hỗ trợ kiểm tra chính tả)
       this.seoCriteria[12].passed = true;
-      // URL thân thiện SEO
       this.seoCriteria[13].passed = /^[a-z0-9-]+$/.test(this.slug);
-      // Slug không quá dài
       this.seoCriteria[14].passed = this.slug.length > 0 && this.slug.length <= 80;
-      // Có mô tả ảnh (alt) (kiểm tra alt tag trong TinyMCE content hoặc ảnh upload)
       this.seoCriteria[15].passed = !!this.file || (this.previewImage && this.previewImage.length > 0) || /<img[^>]+alt=["'][^"']+["']/i.test(this.newsDescriptionLong);
     }
   },
-    mounted() {
-  this.getDanhMucs();
-  // Khởi tạo ngày đăng mặc định là ngày và giờ hiện tại nếu chưa có
-  if (!this.ngay_dang) {
-    const now = new Date();
-    // Lấy múi giờ địa phương (UTC+7)
-    const offset = now.getTimezoneOffset() * 60000; // Offset in milliseconds
-    const localIsoString = new Date(now.getTime() - offset).toISOString();
-    // Định dạng cho input type="datetime-local" (YYYY-MM-DDTHH:mm)
-    this.ngay_dang = localIsoString.slice(0, 16);
+  mounted() {
+    this.getDanhMucs();
+    if (!this.ngay_dang) {
+      const now = new Date();
+      const offset = now.getTimezoneOffset() * 60000;
+      const localIsoString = new Date(now.getTime() - offset).toISOString();
+      this.ngay_dang = localIsoString.slice(0, 16);
+    }
   }
-}
 };
 </script>
 
 <style scoped>
-/*
-  Font Awesome CSS cần được import ở đây hoặc trong file CSS global của bạn.
-  Nếu đã import ở nơi khác, bạn có thể bỏ qua dòng này.
-*/
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
 
 .add-news-page {
@@ -758,7 +773,6 @@ textarea.form-control {
   margin-top: 10px;
   border: 1px solid #e0e0e0;
 }
-/* Xóa hoặc sửa .ai-description nếu bạn không còn hiển thị HTML thuần */
 .ai-description {
   background: #fff;
   border-radius: 6px;
