@@ -40,7 +40,7 @@ Route::get('/orders/{id}', [OrderController::class, 'show']);
 Route::get('/payment/vnpay/return', [PaymentController::class, 'vnpayReturn'])->name('vnpay.return');
 
 Route::put('/products/{productId}/variants/{id}', [SanPhamBienTheController::class, 'update']);
-
+Route::get('products/summary/{slug}', [ProductController::class, 'showSummaryBySlug']);
 Route::middleware('auth:sanctum')->post('/checkout', [PaymentController::class, 'createVnPayPayment']);
 Route::post('/create-vnpay-payment', [PaymentController::class, 'createVnpayPayment']);
 // Route::post('/api/create-vnpay-payment', [OrderController::class, 'createVnPayPayment']);
@@ -145,7 +145,7 @@ Route::delete('/cart/{userId}/{sanPhamBienTheId}', [CartController::class, 'dele
 Route::get('/carts/all', [CartController::class, 'getAllCartsAndItems']);
 });
 Route::get('/cart', [CartController::class, 'index']);
-
+Route::get('/san-pham-cong-khai/slug/{slug}', [ProductController::class, 'getProductDetailsBySlug']);
 // Gio hang
 // Route::get('/gio-hang/nguoi-dung/{id}', [GioHangController::class, 'layGioHangTheoNguoiDung']);
 
@@ -190,7 +190,8 @@ Route::get('/products-sell-top', [ProductController::class, 'getTopSelling']);
 Route::get('products-featured', [ProductController::class, 'getFeatured']);
 Route::get('/products/detail/{slug}', [ProductController::class, 'showSpDetail']);
 // Dòng này đã được sửa:
-Route::get('/products-sell-top-all', [ProductController::class, 'getTopSelling']); // Đã đổi 'allBestSelling' thành 'getTopSelling'
+Route::get('/products-sell-top-all', [ProductController::class, 'getTopSelling']);
+Route::get('/upcoming-promotional-products', [ProductController::class, 'getUpcomingPromotionalProducts']);
 });
 Route::post('/tinymce/upload-image', [ProductController::class, 'uploadEditorImage']);
 

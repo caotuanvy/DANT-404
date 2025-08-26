@@ -433,46 +433,136 @@ public function update(Request $request, $id)
 
 public function getTopSelling()
     {
-        $topSelling = DB::table('san_pham as sp')
+        DB::beginTransaction();
+
+        try {
+            $allPromotionalProducts = DB::table('san_pham as sp')
+                ->join('san_pham_bien_the as sbt', 'sp.san_pham_id', '=', 'sbt.san_pham_id')
+                ->leftJoin('hinh_anh_san_pham as img', 'sp.san_pham_id', '=', 'img.san_pham_id')
+                ->leftJoin('chi_tiet_don_hang as ctdh', 'sbt.bien_the_id', '=', 'ctdh.san_pham_bien_the_id')
+                ->select(
+                    'sp.san_pham_id',
+                    'sp.ten_san_pham',
+                    'sp.khuyen_mai',
+                    'sp.Mo_ta_seo',
+                    'sp.slug',
+                    'sp.ngay_bat_dau_giam_gia',
+                    'sp.ngay_ket_thuc_giam_gia',
+                    DB::raw('MIN(img.duongdan) as hinh_anh'),
+                    DB::raw('MIN(sbt.gia) as gia'),
+                    DB::raw('SUM(sbt.so_luong_ton_kho) as tong_ton_kho'),
+                    DB::raw('COALESCE(SUM(ctdh.so_luong), 0) as so_luong_ban'),
+                    DB::raw('MIN(sbt.bien_the_id) as san_pham_bien_the_id')
+                )
+                ->where('sp.trang_thai', '=', 1)
+                ->groupBy(
+                    'sp.san_pham_id',
+                    'sp.ten_san_pham',
+                    'sp.khuyen_mai',
+                    'sp.Mo_ta_seo',
+                    'sp.slug',
+                    'sp.ngay_bat_dau_giam_gia',
+                    'sp.ngay_ket_thuc_giam_gia'
+                )
+                ->orderByDesc('so_luong_ban')
+                ->get();
+
+            $result = $allPromotionalProducts->map(function ($item) {
+                $maxLength = 50;
+                return [
+                    'san_pham_id' => $item->san_pham_id,
+                    'ten_san_pham' => $item->ten_san_pham,
+                    'hinh_anh' => $item->hinh_anh,
+                    'gia' => $item->gia,
+                    'khuyen_mai' => $item->khuyen_mai,
+                    'Mo_ta_seo' => Str::limit($item->Mo_ta_seo, $maxLength, '...'),
+                    'slug' => $item->slug,
+                    'tong_ton_kho' => $item->tong_ton_kho,
+                    'so_luong_ban' => $item->so_luong_ban,
+                    'ngay_bat_dau_giam_gia' => $item->ngay_bat_dau_giam_gia,
+                    'ngay_ket_thuc_giam_gia' => $item->ngay_ket_thuc_giam_gia,
+                    'san_pham_bien_the_id' => $item->san_pham_bien_the_id
+                ];
+            });
+
+            DB::commit();
+
+            return response()->json($result);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Lỗi khi tải sản phẩm bán chạy: " . $e->getMessage());
+            return response()->json([
+                'message' => 'Đã xảy ra lỗi trong quá trình xử lý yêu cầu.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    public function getProductDetailsBySlug($slug)
+    {
+        $product = SanPham::where('slug', $slug)
+            ->with(['variants', 'hinhAnhSanPham'])
+            ->first();
+
+        if (!$product) {
+            return response()->json(['message' => 'Sản phẩm không tồn tại.'], 404);
+        }
+
+        return response()->json($product);
+    }
+public function getUpcomingPromotionalProducts()
+    {
+        $now = now(); // Lấy thời gian hiện tại
+
+        $upcomingProducts = DB::table('san_pham as sp')
             ->join('san_pham_bien_the as sbt', 'sp.san_pham_id', '=', 'sbt.san_pham_id')
             ->leftJoin('hinh_anh_san_pham as img', 'sp.san_pham_id', '=', 'img.san_pham_id')
-            ->leftJoin('chi_tiet_don_hang as ctdh', 'sbt.bien_the_id', '=', 'ctdh.san_pham_bien_the_id')
-            ->leftJoin('don_hang as dh', 'ctdh.don_hang_id', '=', 'dh.id')
             ->select(
                 'sp.san_pham_id',
                 'sp.ten_san_pham',
                 'sp.khuyen_mai',
                 'sp.Mo_ta_seo',
                 'sp.slug',
+                'sp.ngay_bat_dau_giam_gia',
+                'sp.ngay_ket_thuc_giam_gia',
                 DB::raw('MIN(img.duongdan) as hinh_anh'),
-                DB::raw('SUM(CASE WHEN dh.trang_thai_don_hang = 1 THEN ctdh.so_luong ELSE 0 END) as so_luong_ban'),
                 DB::raw('MIN(sbt.gia) as gia'),
-                DB::raw('SUM(sbt.so_luong_ton_kho) as tong_ton_kho'),
+                DB::raw('SUM(sbt.so_luong_ton_kho) as tong_ton_kho')
             )
-            ->where('sp.trang_thai', '!=', 0)
+            // Khuyến mãi lớn hơn 0
+            ->where('sp.khuyen_mai', '>', 0)
+            // Ngày bắt đầu khuyến mãi trong tương lai
+            ->where('sp.ngay_bat_dau_giam_gia', '>', $now)
+            // Trạng thái sản phẩm đang hoạt động
+            ->where('sp.trang_thai', '=', 1)
             ->groupBy(
                 'sp.slug',
                 'sp.san_pham_id',
                 'sp.ten_san_pham',
                 'sp.Mo_ta_seo',
-                'sp.khuyen_mai'
+                'sp.khuyen_mai',
+                'sp.ngay_bat_dau_giam_gia',
+                'sp.ngay_ket_thuc_giam_gia'
             )
-            ->orderByDesc('so_luong_ban')
-            ->limit(4)
+            ->orderBy('sp.ngay_bat_dau_giam_gia')
+            ->limit(12)
             ->get();
-        $result = $topSelling->map(function ($item) {
+
+        $result = $upcomingProducts->map(function ($item) {
             $maxLength = 50;
             return [
-                'san_pham_id'   => $item->san_pham_id,
-                'ten_san_pham'  => $item->ten_san_pham,
-                'so_luong_ban'  => $item->so_luong_ban,
-                'hinh_anh'      => $item->hinh_anh,
-                'gia'           => $item->gia,
-                'khuyen_mai'    => $item->khuyen_mai,
-                'Mo_ta_seo'     => Str::limit($item->Mo_ta_seo, $maxLength, '...'),
-                'slug'          => $item->slug,
-                'so_luong_ton_kho'  => $item->tong_ton_kho,
-                'tong_so_luong' => $item->tong_ton_kho + $item->so_luong_ban,
+                'san_pham_id' => $item->san_pham_id,
+                'ten_san_pham' => $item->ten_san_pham,
+                'hinh_anh' => $item->hinh_anh,
+                'gia' => $item->gia,
+                'khuyen_mai' => $item->khuyen_mai,
+                'Mo_ta_seo' => Str::limit($item->Mo_ta_seo, $maxLength, '...'),
+                'slug' => $item->slug,
+                'so_luong_ton_kho' => $item->tong_ton_kho,
+                'ngay_bat_dau_giam_gia' => $item->ngay_bat_dau_giam_gia,
+                'ngay_ket_thuc_giam_gia' => $item->ngay_ket_thuc_giam_gia,
             ];
         });
 
