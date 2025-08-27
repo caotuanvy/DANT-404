@@ -61,6 +61,7 @@ class GiamGia extends Model
      */
     public function users()
     {
-        return $this->belongsToMany(User::class, 'nguoi_dung_giam_gia', 'giam_gia_id', 'nguoi_dung_id');
+        return $this->belongsToMany(\App\Models\User::class, 'nguoi_dung_giam_gia', 'giam_gia_id', 'nguoi_dung_id')
+            ->withPivot('da_su_dung', 'created_at', 'updated_at');
     }
 }

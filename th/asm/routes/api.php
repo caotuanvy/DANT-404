@@ -242,7 +242,7 @@ Route::put('/products/{id}/toggle-status', [ProductController::class, 'toggleSta
 Route::delete('/product-images/{id}', [ProductImageController::class, 'destroy']);
 Route::post('/products/generate-seo', [ProductController::class, 'generateSeoContent']);
 
-// ROUTE GỠ BỎ DANH MỤC CON - ĐÃ DI CHUYỂN VÀO ĐÂY
+// ROUTE GỬ BỎ DANH MỤC CON - ĐÃ DI CHUYỂN VÀO ĐÂY
 // Route này yêu cầu xác thực Sanctum (auth:sanctum)
 Route::patch('child-categories/{subcategoryId}/detach', [ChildCategoryController::class, 'detachSubcategory']);
 
@@ -251,7 +251,12 @@ Route::patch('child-categories/{subcategoryId}/detach', [ChildCategoryController
         Route::post('/coupon/apply', 'apply');
         Route::get('/my-coupons', 'myCoupons');
     });
+
+
     Route::get('/giam-gia-home', [GiamGiaController::class, 'getForHomepage']);
+    Route::post('/giam-gia/{giamGia}/claim', [GiamGiaController::class, 'claim'])->middleware('auth:sanctum'); // Chỉ hỗ trợ POST
+    Route::get('/my-vouchers', [GiamGiaController::class, 'myVouchers'])->middleware('auth:sanctum'); // Hoặc 'auth:sanctum'
+
     Route::prefix('admin')->group(function () {
 
         // --- QUẢN LÝ MÃ GIẢM GIÁ (COUPON/VOUCHER) ---
@@ -264,7 +269,6 @@ Route::patch('child-categories/{subcategoryId}/detach', [ChildCategoryController
         Route::get('/users/search', [GiamGiaController::class, 'searchUsers']);
         Route::get('/my-coupons', [App\Http\Controllers\Api\CouponController::class, 'myCoupons']);
         Route::post('/coupon/apply', [App\Http\Controllers\Api\CouponController::class, 'apply']);
-
         });
 
         // API phụ trợ cho trang quản lý giảm giá
@@ -301,7 +305,6 @@ Route::post('/categories/{categoryId}/products', [CategoryProductController::cla
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
 Route::put('/categories/{id}', [CategoryController::class, 'update']);
-
 
 
 Route::get('/parent-categories/{id}/products', [ParentCategoryProductController::class, 'getProductsByParentCategory']);

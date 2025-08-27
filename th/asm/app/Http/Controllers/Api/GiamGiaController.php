@@ -130,13 +130,65 @@ class GiamGiaController extends Controller
 
         return response()->json($users);
     }
-     public function getForHomepage()
+     // Đảm bảo phương thức này dùng cho route /api/giam-gia/homepage
+    public function getForHomepage()
     {
         $activeDiscounts = GiamGia::where('trang_thai', 1)
                                    ->where('ngay_ket_thuc', '>=', now())
                                    ->orderBy('ngay_ket_thuc', 'asc')
+                                   // ->select([...]) // Nếu muốn chỉ lấy các trường cần thiết, bỏ comment này
                                    ->get();
+
+        // Nếu muốn kiểm tra dữ liệu trả về, có thể log hoặc dd()
+        // \Log::info('Homepage discounts:', $activeDiscounts->toArray());
+        // dd($activeDiscounts);
 
         return response()->json($activeDiscounts);
     }
+    public function claim(Request $request, GiamGia $giamGia)
+{
+    $userId = $request->input('nguoi_dung_id');
+    $user = \App\Models\User::find($userId);
+
+    if (!$user) {
+        return response()->json(['message' => 'Người dùng không tồn tại.'], 404);
+    }
+
+    // Kiểm tra trạng thái và hạn sử dụng
+    if (!$giamGia->trang_thai || $giamGia->ngay_ket_thuc < now()) {
+        return response()->json(['message' => 'Mã giảm giá không hợp lệ hoặc đã hết hạn.'], 400);
+    }
+
+    // Kiểm tra đã lưu chưa
+    $isAlreadyClaimed = $user->vouchers()->where('giam_gia.giam_gia_id', $giamGia->giam_gia_id)->exists();
+    if ($isAlreadyClaimed) {
+        return response()->json(['message' => 'Bạn đã lưu mã giảm giá này rồi.'], 409);
+    }
+
+    // Lưu vào bảng trung gian
+    $user->vouchers()->attach($giamGia->giam_gia_id);
+
+    return response()->json([
+        'message' => 'Lưu mã giảm giá thành công!',
+        'coupon' => $giamGia
+    ]);
+}
+
+public function myVouchers(Request $request)
+{
+    $userId = $request->input('nguoi_dung_id');
+    $user = \App\Models\User::find($userId);
+
+    if (!$user) {
+        return response()->json(['message' => 'Người dùng không tồn tại.'], 404);
+    }
+
+    $myVouchers = $user->vouchers()
+        ->where('giam_gia.trang_thai', 1)
+        ->where('giam_gia.ngay_ket_thuc', '>=', now())
+        ->orderBy('giam_gia.ngay_ket_thuc', 'asc')
+        ->get();
+
+    return response()->json($myVouchers);
+}
 }
