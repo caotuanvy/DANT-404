@@ -10,7 +10,6 @@
       @close="showCouponModal = false"
       @coupon-selected="handleCouponSelection"
     />
-
     <div class="main-content">
       <div class="product-list" v-if="products.length > 0">
         <div v-for="product in products" :key="product.id" class="product-item">
@@ -61,7 +60,7 @@
 
       <div class="order-summary-panel" v-if="products.length > 0">
         <div class="delivery-address">
-          <h2 class="panel-title">Địa chỉ giao hàng</h2>
+<h2 class="panel-title">Địa chỉ giao hàng</h2>
           <div v-if="!showAddressForm">
             <p><strong>Người nhận:</strong> {{ displayedAddress.ho_ten }}</p>
             <p><strong>SĐT:</strong> {{ displayedAddress.sdt }}</p>
@@ -114,8 +113,8 @@
               </div>
               <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
               <div class="form-actions">
-                <button class="save-btn" @click="handleUpdateAddress">Lưu địa chỉ</button>
-                <button class="cancel-btn" @click="cancelAddressChange">Hủy</button>
+                  <button class="save-btn" @click="handleUpdateAddress">Lưu địa chỉ</button>
+                  <button class="cancel-btn" @click="cancelAddressChange">Hủy</button>
               </div>
             </div>
           </div>
@@ -173,7 +172,7 @@
             <span>Phí vận chuyển</span>
             <span>{{ formatPrice(deliveryFee) }}</span>
           </div>
-          <div class="summary-total">
+<div class="summary-total">
             <span>Tổng cộng</span>
             <span>{{ formatPrice(totalAmount) }}</span>
           </div>
@@ -197,302 +196,418 @@ import { useRouter, useRoute } from 'vue-router';
 import ChonMaGiamGiaModal from './ChonMaGiamGiaModal.vue';
 
 export default {
-  name: "CartPage",
-  components: {
-    ChonMaGiamGiaModal,
-  },
-  setup() {
-    const router = useRouter();
-    const route = useRoute();
-    const products = ref([]);
-    const deliveryMethod = ref("standard");
-    const paymentMethod = ref("cod");
-    const showAddressForm = ref(false);
-    const displayedAddress = ref({ ho_ten: "", sdt: "", dia_chi: "" });
-    const provinces = ref([]);
-    const districts = ref([]);
-    const wards = ref([]);
-    const selectedProvinceCode = ref('');
-    const selectedDistrictCode = ref('');
-    const selectedWardCode = ref('');
-    const streetAddress = ref('');
-    const isLoadingAddressData = ref(false);
-    const errorMessage = ref('');
-    const discountAmount = ref(0);
-    const couponCode = ref("");
-    const isLoadingCoupon = ref(false);
-    const couponErrorMessage = ref("");
-    const myCoupons = ref([]);
-    const showCouponModal = ref(false);
-    const imageBaseUrl = import.meta.env.VITE_IMAGE_BASE_URL;
-    const isPlacingOrder = ref(false);
+  name: "CartPage",
+  components: {
+    ChonMaGiamGiaModal,
+  },
+  setup() {
+    const router = useRouter();
+    const route = useRoute();
+    const products = ref([]);
+    const deliveryMethod = ref("standard");
+    const paymentMethod = ref("cod");
+    const showAddressForm = ref(false);
+    // Khởi tạo đầy đủ thuộc tính cho displayedAddress để đảm bảo tính nhất quán
+    const displayedAddress = ref({ ho_ten: "", sdt: "", dia_chi: "", id_dia_chi: null });
+    const provinces = ref([]);
+    const districts = ref([]);
+    const wards = ref([]);
+    const selectedProvinceCode = ref('');
+    const selectedDistrictCode = ref('');
+    const selectedWardCode = ref('');
+    const streetAddress = ref('');
+    const isLoadingAddressData = ref(false);
+    const errorMessage = ref('');
+    const discountAmount = ref(0);
+    const couponCode = ref("");
+    const isLoadingCoupon = ref(false);
+    const couponErrorMessage = ref("");
+    const myCoupons = ref([]);
+    const showCouponModal = ref(false);
+    const imageBaseUrl = import.meta.env.VITE_IMAGE_BASE_URL;
+    const isPlacingOrder = ref(false);
+    const currentAddressId = ref(null); 
 
-    const totalItems = computed(() => {
-      return products.value.reduce((acc, product) => acc + product.quantity, 0);
-    });
-    const subtotal = computed(() => {
-      return products.value.reduce((acc, product) => acc + product.price * product.quantity, 0);
-    });
-    const deliveryFee = computed(() => {
-      if (deliveryMethod.value === "standard") return 15000;
-      if (deliveryMethod.value === "express") return 25000;
-      return 0;
-    });
-    const totalAmount = computed(() => {
-      return Math.max(0, subtotal.value - discountAmount.value) + deliveryFee.value;
-    });
+    // --- CÁC HÀM COMPUTED VÀ HÀM CƠ BẢN ---
+    const totalItems = computed(() => products.value.reduce((acc, p) => acc + p.quantity, 0));
+    const subtotal = computed(() => products.value.reduce((acc, p) => acc + p.price * p.quantity, 0));
+    const deliveryFee = computed(() => {
+      if (deliveryMethod.value === "standard") return 15000;
+      if (deliveryMethod.value === "express") return 25000;
+      return 0;
+    });
+    const totalAmount = computed(() => Math.max(0, subtotal.value - discountAmount.value) + deliveryFee.value);
+    const formatPrice = (price) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price);
 
-    const formatPrice = (price) => {
-      return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price);
-    };
+    // --- CÁC HÀM XỬ LÝ GIỎ HÀNG VÀ MÃ GIẢM GIÁ ---
+    const updateCartItem = async (productId, quantityChange) => {
+      const product = products.value.find((p) => p.id === productId);
+      if (!product) return;
+      try {
+        const response = await axios.post(`http://localhost:8000/api/cart/add`, {
+          san_pham_bien_the_id: product.id,
+          quantity: quantityChange
+        });
+        if (response.data.cart_item && response.data.cart_item.so_luong > 0) {
+          product.quantity = response.data.cart_item.so_luong;
+          product.total_item_price = response.data.cart_item.thanh_tien;
+        } else {
+          products.value = products.value.filter(p => p.id !== productId);
+        }
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Cập nhật giỏ hàng thành công!', showConfirmButton: false, timer: 1500 });
+      } catch (error) {
+        console.error("Lỗi khi cập nhật giỏ hàng:", error.response?.data || error.message);
+        Swal.fire("Lỗi", error.response?.data?.message || "Không thể cập nhật giỏ hàng.", "error");
+      }
+    };
+    const increaseQuantity = (productId) => updateCartItem(productId, 1);
+    const decreaseQuantity = (productId) => {
+      const product = products.value.find((p) => p.id === productId);
+      if (product && product.quantity > 1) {
+        updateCartItem(productId, -1);
+      } else {
+        removeProduct(productId);
+      }
+    };
+    const removeProduct = async (productId) => {
+      const result = await Swal.fire({
+        title: 'Xóa sản phẩm?', text: "Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?",
+        icon: 'warning', showCancelButton: true, confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33', confirmButtonText: 'Đồng ý', cancelButtonText: 'Hủy'
+      });
+      if (result.isConfirmed) {
+        try {
+          const user = JSON.parse(localStorage.getItem("user"));
+          const userId = user?.nguoi_dung_id || user?.id;
+          await axios.delete(`http://localhost:8000/api/cart/${userId}/${productId}`);
+          products.value = products.value.filter(p => p.id !== productId);
+          Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Đã xóa sản phẩm!', showConfirmButton: false, timer: 1500 });
+        } catch (error) {
+          console.error("Lỗi khi xóa sản phẩm:", error);
+          Swal.fire("Lỗi", "Không thể xóa sản phẩm.", "error");
+        }
+      }
+    };
+    const fetchMyCoupons = async () => {
+      try {
+        const response = await axios.get('http://localhost:8000/api/my-coupons');
+        myCoupons.value = response.data;
+      } catch (error) {
+        console.error("Lỗi khi tải mã giảm giá của tôi:", error);
+      }
+    };
+    const handleCouponSelection = (selectedCode) => {
+      couponCode.value = selectedCode;
+      showCouponModal.value = false;
+      applyCoupon();
+    };
+    const applyCoupon = async () => {
+      if (!couponCode.value) {
+        couponErrorMessage.value = "Vui lòng nhập mã giảm giá.";
+        return;
+      }
+      isLoadingCoupon.value = true;
+      couponErrorMessage.value = '';
+      discountAmount.value = 0;
+      const cartItemsPayload = products.value.map(item => ({ id: item.id, quantity: item.quantity, price: item.price }));
+      try {
+        const response = await axios.post('http://localhost:8000/api/coupon/apply', { ma_giam_gia: couponCode.value, cart_items: cartItemsPayload });
+        discountAmount.value = response.data.discount_amount;
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Áp dụng mã thành công!', showConfirmButton: false, timer: 2000 });
+      } catch (error) {
+        couponErrorMessage.value = error.response?.data?.message || 'Có lỗi xảy ra.';
+      } finally {
+        isLoadingCoupon.value = false;
+      }
+    };
 
-    const updateCartItem = async (productId, quantityChange) => {
-      const product = products.value.find((p) => p.id === productId);
-      if (!product) return;
+    // ==========================================================
+    // ===== BỘ LOGIC XỬ LÝ ĐỊA CHỈ ĐÃ ĐƯỢC TỐI ƯU HÓA =====
+    // ==========================================================
+    const fetchProvinces = async () => {
+        try {
+            const cachedProvinces = localStorage.getItem('provinces');
+            if (cachedProvinces) {
+                provinces.value = JSON.parse(cachedProvinces);
+                return;
+            }
+            const response = await fetch('https://vn-public-apis.fpo.vn/provinces/getAll?limit=-1');
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const apiData = await response.json();
+            provinces.value = apiData.data.data;
+            localStorage.setItem('provinces', JSON.stringify(provinces.value));
+        } catch (error) {
+            console.error('Lỗi khi tải danh sách tỉnh/thành phố:', error.message);
+        }
+    };
+    const fetchDistricts = async (provinceCode) => {
+        if (!provinceCode) {
+            districts.value = [];
+            wards.value = [];
+            return;
+        }
+        try {
+            const cacheKey = `districts_${provinceCode}`;
+            const cachedDistricts = localStorage.getItem(cacheKey);
+            if (cachedDistricts) {
+                districts.value = JSON.parse(cachedDistricts);
+                return;
+            }
+            const response = await fetch(`https://vn-public-apis.fpo.vn/districts/getByProvince?provinceCode=${provinceCode}&limit=-1`);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const apiData = await response.json();
+            districts.value = apiData.data.data;
+            localStorage.setItem(cacheKey, JSON.stringify(districts.value));
+        } catch (error) {
+            console.error('Lỗi khi tải danh sách quận/huyện:', error.message);
+            districts.value = [];
+            wards.value = [];
+        }
+    };
+    const fetchWards = async (districtCode) => {
+        if (!districtCode) {
+            wards.value = [];
+            return;
+        }
+        try {
+            const cacheKey = `wards_${districtCode}`;
+            const cachedWards = localStorage.getItem(cacheKey);
+            if (cachedWards) {
+                wards.value = JSON.parse(cachedWards);
+                return;
+            }
+            const response = await fetch(`https://vn-public-apis.fpo.vn/wards/getByDistrict?districtCode=${districtCode}&limit=-1`);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const apiData = await response.json();
+            wards.value = apiData.data.data;
+            localStorage.setItem(cacheKey, JSON.stringify(wards.value));
+        } catch (error) {
+            console.error('Lỗi khi tải danh sách phường/xã:', error.message);
+            wards.value = [];
+        }
+    };
 
-      try {
-        const response = await axios.post(`http://localhost:8000/api/cart/add`, {
-          san_pham_bien_the_id: product.id,
-          quantity: quantityChange
-        });
+    watch(selectedProvinceCode, (newVal) => {
+        districts.value = [];
+        wards.value = [];
+        selectedDistrictCode.value = '';
+        selectedWardCode.value = '';
+        if (newVal) fetchDistricts(newVal);
+    });
 
-        if (response.data.cart_item && response.data.cart_item.so_luong > 0) {
-          product.quantity = response.data.cart_item.so_luong;
-          product.total_item_price = response.data.cart_item.thanh_tien;
-        } else {
-          products.value = products.value.filter(p => p.id !== productId);
-        }
+    watch(selectedDistrictCode, (newVal) => {
+        wards.value = [];
+        selectedWardCode.value = '';
+        if (newVal) fetchWards(newVal);
+    });
 
-        Swal.fire({
-          toast: true, position: 'top-end', icon: 'success',
-          title: 'Cập nhật giỏ hàng thành công!', showConfirmButton: false, timer: 1500
-        });
-      } catch (error) {
-        console.error("Lỗi khi cập nhật giỏ hàng:", error.response?.data || error.message);
-        Swal.fire("Lỗi", error.response?.data?.message || "Không thể cập nhật giỏ hàng.", "error");
-      }
-    };
-
-    const increaseQuantity = (productId) => updateCartItem(productId, 1);
-    const decreaseQuantity = (productId) => {
-      const product = products.value.find((p) => p.id === productId);
-      if (product && product.quantity > 1) {
-        updateCartItem(productId, -1);
-      } else {
-        removeProduct(productId);
-      }
-    };
-
-    const removeProduct = async (productId) => {
-      const result = await Swal.fire({
-        title: 'Xóa sản phẩm?', text: "Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?",
-        icon: 'warning', showCancelButton: true, confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33', confirmButtonText: 'Đồng ý', cancelButtonText: 'Hủy'
-      });
-      if (result.isConfirmed) {
-        try {
-          const user = JSON.parse(localStorage.getItem("user"));
-          const userId = user?.nguoi_dung_id || user?.id;
-          await axios.delete(`http://localhost:8000/api/cart/${userId}/${productId}`);
-          products.value = products.value.filter(p => p.id !== productId);
-          Swal.fire({
-            toast: true, position: 'top-end', icon: 'success',
-            title: 'Đã xóa sản phẩm!', showConfirmButton: false, timer: 1500
-          });
-        } catch (error) {
-          console.error("Lỗi khi xóa sản phẩm:", error);
-          Swal.fire("Lỗi", "Không thể xóa sản phẩm.", "error");
-        }
-      }
-    };
-
-    const fetchMyCoupons = async () => {
-      try {
-        const response = await axios.get('http://localhost:8000/api/my-coupons');
-        myCoupons.value = response.data;
-      } catch (error) {
-        console.error("Lỗi khi tải mã giảm giá của tôi:", error);
-      }
-    };
+    const changeAddress = () => {
+        showAddressForm.value = true;
+        errorMessage.value = '';
+        if (provinces.value.length === 0) {
+            fetchProvinces();
+        }
+    };
     
-    const handleCouponSelection = (selectedCode) => {
-      couponCode.value = selectedCode;
-      showCouponModal.value = false;
-      applyCoupon();
-    };
-    
-    const applyCoupon = async () => {
-      if (!couponCode.value) {
-        couponErrorMessage.value = "Vui lòng nhập mã giảm giá.";
-        return;
-      }
-      isLoadingCoupon.value = true;
-      couponErrorMessage.value = '';
-      discountAmount.value = 0;
-      const cartItemsPayload = products.value.map(item => ({
-        id: item.id,
-        quantity: item.quantity,
-        price: item.price
-      }));
+    // Hàm này sẽ được gọi từ onMounted và cancelAddressChange
+    const loadUserAddress = async () => {
+        const user = JSON.parse(localStorage.getItem("user"));
+        const userId = user?.nguoi_dung_id || user?.id;
+        if (!userId) return;
 
-      try {
-        const response = await axios.post('http://localhost:8000/api/coupon/apply', {
-          ma_giam_gia: couponCode.value,
-          cart_items: cartItemsPayload
-        });
-        discountAmount.value = response.data.discount_amount;
-        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Áp dụng mã thành công!', showConfirmButton: false, timer: 2000 });
-      } catch (error) {
-        couponErrorMessage.value = error.response?.data?.message || 'Có lỗi xảy ra.';
-      } finally {
-        isLoadingCoupon.value = false;
-      }
-    };
-
-    const placeOrder = async () => {
-      if (isPlacingOrder.value) return; 
-      isPlacingOrder.value = true;
-
-      const user = JSON.parse(localStorage.getItem("user") || "null");
-      if (!products.value.length) {
-        Swal.fire("Giỏ hàng trống", "Vui lòng thêm sản phẩm.", "warning");
-        isPlacingOrder.value = false;
-        return;
-      }
-      
-      // Thêm kiểm tra địa chỉ
-      if (!displayedAddress.value.id_dia_chi) {
-          Swal.fire("Lỗi địa chỉ", "Vui lòng chọn hoặc thêm địa chỉ giao hàng.", "error");
-          isPlacingOrder.value = false;
-          return;
-      }
-
-      const payload = {
-        phuong_thuc_thanh_toan_id: paymentMethod.value === 'cod' ? 1 : 2,
-        dia_chi_id: displayedAddress.value.id_dia_chi,
-        phi_van_chuyen: deliveryFee.value,
-        ma_giam_gia: couponCode.value || null,
-        ghi_chu: 'Đặt hàng'
-      };
-
-      if (paymentMethod.value === 'vnpay') {
         try {
-          const cartPayload = products.value.map(p => ({
-            san_pham_bien_the_id: p.id,
-            so_luong: p.quantity,
-            don_gia: p.price,
-            thanh_tien: p.total_item_price ?? p.price * p.quantity
-          }));
-          
-          // Gửi payload VNPAY
-          const { data } = await axios.post('http://localhost:8000/api/create-vnpay-payment', {
-            ...payload, // Truyền các thông tin đơn hàng sang backend
-            cart: cartPayload,
-            total: totalAmount.value,
-            user_id: user?.nguoi_dung_id || user?.id,
-          });
-
-          if (data.payment_url) {
-            window.location.href = data.payment_url; // Chuyển hướng trực tiếp để không mở tab mới
-          } else {
-            throw new Error("Không lấy được URL thanh toán");
-          }
-        } catch (err) {
-          console.error(err);
-          Swal.fire("Lỗi", "Không thể tạo đơn hàng. Thử lại.", "error");
-        } finally {
-          isPlacingOrder.value = false;
-        }
-      } else if (paymentMethod.value === 'cod') {
-        try {
-          const response = await axios.post('http://localhost:8000/api/orders/store', payload, {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`
+            const addressRes = await axios.get(`http://localhost:8000/api/dia_chi/nguoi_dung/${userId}`);
+            const addresses = addressRes.data;
+            const defaultAddress = (Array.isArray(addresses) && addresses.length > 0) ? addresses[0] : null;
+            
+            if (defaultAddress) {
+                const addressId = defaultAddress.id_dia_chi || defaultAddress.id;
+                displayedAddress.value = { 
+                    ho_ten: defaultAddress.ho_ten || user.ho_ten, 
+                    sdt: defaultAddress.sdt || user.sdt, 
+                    dia_chi: defaultAddress.dia_chi,
+                    id_dia_chi: addressId
+                };
+                currentAddressId.value = addressId;
+            } else {
+                displayedAddress.value = { ho_ten: user.ho_ten || "", sdt: user.sdt || "", dia_chi: "", id_dia_chi: null };
+                currentAddressId.value = null;
+                showAddressForm.value = true;
+                changeAddress();
             }
-          });
-
-          Swal.fire({
-            icon: 'success',
-            title: 'Đặt hàng thành công!',
-            text: 'Đơn hàng của bạn đã được ghi nhận và sẽ được giao sớm nhất có thể.',
-            showConfirmButton: false,
-            timer: 3000
-          });
-          
-          // Xóa giỏ hàng trên frontend
-          products.value = [];
-          
-          router.push({ name: 'paymentsuccess', params: { orderId: response.data.order_id }, query: { success: '1' } });
         } catch (err) {
-          console.error("Lỗi khi tạo đơn hàng COD:", err.response?.data || err.message);
-          Swal.fire("Lỗi", "Không thể tạo đơn hàng COD. Thử lại.", "error");
-        } finally {
-          isPlacingOrder.value = false;
+            console.error("Lỗi khi tải địa chỉ người dùng:", err);
         }
-      } else {
-        Swal.fire("Lỗi", "Vui lòng chọn phương thức thanh toán.", "warning");
-        isPlacingOrder.value = false;
-      }
     };
 
-    onMounted(async () => {
-      const user = JSON.parse(localStorage.getItem("user"));
-      const userId = user?.nguoi_dung_id || user?.id;
-      if (!userId) { 
-        Swal.fire("Lỗi", "Vui lòng đăng nhập để xem giỏ hàng.", "error");
-        router.push('/login');
-        return; 
-      }
+    const cancelAddressChange = () => {
+        loadUserAddress(); 
+        showAddressForm.value = false;
+        errorMessage.value = '';
+    };
 
-      // Kiểm tra và xử lý kết quả VNPAY trước khi tải giỏ hàng
-      if (route.query.vnp_ResponseCode) {
-        await handleVnpayReturn();
-        return; // Dừng lại không tải lại giỏ hàng
-      }
+    const handleUpdateAddress = async () => {
+        errorMessage.value = '';
+        if (!displayedAddress.value.ho_ten || !displayedAddress.value.sdt || !streetAddress.value || !selectedProvinceCode.value || !selectedDistrictCode.value || !selectedWardCode.value) {
+            errorMessage.value = "Vui lòng điền đầy đủ thông tin.";
+            return;
+        }
 
-      // Tải giỏ hàng, địa chỉ và mã giảm giá nếu không phải là trang trả về từ VNPAY
-      await Promise.all([
-        axios.get(`http://localhost:8000/api/cart/${userId}`),
-        axios.get(`http://localhost:8000/api/dia_chi/nguoi_dung/${userId}`),
-        fetchMyCoupons(),
-      ]).then(([cartRes, addressRes]) => {
-        if (cartRes.data && cartRes.data.items) { products.value = cartRes.data.items; } 
-        else { products.value = []; }
+        const provinceName = provinces.value.find(p => p.code == selectedProvinceCode.value)?.name;
+        const districtName = districts.value.find(d => d.code == selectedDistrictCode.value)?.name;
+        const wardName = wards.value.find(w => w.code == selectedWardCode.value)?.name;
+        const fullAddress = `${streetAddress.value}, ${wardName}, ${districtName}, ${provinceName}`;
+        const user = JSON.parse(localStorage.getItem("user"));
+        const userId = user?.nguoi_dung_id || user?.id;
 
-        const addresses = addressRes.data;
-        let defaultAddress = (addresses && Array.isArray(addresses) && addresses.length > 0) ? addresses[0] : null;
-        if (defaultAddress) {
-          displayedAddress.value = { 
-            ho_ten: defaultAddress.ho_ten || user.ho_ten, 
-            sdt: defaultAddress.sdt || user.sdt, 
-            dia_chi: defaultAddress.dia_chi,
-            id_dia_chi: defaultAddress.id_dia_chi || defaultAddress.id 
-          };
-        } else {
-          displayedAddress.value = { ho_ten: user.ho_ten || "", sdt: user.sdt || "", dia_chi: "" };
-          showAddressForm.value = true;
-        }
-      }).catch(err => {
-        console.error("Lỗi khi tải dữ liệu ban đầu:", err);
-        Swal.fire("Lỗi", "Không thể tải dữ liệu giỏ hàng hoặc địa chỉ.", "error");
-      });
-    });
+        const addressPayload = {
+            nguoi_dung_id: userId,
+            ho_ten: displayedAddress.value.ho_ten,
+            sdt: displayedAddress.value.sdt,
+            dia_chi: fullAddress,
+        };
 
-    return {
-      products, deliveryMethod, paymentMethod, showAddressForm, 
-      displayedAddress, provinces, districts, wards, selectedProvinceCode, 
-      selectedDistrictCode, selectedWardCode, streetAddress, 
-      isLoadingAddressData, errorMessage, totalItems, subtotal, deliveryFee, 
+        try {
+            let response;
+            if (currentAddressId.value) {
+                response = await axios.put(`http://localhost:8000/api/dia_chi/${currentAddressId.value}`, addressPayload);
+            } else {
+                response = await axios.post('http://localhost:8000/api/dia_chi', addressPayload);
+            }
+
+            const savedAddress = response.data.dia_chi || response.data || {};
+            const savedAddressId = savedAddress.id_dia_chi || savedAddress.id;
+            
+            if (!savedAddressId) {
+                throw new Error("Không nhận được ID địa chỉ hợp lệ từ máy chủ.");
+            }
+
+            displayedAddress.value = {
+                ho_ten: savedAddress.ho_ten || addressPayload.ho_ten,
+                sdt: savedAddress.sdt || addressPayload.sdt,
+                dia_chi: savedAddress.dia_chi || fullAddress,
+                id_dia_chi: savedAddressId
+            };
+            currentAddressId.value = savedAddressId;
+            showAddressForm.value = false;
+            Swal.fire("Thành công", "Đã cập nhật địa chỉ thành công!", "success");
+
+        } catch (error) {
+            console.error("Lỗi khi lưu địa chỉ:", error.response?.data || error.message);
+            errorMessage.value = error.response?.data?.message || "Lưu địa chỉ thất bại.";
+            Swal.fire("Lỗi", errorMessage.value, "error");
+        }
+    };
+    
+    const placeOrder = async () => {
+      if (isPlacingOrder.value) return; 
+      isPlacingOrder.value = true;
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+
+      if (!products.value.length) {
+        Swal.fire("Giỏ hàng trống", "Vui lòng thêm sản phẩm.", "warning");
+        isPlacingOrder.value = false;
+        return;
+      }
+      
+      if (!displayedAddress.value.id_dia_chi) {
+          Swal.fire("Lỗi địa chỉ", "Vui lòng chọn hoặc thêm địa chỉ giao hàng.", "error");
+          isPlacingOrder.value = false;
+          return;
+      }
+
+      const payload = {
+        phuong_thuc_thanh_toan_id: paymentMethod.value === 'cod' ? 1 : (paymentMethod.value === 'vnpay' ? 2 : null),
+        dia_chi_id: displayedAddress.value.id_dia_chi,
+        phi_van_chuyen: deliveryFee.value,
+        ma_giam_gia: couponCode.value || null,
+        ghi_chu: 'Đặt hàng'
+      };
+
+      if (paymentMethod.value === 'vnpay') {
+        try {
+          const cartPayload = products.value.map(p => ({
+            san_pham_bien_the_id: p.id, so_luong: p.quantity, don_gia: p.price,
+            thanh_tien: p.total_item_price ?? p.price * p.quantity
+          }));
+          const { data } = await axios.post('http://localhost:8000/api/create-vnpay-payment', {
+            ...payload, cart: cartPayload, total: totalAmount.value,
+            user_id: user?.nguoi_dung_id || user?.id,
+          });
+          if (data.payment_url) {
+            window.location.href = data.payment_url;
+          } else { throw new Error("Không lấy được URL thanh toán"); }
+        } catch (err) {
+          console.error("Lỗi VNPAY:", err);
+          Swal.fire("Lỗi", "Không thể tạo thanh toán VNPAY. Thử lại.", "error");
+        } finally { isPlacingOrder.value = false; }
+      } else if (paymentMethod.value === 'cod') {
+        try {
+          const response = await axios.post('http://localhost:8000/api/orders/store', payload, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          });
+          Swal.fire({ icon: 'success', title: 'Đặt hàng thành công!', text: 'Đơn hàng của bạn đã được ghi nhận.', showConfirmButton: false, timer: 3000 });
+          products.value = [];
+          router.push({ name: 'paymentsuccess', params: { orderId: response.data.order_id }, query: { success: '1' } });
+        } catch (err) {
+          console.error("Lỗi khi tạo đơn hàng COD:", err.response?.data || err.message);
+          Swal.fire("Lỗi", "Không thể tạo đơn hàng COD. Thử lại.", "error");
+        } finally { isPlacingOrder.value = false; }
+      } else {
+        Swal.fire("Lỗi", "Vui lòng chọn phương thức thanh toán.", "warning");
+        isPlacingOrder.value = false;
+      }
+    };
+
+    const handleVnpayReturn = async () => {
+        // Hàm này cần được triển khai để xác nhận giao dịch VNPAY với backend
+        // và sau đó chuyển hướng người dùng đến trang thành công.
+        console.log("Xử lý kết quả trả về từ VNPAY:", route.query);
+        // Ví dụ: gọi API để xác thực
+        // await axios.post('/api/vnpay-return', route.query);
+        // router.push({ name: 'paymentsuccess', ... });
+    };
+
+    onMounted(() => {
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (!user) { 
+        router.push('/login');
+        return; 
+      }
+
+      if (route.query.vnp_ResponseCode) {
+        handleVnpayReturn();
+        return;
+      }
+      
+      const userId = user.nguoi_dung_id || user.id;
+      
+      axios.get(`http://localhost:8000/api/cart/${userId}`)
+        .then(cartRes => {
+            products.value = (cartRes.data && cartRes.data.items) ? cartRes.data.items : [];
+        })
+        .catch(err => console.error("Lỗi khi tải giỏ hàng:", err));
+      
+      loadUserAddress();
+      fetchMyCoupons();
+    });
+
+    return {
+      products, deliveryMethod, paymentMethod, showAddressForm, 
+      displayedAddress, provinces, districts, wards, selectedProvinceCode, 
+      selectedDistrictCode, selectedWardCode, streetAddress, 
+      isLoadingAddressData, errorMessage, totalItems, subtotal, deliveryFee,
       totalAmount, formatPrice, increaseQuantity, decreaseQuantity, 
-      removeProduct, placeOrder, discountAmount, couponCode, 
-      isLoadingCoupon, couponErrorMessage, applyCoupon, myCoupons, 
-      showCouponModal, handleCouponSelection,
-      imageBaseUrl,
-      isPlacingOrder
-    };
-  }
+      removeProduct, placeOrder, discountAmount, couponCode, 
+      isLoadingCoupon, couponErrorMessage, applyCoupon, myCoupons, 
+      showCouponModal, handleCouponSelection,
+      imageBaseUrl,
+      isPlacingOrder, changeAddress, cancelAddressChange, handleUpdateAddress
+    };
+  }
 };
 </script>
+
 <style scoped>
 /* General styles */
 .cart-page {
