@@ -297,12 +297,16 @@ import GiamGiaManager from '@/components/admin/GiamGiaManager.vue';const routes 
     name: 'ProductDetail',
     component: () => import('@/components/user/ProductDetail.vue')
   },
-    {
-    path: '/paymentsuccess/:orderId?',
-    name: 'paymentsuccess',
-    component: PaymentSuccess,
-    props: true
-},
+{
+        path: '/paymentsuccess',
+        name: 'paymentsuccess',
+        component: PaymentSuccess,
+        props: route => ({
+            orderId: route.query.order_id,
+            success: route.query.success === '1',
+            paymentMethod: route.query.payment_method || null 
+        })
+    },
 
 ];
 

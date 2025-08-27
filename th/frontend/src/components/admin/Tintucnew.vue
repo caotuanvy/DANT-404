@@ -5,7 +5,9 @@
         <h1 class="page-title">Danh sách tin tức</h1>
       </div>
       <router-link to="/admin/tintuc/add" class="btn-add">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+        </svg>
         <span>Thêm tin tức</span>
       </router-link>
     </header>
@@ -59,7 +61,7 @@
             <tr v-if="loading">
               <td colspan="10" class="text-center py-8">Đang tải dữ liệu...</td>
             </tr>
-            <tr v-for="news in filteredNews" :key="news.id" class="table-row" :class="{'is-inactive-row': news.trang_thai != 1}">
+            <tr v-for="news in paginatedNews" :key="news.id" class="table-row" :class="{'is-inactive-row': news.trang_thai != 1}">
               <td data-label="Chọn"><input type="checkbox"></td>
               <td data-label="Tiêu đề">
                 <div class="news-title-cell">
@@ -103,7 +105,7 @@
               </td>
               <td data-label="Hành động" class="text-center">
                 <div class="action-buttons">
-                  <router-link :to="`/tintuc/${news.slug}`" class="action-icon" title="Xem chi tiết">
+                  <router-link :to="`/tin-tuc-chi-tiet/${news.slug}`" class="action-icon" title="Xem chi tiết">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
                   </router-link>
                   <router-link :to="`/admin/tintuc/${news.id}/edit`" class="action-icon" title="Sửa">
@@ -125,6 +127,18 @@
       </div>
       <p v-if="!loading && filteredNews.length === 0" class="no-data-message">Không có tin tức nào phù hợp.</p>
       <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+
+      <div class="pagination-container" v-if="totalPages > 1">
+        <button @click="prevPage" :disabled="currentPage === 1" class="pagination-btn">
+          Trước
+        </button>
+        <span class="pagination-info">
+          Trang {{ currentPage }} trên {{ totalPages }}
+        </span>
+        <button @click="nextPage" :disabled="currentPage === totalPages" class="pagination-btn">
+          Sau
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -132,7 +146,9 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
+// State Variables
 const newsList = ref([]);
 const errorMessage = ref('');
 const loading = ref(false);
@@ -141,6 +157,11 @@ const categoryFilter = ref('');
 const statusFilter = ref('');
 const categories = ref([]);
 
+// Pagination variables
+const currentPage = ref(1);
+const itemsPerPage = ref(10); // phan trang 10 tin mỗi trang
+
+// Functions & Computed Properties
 const clearSearch = () => {
   searchQuery.value = '';
 };
@@ -153,6 +174,7 @@ const truncateText = (text, maxLength) => {
   return text;
 };
 
+// Filtered data (before pagination)
 const filteredNews = computed(() => {
   let currentNews = newsList.value;
 
@@ -176,10 +198,38 @@ const filteredNews = computed(() => {
   if (statusFilter.value !== '') {
     currentNews = currentNews.filter(news => String(news.trang_thai) === statusFilter.value);
   }
-
+  
+  // Reset page to 1 whenever filters change
+  currentPage.value = 1;
   return currentNews;
 });
 
+// Paginated data (displayed on the current page)
+const paginatedNews = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  return filteredNews.value.slice(start, end);
+});
+
+// Total pages for pagination
+const totalPages = computed(() => {
+  return Math.ceil(filteredNews.value.length / itemsPerPage.value);
+});
+
+// Pagination navigation functions
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+  }
+};
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
+};
+
+// Data fetching function
 const getNews = async () => {
   loading.value = true;
   errorMessage.value = '';
@@ -206,60 +256,133 @@ const getCategories = async () => {
   }
 };
 
+// Toggle functions
 const toggleNoiBat = async (news) => {
   const oldStatus = news.noi_bat;
   const newStatus = oldStatus === 1 ? 0 : 1;
-  news.noi_bat = newStatus;
-  try {
-    await axios.put(`http://localhost:8000/api/tintuc/${news.id}`, {
-      noi_bat: newStatus,
-    }, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
-  } catch (error) {
-    news.noi_bat = oldStatus;
-    alert('Cập nhật trạng thái nổi bật thất bại!');
+  const actionText = newStatus === 1 ? 'ghim trang chủ' : 'bỏ ghim trang chủ';
+
+  const result = await Swal.fire({
+    title: `Xác nhận thay đổi trạng thái`,
+    text: `Bạn có chắc muốn đặt tin "${news.tieude}" ở trạng thái ${actionText} không?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Đồng ý',
+    cancelButtonText: 'Hủy',
+  });
+
+  if (result.isConfirmed) {
+    try {
+      news.noi_bat = newStatus;
+      await axios.put(`http://localhost:8000/api/tintuc/${news.id}`, {
+        noi_bat: newStatus,
+      }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      Swal.fire({
+        title: 'Thành công!',
+        text: `Đã cập nhật tin tức thành công!`,
+        icon: 'success',
+      });
+    } catch (error) {
+      news.noi_bat = oldStatus;
+      console.error('Lỗi khi cập nhật trạng thái nổi bật:', error);
+      Swal.fire({
+        title: 'Thất bại!',
+        text: `Cập nhật trạng thái nổi bật thất bại: ` + (error.response?.data?.message || error.message),
+        icon: 'error',
+      });
+    }
   }
 };
 
 const toggleDuyet = async (news) => {
   const oldStatus = news.duyet_tin_tuc;
   const newStatus = oldStatus === 1 ? 0 : 1;
-  news.duyet_tin_tuc = newStatus;
-  try {
-    await axios.put(`http://localhost:8000/api/tintuc/${news.id}`, {
-      duyet_tin_tuc: newStatus,
-    }, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
-  } catch (error) {
-    news.duyet_tin_tuc = oldStatus;
-    alert('Cập nhật trạng thái duyệt thất bại!');
+  const actionText = newStatus === 1 ? 'hiển thị ở mục Quan Trọng' : 'bỏ hiển thị ở mục Quan Trọng';
+
+  const result = await Swal.fire({
+    title: `Xác nhận ${actionText} tin`,
+    text: `Bạn có chắc muốn tin tức ${actionText} "${news.tieude}" này không?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Đồng ý',
+    cancelButtonText: 'Hủy',
+  });
+
+  if (result.isConfirmed) {
+    try {
+      news.duyet_tin_tuc = newStatus;
+      await axios.put(`http://localhost:8000/api/tintuc/${news.id}`, {
+        duyet_tin_tuc: newStatus,
+      }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      Swal.fire({
+        title: 'Thành công!',
+        text: `Đã ${actionText} tin tức thành công!`,
+        icon: 'success',
+      });
+    } catch (error) {
+      news.duyet_tin_tuc = oldStatus;
+      console.error('Lỗi khi cập nhật trạng thái duyệt:', error);
+      Swal.fire({
+        title: 'Thất bại!',
+        text: `Cập nhật trạng thái duyệt thất bại: ` + (error.response?.data?.message || error.message),
+        icon: 'error',
+      });
+    }
   }
 };
 
 const toggleTrangThai = async (news) => {
   const oldStatus = news.trang_thai;
   const newStatus = oldStatus === 1 ? 0 : 1;
-  const action = newStatus === 1 ? 'hiển thị' : 'vô hiệu hóa';
-  if (!confirm(`Bạn có chắc muốn ${action} tin tức này?`)) return;
-  news.trang_thai = newStatus;
-  try {
-    await axios.put(`http://localhost:8000/api/tintuc/${news.id}`, {
-      trang_thai: newStatus,
-    }, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
-    alert(`Đã ${action} tin tức thành công!`);
-  } catch (error) {
-    news.trang_thai = oldStatus;
-    alert('Thao tác thất bại!');
+  const actionText = newStatus === 1 ? 'hiển thị' : 'ẩn';
+
+  const result = await Swal.fire({
+    title: `Xác nhận thay đổi trạng thái`,
+    text: `Bạn có chắc muốn ${actionText} tin tức "${news.tieude}" này không?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Đồng ý',
+    cancelButtonText: 'Hủy',
+  });
+
+  if (result.isConfirmed) {
+    try {
+      news.trang_thai = newStatus;
+      await axios.put(`http://localhost:8000/api/tintuc/${news.id}`, {
+        trang_thai: newStatus,
+      }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      Swal.fire({
+        title: 'Thành công!',
+        text: `Đã ${actionText} tin tức thành công!`,
+        icon: 'success',
+      });
+    } catch (error) {
+      news.trang_thai = oldStatus;
+      console.error('Lỗi khi cập nhật trạng thái:', error);
+      Swal.fire({
+        title: 'Thất bại!',
+        text: `Cập nhật trạng thái thất bại: ` + (error.response?.data?.message || error.message),
+        icon: 'error',
+      });
+    }
   }
 };
 
@@ -276,8 +399,8 @@ onMounted(() => {
 
 <style scoped>
 /*
- * BASE STYLES
- */
+ * BASE STYLES
+ */
 .page-wrapper {
   background-color: #f3f4f6;
   padding: 2rem;
@@ -525,9 +648,39 @@ onMounted(() => {
   color: #9ca3af;
 }
 
+/* --- PAGINATION STYLES --- */
+.pagination-container {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+}
+.pagination-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #fff;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+.pagination-btn:hover:not(:disabled) {
+    background-color: #f0f0f0;
+    border-color: #aaa;
+}
+.pagination-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+.pagination-info {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+
 /*
- * RESPONSIVE MOBILE STYLES (Dưới 768px)
- */
+ * RESPONSIVE MOBILE STYLES (Dưới 768px)
+ */
 @media (max-width: 768px) {
   .page-wrapper {
     padding: 1rem;

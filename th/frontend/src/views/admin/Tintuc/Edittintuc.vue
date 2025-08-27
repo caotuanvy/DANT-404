@@ -97,7 +97,6 @@
               </div>
             </div>
           </div>
-
           <div class="form-actions">
             <button type="submit" class="btn btn-primary btn-large" :disabled="isSubmitting">
               <span v-if="isSubmitting"><i class="fas fa fa-spinner fa-spin"></i> Đang lưu...</span>
@@ -126,6 +125,7 @@
 <script>
 import axios from "axios";
 import Editor from '@tinymce/tinymce-vue';
+import Swal from "sweetalert2";
 
 export default {
   components: {
@@ -296,9 +296,17 @@ export default {
     async getDanhMucs() {
       try {
         const res = await axios.get("http://localhost:8000/api/danh-muc-tin-tuc");
-        this.danhMucs = res.data;
+        this.danhMucs = res.data.filter(dm => dm.trang_thai === 1);
       } catch (error) {
-        alert("Không thể tải danh mục tin tức!");
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'error',
+            title: 'Lỗi: Không thể tải danh mục tin tức. Vui lòng thử lại sau.',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        });
         console.error("Lỗi tải danh mục:", error);
       }
     },
@@ -306,7 +314,15 @@ export default {
       try {
         const token = localStorage.getItem("token");
         if (!token) {
-          alert("Bạn cần đăng nhập để xem tin tức!");
+          Swal.fire({
+              toast: true,
+              position: 'top-end',
+              icon: 'warning',
+              title: 'Lỗi: Bạn cần đăng nhập để truy cập trang này.',
+              showConfirmButton: false,
+              timer: 3000,
+              timerProgressBar: true
+          });
           this.$router.push("/login");
           return;
         }
@@ -351,7 +367,15 @@ export default {
         this.originalHinhAnh = data.hinh_anh || "";
         this.checkSeoCriteria();
       } catch (error) {
-        alert("Không thể tải dữ liệu tin tức hoặc không có quyền!");
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'error',
+            title: 'Lỗi: Không thể tải dữ liệu tin tức. Vui lòng kiểm tra lại URL hoặc quyền truy cập của bạn.',
+            showConfirmButton: false,
+            timer: 4000,
+            timerProgressBar: true
+        });
         console.error("Lỗi tải tin tức:", error);
       }
     },
@@ -376,13 +400,29 @@ export default {
       this.isSubmitting = true;
       try {
         if (!this.tieude || !this.id_danh_muc_tin_tuc) {
-          alert("Vui lòng nhập đầy đủ thông tin bắt buộc (Tiêu đề, Danh mục)!");
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'warning',
+            title: 'Lỗi: Vui lòng nhập đầy đủ thông tin bắt buộc (Tiêu đề, Danh mục) trước khi lưu.',
+            showConfirmButton: false,
+            timer: 4000,
+            timerProgressBar: true
+          });
           this.isSubmitting = false;
           return;
         }
         const token = localStorage.getItem("token");
         if (!token) {
-          alert("Bạn cần đăng nhập!");
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'warning',
+            title: 'Lỗi: Bạn cần đăng nhập để thực hiện hành động này.',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+          });
           this.$router.push("/login");
           this.isSubmitting = false;
           return;
@@ -417,19 +457,43 @@ export default {
         );
 
         if (res.status === 200 || res.status === 201) {
-          alert("Cập nhật tin tức thành công!");
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Thông báo: Tin tức đã được cập nhật thành công.',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+          });
           this.$router.push("/admin/tintuc");
         }
       } catch (error) {
         console.error("Lỗi khi cập nhật tin tức:", error.response ? error.response.data : error);
-        alert("Có lỗi xảy ra khi cập nhật tin tức! Vui lòng kiểm tra lại thông tin.");
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'error',
+            title: 'Lỗi: Có vấn đề xảy ra trong quá trình cập nhật tin tức. Vui lòng kiểm tra lại thông tin và thử lại.',
+            showConfirmButton: false,
+            timer: 4000,
+            timerProgressBar: true
+        });
       } finally {
         this.isSubmitting = false;
       }
     },
     async generateSeoContent() {
       if (!this.tieude) {
-        alert('Vui lòng nhập Tiêu đề trước khi tạo nội dung SEO.');
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'warning',
+            title: 'Cảnh báo: Vui lòng nhập Tiêu đề trước khi tạo nội dung SEO.',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        });
         return;
       }
       this.isGeneratingSeo = true;
@@ -466,10 +530,27 @@ export default {
         }
 
         this.checkSeoCriteria();
-        alert('Tạo nội dung AI và SEO thành công!');
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Thông báo: Tạo nội dung AI và SEO thành công!',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        });
       } catch (error) {
         console.error("Lỗi khi tạo nội dung AI:", error.response ? error.response.data : error);
-        this.globalError = "Tạo SEO thất bại! Vui lòng thử lại.";
+        this.globalError = "Tạo nội dung SEO thất bại! Vui lòng thử lại.";
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'error',
+            title: this.globalError,
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        });
       } finally {
         this.isGeneratingSeo = false;
       }

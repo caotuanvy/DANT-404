@@ -19,14 +19,17 @@ class Order extends Model
         'dia_chi_id',           // Địa chỉ giao hàng
         'trang_thai_don_hang',  // <-- Đã thống nhất với Controller dùng 'trang_thai_don_hang'
         'ghi_chu',
+        'ten_nguoi_nhan',
+        'sdt_nguoi_nhan',
+        'dia_chi_giao_hang',
         'phi_van_chuyen',
         'tong_tien',            // <-- Đã thêm vào fillable (quan trọng!)
         'is_paid',              // <-- Đã thêm vào fillable (quan trọng!)
         'ngay_dat',             // <-- Đã thêm vào fillable (quan trọng!)
         'ngay_tao',             // Giữ lại theo các file cũ nếu có trong DB
         'ngay_sua',
-            'so_tien_giam',
-       // Giữ lại theo các file cũ nếu có trong DB
+        'so_tien_giam',
+        // Giữ lại theo các file cũ nếu có trong DB
     ];
 
 
