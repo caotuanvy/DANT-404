@@ -62,7 +62,7 @@
       <div class="order-summary-panel" v-if="products.length > 0">
         <div class="delivery-address">
           <h2 class="panel-title">Địa chỉ giao hàng</h2>
-          <div v-if="!showAddressForm">
+<div v-if="!showAddressForm">
             <p><strong>Người nhận:</strong> {{ displayedAddress.ho_ten }}</p>
             <p><strong>SĐT:</strong> {{ displayedAddress.sdt }}</p>
             <p><strong>Địa chỉ:</strong> {{ displayedAddress.dia_chi || 'Chưa có địa chỉ' }}</p>
@@ -115,7 +115,7 @@
               <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
               <div class="form-actions">
                 <button class="save-btn" @click="handleUpdateAddress">Lưu địa chỉ</button>
-                <button class="cancel-btn" @click="cancelAddressChange">Hủy</button>
+<button class="cancel-btn" @click="cancelAddressChange">Hủy</button>
               </div>
             </div>
           </div>
@@ -175,7 +175,7 @@
           </div>
           <div class="summary-total">
             <span>Tổng cộng</span>
-            <span>{{ formatPrice(totalAmount) }}</span>
+<span>{{ formatPrice(totalAmount) }}</span>
           </div>
           <button class="place-order-button" @click="placeOrder" :disabled="isPlacingOrder">
             {{ isPlacingOrder ? 'Đang xử lý...' : `ĐẶT HÀNG (${formatPrice(totalAmount)})` }}
@@ -256,8 +256,7 @@ export default {
         const parts = fullAddress.split(',').map(part => part.trim());
         const [province, district, ward, ...streetParts] = parts.reverse();
         const street = streetParts.reverse().join(', ').trim();
-
-        const cleanName = (name) => {
+const cleanName = (name) => {
             if (!name) return '';
             return name.replace(/^(Tỉnh|Thành phố|Quận|Huyện|Phường|Xã)\s/i, '').trim();
         };
@@ -330,7 +329,7 @@ export default {
             }
             const apiData = await response.json();
             provinces.value = apiData.data.data;
-            localStorage.setItem('provinces', JSON.stringify(provinces.value));
+localStorage.setItem('provinces', JSON.stringify(provinces.value));
         } catch (error) {
             console.error('Lỗi khi tải danh sách Tỉnh/Thành phố:', error.message);
             provinces.value = [];
@@ -398,7 +397,7 @@ export default {
     }
     const foundProvince = provinces.value.find(p => p.code === selectedProvinceCode.value);
     const foundDistrict = districts.value.find(d => d.code === selectedDistrictCode.value);
-    const foundWard = wards.value.find(w => w.code === selectedWardCode.value);
+const foundWard = wards.value.find(w => w.code === selectedWardCode.value);
     
     if (!foundProvince || !foundDistrict || !foundWard) {
         errorMessage.value = 'Dữ liệu địa chỉ không hợp lệ. Vui lòng chọn lại.';
@@ -473,7 +472,7 @@ export default {
         icon: 'warning', showCancelButton: true, confirmButtonColor: '#3085d6',
         cancelButtonColor: '#d33', confirmButtonText: 'Đồng ý', cancelButtonText: 'Hủy'
       });
-      if (result.isConfirmed) {
+if (result.isConfirmed) {
         try {
           const user = JSON.parse(localStorage.getItem("user"));
           const userId = user?.nguoi_dung_id || user?.id;
@@ -548,7 +547,7 @@ export default {
                 const userId = user?.nguoi_dung_id || user?.id;
                 if (userId) {
                     axios.delete(`http://localhost:8000/api/cart/clear/${userId}`)
-                        .catch(err => console.error("Lỗi khi xóa giỏ hàng:", err));
+.catch(err => console.error("Lỗi khi xóa giỏ hàng:", err));
                 }
                 products.value = [];
                 router.replace({ name: 'paymentsuccess', query: { success: '1', payment_method: 'vnpay', order_id: query.vnp_TxnRef } });
@@ -625,7 +624,7 @@ export default {
             Swal.fire({
               icon: 'success',
               title: 'Đặt hàng thành công!',
-              text: 'Đơn hàng của bạn đã được ghi nhận và sẽ được giao sớm nhất có thể.',
+text: 'Đơn hàng của bạn đã được ghi nhận và sẽ được giao sớm nhất có thể.',
               showConfirmButton: false,
               timer: 3000
             });
@@ -710,7 +709,7 @@ export default {
                     id_dia_chi: defaultAddress.id_dia_chi || defaultAddress.id
                 };
             } else {
-                displayedAddress.value = { ho_ten: user.ho_ten || "", sdt: user.sdt || "", dia_chi: "" };
+displayedAddress.value = { ho_ten: user.ho_ten || "", sdt: user.sdt || "", dia_chi: "" };
             }
         } catch (err) {
             console.error("Lỗi khi tải dữ liệu ban đầu:", err);
@@ -863,7 +862,7 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 18px;
+font-size: 18px;
   cursor: pointer;
   color: #333;
   transition: background-color 0.2s;
@@ -1048,7 +1047,7 @@ export default {
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 15px;
+font-size: 15px;
   font-weight: bold;
   transition: background-color 0.2s;
   margin: 0px;
