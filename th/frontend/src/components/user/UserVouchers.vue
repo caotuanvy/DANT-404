@@ -28,13 +28,16 @@ import axios from 'axios';
 const vouchers = ref([]);
 const loading = ref(true);
 
+// --- Các hàm helper của bạn đã rất tốt, giữ nguyên ---
 function isExpired(dateStr) {
+  // Thêm điều kiện kiểm tra null để tránh lỗi
+  if (!dateStr) return true;
   return new Date() > new Date(dateStr);
 }
 function formatDate(dateStr) {
   if (!dateStr) return '';
   const d = new Date(dateStr);
-  return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+  return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
 }
 function formatValue(voucher) {
   if (voucher.loai_giam_gia === 'percentage') return `${voucher.gia_tri}%`;
@@ -42,26 +45,39 @@ function formatValue(voucher) {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(voucher.gia_tri);
 }
 
+// --- Phần onMounted đã được sửa lại ---
 onMounted(async () => {
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  if (!user.nguoi_dung_id) {
-    loading.value = false;
-    return;
-  }
+  loading.value = true;
   try {
-    // Đổi sang POST để lấy dữ liệu
-    const res = await axios.get('/giam-gia/my-vouchers', {
-      nguoi_dung_id: user.nguoi_dung_id
+    // 1. Lấy token từ localStorage (hoặc bất cứ đâu bạn lưu nó sau khi đăng nhập)
+    const token = localStorage.getItem('authToken'); // Giả sử bạn lưu token với key là 'authToken'
+
+    // 2. Kiểm tra xem người dùng đã đăng nhập chưa (có token không)
+    if (!token) {
+      console.log("Người dùng chưa đăng nhập.");
+      vouchers.value = []; // Đảm bảo danh sách voucher rỗng
+      loading.value = false;
+      return; // Dừng thực thi
+    }
+
+    // 3. Gọi API với URL đúng và đính kèm token vào header
+    const response = await axios.get('/api/my-vouchers', {
+      headers: {
+        'Authorization': `Bearer ${token}` // Gửi token để backend xác thực
+      }
     });
-    vouchers.value = res.data;
-  } catch (e) {
-    vouchers.value = [];
+
+    // 4. Gán dữ liệu trả về
+    vouchers.value = response.data;
+
+  } catch (error) {
+    console.error("Lỗi khi tải mã giảm giá của người dùng:", error);
+    vouchers.value = []; // Set mảng rỗng nếu có lỗi
   } finally {
     loading.value = false;
   }
 });
 </script>
-
 <style scoped>
 .user-vouchers-container {
   margin-top: 30px;
