@@ -95,7 +95,7 @@ onMounted(async () => {
   padding: 3rem 1rem;
    font-family: "Lora", serif;
   line-height: 1.8;
-  height: 690px;
+  height: auto;
 }
 
 .fofmart-gioithieu-wrapper .section-block {

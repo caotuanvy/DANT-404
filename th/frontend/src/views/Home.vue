@@ -1,7 +1,9 @@
 <template>
   <div>
     <ImageSlider />
-    <IntroduceView />
+    <DiscountView />
+    <!-- <IntroduceView /> -->
+
     <Category/>
     <BestSellProduct />
     <EightProductGrid />
@@ -11,6 +13,7 @@
 </template>
 
 <script setup>
+import DiscountView from '@/components/user/DiscountView.vue';
 import Category from '@/components/user/Category.vue';
 import BestSellProduct from '@/components/user/BestSellProduct.vue';
 import EightProductGrid from '@/components/user/EightProductGrid.vue';

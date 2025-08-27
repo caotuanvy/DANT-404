@@ -251,6 +251,7 @@ Route::patch('child-categories/{subcategoryId}/detach', [ChildCategoryController
         Route::post('/coupon/apply', 'apply');
         Route::get('/my-coupons', 'myCoupons');
     });
+    Route::get('/giam-gia-home', [GiamGiaController::class, 'getForHomepage']);
     Route::prefix('admin')->group(function () {
 
         // --- QUẢN LÝ MÃ GIẢM GIÁ (COUPON/VOUCHER) ---

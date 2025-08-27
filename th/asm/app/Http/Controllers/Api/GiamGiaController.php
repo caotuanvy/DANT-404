@@ -130,4 +130,13 @@ class GiamGiaController extends Controller
 
         return response()->json($users);
     }
+     public function getForHomepage()
+    {
+        $activeDiscounts = GiamGia::where('trang_thai', 1)
+                                   ->where('ngay_ket_thuc', '>=', now())
+                                   ->orderBy('ngay_ket_thuc', 'asc')
+                                   ->get();
+
+        return response()->json($activeDiscounts);
+    }
 }
