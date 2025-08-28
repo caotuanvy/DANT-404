@@ -566,7 +566,7 @@ onMounted(() => {
   flex-grow: 1;
   overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 3; /* Thêm dòng này để giới hạn chỉ 2 dòng */
   -webkit-box-orient: vertical;
 }
 .product-rating {
