@@ -24,13 +24,14 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
+import { useRouter } from 'vue-router'; 
 
 const vouchers = ref([]);
 const loading = ref(true);
+const router = useRouter(); 
 
-// --- Các hàm helper của bạn đã rất tốt, giữ nguyên ---
+// --- Các hàm helper giữ nguyên ---
 function isExpired(dateStr) {
-  // Thêm điều kiện kiểm tra null để tránh lỗi
   if (!dateStr) return true;
   return new Date() > new Date(dateStr);
 }
@@ -45,34 +46,39 @@ function formatValue(voucher) {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(voucher.gia_tri);
 }
 
-// --- Phần onMounted đã được sửa lại ---
+// --- Phần onMounted đã được cập nhật ---
 onMounted(async () => {
   loading.value = true;
   try {
-    // 1. Lấy token từ localStorage (hoặc bất cứ đâu bạn lưu nó sau khi đăng nhập)
-    const token = localStorage.getItem('authToken'); // Giả sử bạn lưu token với key là 'authToken'
+    // Sửa key lấy token từ 'authToken' sang 'token'
+    const token = localStorage.getItem('token'); 
 
-    // 2. Kiểm tra xem người dùng đã đăng nhập chưa (có token không)
     if (!token) {
-      console.log("Người dùng chưa đăng nhập.");
-      vouchers.value = []; // Đảm bảo danh sách voucher rỗng
-      loading.value = false;
-      return; // Dừng thực thi
+      console.log("Người dùng chưa đăng nhập. Vui lòng đăng nhập lại.");
+      router.push({ name: 'login' }); // Cần đảm bảo tên route đăng nhập là 'login'
+      return; 
     }
 
-    // 3. Gọi API với URL đúng và đính kèm token vào header
-    const response = await axios.get('/api/my-vouchers', {
+    const response = await axios.get('/my-vouchers', {
       headers: {
-        'Authorization': `Bearer ${token}` // Gửi token để backend xác thực
+        'Authorization': `Bearer ${token}` 
       }
     });
 
-    // 4. Gán dữ liệu trả về
     vouchers.value = response.data;
+    console.log("Voucher của người dùng:", vouchers.value);
 
   } catch (error) {
-    console.error("Lỗi khi tải mã giảm giá của người dùng:", error);
-    vouchers.value = []; // Set mảng rỗng nếu có lỗi
+    console.error("Lỗi khi tải mã giảm giá của người dùng:", error.response?.data || error.message);
+    
+    // Nếu token hết hạn hoặc không hợp lệ (lỗi 401 Unauthorized), chuyển hướng người dùng
+    if (error.response && error.response.status === 401) {
+      console.log("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      localStorage.removeItem('token'); // Xóa token cũ
+      router.push({ name: 'login' });
+    }
+
+    vouchers.value = [];
   } finally {
     loading.value = false;
   }
@@ -81,10 +87,8 @@ onMounted(async () => {
 <style scoped>
 .user-vouchers-container {
   margin-top: 30px;
-  background: #fff;
   border-radius: 10px;
   padding: 25px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
 }
 .user-vouchers-list {
   display: grid;

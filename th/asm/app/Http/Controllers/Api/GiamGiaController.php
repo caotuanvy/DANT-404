@@ -176,11 +176,12 @@ class GiamGiaController extends Controller
 
 public function myVouchers(Request $request)
 {
-    $userId = $request->input('nguoi_dung_id');
-    $user = \App\Models\User::find($userId);
+    // Lấy thông tin người dùng đã được xác thực qua token
+    $user = $request->user();
 
+    // Middleware đã đảm bảo user luôn tồn tại, nhưng kiểm tra lại cũng không thừa
     if (!$user) {
-        return response()->json(['message' => 'Người dùng không tồn tại.'], 404);
+        return response()->json(['message' => 'Unauthorized.'], 401);
     }
 
     $myVouchers = $user->vouchers()
