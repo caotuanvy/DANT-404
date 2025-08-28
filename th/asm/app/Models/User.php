@@ -78,13 +78,15 @@ class User extends Authenticatable
     }
     // app/Models/User.php
 
-public function diaChiMacDinh()
-{
-    return $this->hasOne(DiaChi::class, 'nguoi_dung_id', 'nguoi_dung_id')->latestOfMany('id_dia_chi');
-}
-public function vouchers()
+    public function diaChiMacDinh()
     {
-        return $this->belongsToMany(GiamGia::class, 'nguoi_dung_giam_gia', 'nguoi_dung_id', 'giam_gia_id');
+        return $this->hasOne(DiaChi::class, 'nguoi_dung_id', 'nguoi_dung_id')->latestOfMany('id_dia_chi');
     }
+    public function vouchers()
+    {
+        return $this->belongsToMany(\App\Models\GiamGia::class, 'nguoi_dung_giam_gia', 'nguoi_dung_id', 'giam_gia_id')
+            ->withPivot('da_su_dung', 'created_at', 'updated_at');
+    }
+
 
 }

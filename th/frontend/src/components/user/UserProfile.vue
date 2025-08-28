@@ -3,6 +3,8 @@ import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import Swal from 'sweetalert2';
+import UserVouchers from './UserVouchers.vue';
+
 
 // --- BIẾN PHẢN ỨNG CHO THÔNG TIN CÁ NHÂN ---
 const userName = ref('Khách');
@@ -584,6 +586,8 @@ const handleLogout = () => {
         <p v-if="errorMessage && !showEditPersonalForm" class="error-message">{{ errorMessage }}</p>
         <button class="update-btn" @click="handleUpdateAddress" :disabled="isLoadingAddressData">CẬP NHẬT</button>
     </div>
+    <!-- Thêm dòng này để hiển thị mã giảm giá đã lưu -->
+    <UserVouchers />
 </template>
 
 <style scoped>

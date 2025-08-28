@@ -35,8 +35,8 @@
 
     <div v-if="discounts.length > 0" class="discount-app-cards-grid">
       <div v-for="discount in discounts" :key="discount.giam_gia_id" 
-          class="discount-app-card-item"
-          :class="{ 'discount-app-card-expired': isExpired(discount.ngay_ket_thuc) }">
+           class="discount-app-card-item"
+           :class="{ 'discount-app-card-expired': isExpired(discount.ngay_ket_thuc) }">
         
         <div class="discount-app-card-header">
           <div class="discount-app-badge">
@@ -61,14 +61,28 @@
         </div>
 
         <div class="discount-app-card-actions">
-          <button v-if="!isExpired(discount.ngay_ket_thuc)" 
-                  @click="copyCode(discount.ma_giam_gia)"
-                  class="discount-app-apply-button">
-            {{ buttonText[discount.giam_gia_id] || 'Sao chép' }}
-          </button>
-          <button v-else 
-                  disabled
-                  class="discount-app-expired-button">
+          <div v-if="!isExpired(discount.ngay_ket_thuc)">
+            <button v-if="isLoggedIn"
+                    @click="claimVoucher(discount)"
+                    :disabled="getClaimStatus(discount.giam_gia_id) !== 'idle'"
+                    class="discount-app-apply-button"
+                    :class="{ 
+                      'is-loading': getClaimStatus(discount.giam_gia_id) === 'loading',
+                      'is-success': getClaimStatus(discount.giam_gia_id) === 'success' 
+                    }">
+              <span v-if="getClaimStatus(discount.giam_gia_id) === 'idle'">Lưu mã</span>
+              <span v-if="getClaimStatus(discount.giam_gia_id) === 'loading'">Đang lưu...</span>
+              <span v-if="getClaimStatus(discount.giam_gia_id) === 'success'">Đã lưu</span>
+              <span v-if="getClaimStatus(discount.giam_gia_id) === 'error'">Thử lại</span>
+            </button>
+            <button v-else
+                    @click="copyCode(discount.ma_giam_gia)"
+                    class="discount-app-apply-button">
+              {{ buttonText[discount.giam_gia_id] || 'Sao chép' }}
+            </button>
+          </div>
+          
+          <button v-else disabled class="discount-app-expired-button">
             Hết hạn
           </button>
         </div>
@@ -88,15 +102,18 @@
     </div>
   </div>
 </template>
-
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, reactive } from 'vue';
 import axios from 'axios';
 
 // ==================== STATE MANAGEMENT ====================
 const discounts = ref([]);
 const loading = ref(true);
 const buttonText = ref({});
+const isLoggedIn = ref(true); // giả lập, thực tế lấy từ store hoặc localStorage
+const authToken = ref(localStorage.getItem('token') || ''); // Lấy token từ localStorage
+const claimStatuses = reactive({}); // { id: 'idle' | 'loading' | 'success' | 'error' }
+const getClaimStatus = (id) => claimStatuses[id] || 'idle';
 
 // ==================== LIFECYCLE HOOKS ====================
 onMounted(() => {
@@ -117,10 +134,45 @@ async function fetchDiscounts() {
   }
 }
 
+async function claimVoucher(discount) {
+  const discountId = discount.giam_gia_id;
+  if (!isLoggedIn.value) {
+    alert("Vui lòng đăng nhập để lưu mã giảm giá.");
+    return;
+  }
+  claimStatuses[discountId] = 'loading';
+  try {
+    // Lấy user từ localStorage
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userId = user.nguoi_dung_id;
+    if (!userId) throw new Error('Không tìm thấy thông tin người dùng.');
+
+    await axios.post(
+      `/giam-gia/${discountId}/claim`,
+      { nguoi_dung_id: userId },
+      {
+        headers: {
+          'Authorization': `Bearer ${authToken.value}`,
+          'Accept': 'application/json'
+        }
+      }
+    );
+    claimStatuses[discountId] = 'success';
+  } catch (error) {
+    // Nếu lỗi 409 (Conflict) thì thông báo đã lưu rồi
+    if (error.response && error.response.status === 409) {
+      alert(error.response.data.message || 'Bạn đã lưu mã giảm giá này rồi.');
+    }
+    claimStatuses[discountId] = 'error';
+    setTimeout(() => {
+      if (claimStatuses[discountId] === 'error') claimStatuses[discountId] = 'idle';
+    }, 3000);
+  }
+}
+
 async function copyCode(code) {
   try {
     await navigator.clipboard.writeText(code);
-    
     const discountId = getDiscountIdByCode(code);
     if (discountId !== null) {
       buttonText.value[discountId] = 'Đã sao chép!';
@@ -164,14 +216,16 @@ function formatValue(discount) {
   if (discount.loai_giam_gia === 'percentage') {
     return `${discount.gia_tri}%`;
   }
-  if (discount.gia_tri === null) return '0 VND';
-  return new Intl.NumberFormat('vi-VN', { style: 'decimal', currency: 'VND' }).format(discount.gia_tri) + ' VND';
+  if (discount.loai_giam_gia === 'free_ship') {
+    return `Miễn phí vận chuyển`;
+  }
+  if (discount.gia_tri === null) return '0 đ';
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(discount.gia_tri);
 }
 
 function formatCurrency(value) {
-  if (value === null) return '0 VND';
-  const formatter = new Intl.NumberFormat('vi-VN', { style: 'decimal' });
-  return `${formatter.format(value)} VND`;
+  if (value === null || value === 0) return '0 đ';
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
 }
 
 function showDetails(discount) {
@@ -180,14 +234,13 @@ function showDetails(discount) {
     Mã giảm giá: ${discount.ma_giam_gia}
     Loại giảm giá: ${discount.loai_giam_gia}
     Giá trị: ${formatValue(discount)}
-    Số lượng: ${discount.so_luong}
+    Số lượng còn lại: ${discount.so_luong}
     Ngày bắt đầu: ${formatDate(discount.ngay_bat_dau)}
     Ngày kết thúc: ${formatDate(discount.ngay_ket_thuc)}
-    Giá trị đơn hàng tối thiểu: ${formatCurrency(discount.gia_tri_don_hang_toi_thieu)}
-    Giá trị giảm tối đa: ${formatCurrency(discount.gia_tri_giam_toi_da)}
+    Đơn hàng tối thiểu: ${formatCurrency(discount.gia_tri_don_hang_toi_thieu)}
+    Giảm tối đa: ${formatCurrency(discount.gia_tri_giam_toi_da)}
     Trạng thái: ${discount.trang_thai ? 'Hoạt động' : 'Không hoạt động'}
   `;
-  console.log('Thông tin chi tiết:\n' + details);
   alert('Thông tin chi tiết:\n' + details);
 }
 </script>
