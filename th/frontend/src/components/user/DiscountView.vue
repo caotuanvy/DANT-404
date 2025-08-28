@@ -202,7 +202,7 @@ function showDetails(discount) {
   -moz-osx-font-smoothing: grayscale;
   padding: 60px 20px;
   box-sizing: border-box;
-  background-color: #f7f9fc;
+  
 }
 
 /* ==================== HEADER SECTION ==================== */

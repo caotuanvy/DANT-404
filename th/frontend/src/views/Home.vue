@@ -4,8 +4,9 @@
     <DiscountView />
     <!-- <IntroduceView /> -->
 
-    <Category/>
+   
     <BestSellProduct />
+     <Category/>
     <EightProductGrid />
     <TintucHome />
     <FloatingSocialLinks />
@@ -14,8 +15,9 @@
 
 <script setup>
 import DiscountView from '@/components/user/DiscountView.vue';
-import Category from '@/components/user/Category.vue';
+
 import BestSellProduct from '@/components/user/BestSellProduct.vue';
+import Category from '@/components/user/Category.vue';
 import EightProductGrid from '@/components/user/EightProductGrid.vue';
 import IntroduceView from '@/components/user/IntroduceView.vue';
 import ImageSlider from '@/components/user/Slide.vue'; 

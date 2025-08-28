@@ -1,10 +1,6 @@
 <template>
   <div class="page-wrapper">
-    <header class="page-header">
-      <div>
-        <h1 class="page-title">Danh mục</h1>
-      </div>
-    </header>
+   
 
     <div class="content-card">
       <div class="table-container">
@@ -90,7 +86,7 @@ onMounted(getCategories);
 <style scoped>
 /* CSS đã được tối ưu và chỉnh sửa */
 .page-wrapper {
-  background-color: #f3f4f6;
+  
   padding: 2rem;
   min-height: auto;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -109,7 +105,7 @@ onMounted(getCategories);
 .content-card {
   background-color: #fff;
   border-radius: 8px;
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+
   padding: 1.5rem;
 }
 
