@@ -1,58 +1,60 @@
 <template>
-  <div class="admin-chat-container">
-    <div v-if="!isMinimized" class="chat-main-panel">
-      <div class="conversations-list">
-        <h4>Đoạn chat</h4>
-        <ul>
-          <li v-for="conv in conversations" :key="conv.id" @click="selectConversation(conv)"
-              :class="{ 'selected-user': selectedConversationId === conv.id }">
-            <div class="user-info">
-              <img :src="conv.user?.anh_dai_dien" alt="Avatar" class="user-avatar" />
-              <div class="user-details">
-                <span class="user-name">{{ conv.user?.ho_ten || 'Tên người dùng không khả dụng' }}</span>
+  <div>
+    <div v-if="!isMinimized" class="admin-chat-container">
+      <div class="chat-main-panel">
+        <div class="conversations-list">
+          <h4>Đoạn chat</h4>
+          <ul>
+            <li v-for="conv in conversations" :key="conv.id" @click="selectConversation(conv)"
+                :class="{ 'selected-user': selectedConversationId === conv.id }">
+              <div class="user-info">
+                <img :src="conv.user?.anh_dai_dien" alt="Avatar" class="user-avatar" />
+                <div class="user-details">
+                  <span class="user-name">{{ conv.user?.ho_ten || 'Tên người dùng không khả dụng' }}</span>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div v-if="selectedConversationId" class="chat-panel">
+          <div class="chat-header">
+            <h4>{{ selectedConversation?.user?.ho_ten || 'Người dùng' }}</h4>
+            <div class="header-buttons">
+              <button @click="toggleMinimize" class="header-btn">
+                <i class="fas fa-minus"></i>
+              </button>
+            </div>
+          </div>
+          <div class="chat-body">
+            <div ref="messagesContainer" class="messages">
+              <div v-for="msg in messages" :key="msg.id"
+                   :class="{'message-sent': isMyMessage(msg), 'message-received': !isMyMessage(msg)}">
+                {{ msg.content }}
               </div>
             </div>
-          </li>
-        </ul>
-      </div>
-
-      <div v-if="selectedConversationId" class="chat-panel">
-        <div class="chat-header">
-          <h4>{{ selectedConversation?.user?.ho_ten || 'Người dùng' }}</h4>
+            <div class="chat-footer">
+              <input v-model="newMessage"
+                     :disabled="isSending"
+                     placeholder="Nhập tin nhắn..."
+                     @keyup.enter="sendMessage">
+              <button :disabled="isSending" @click="sendMessage">
+                <i v-if="!isSending" class="fas fa-paper-plane"></i>
+                <i v-else class="fas fa-spinner fa-spin"></i>
+              </button>
+            </div>
+            <div v-if="errorMessage" class="error-message">
+              {{ errorMessage }}
+            </div>
+          </div>
+        </div>
+        <div v-else class="no-chat-selected">
+          Chọn một người dùng để bắt đầu trò chuyện.
           <div class="header-buttons">
             <button @click="toggleMinimize" class="header-btn">
               <i class="fas fa-minus"></i>
             </button>
           </div>
         </div>
-
-        <div class="chat-body">
-          <div ref="messagesContainer" class="messages">
-            <div v-for="msg in messages" :key="msg.id"
-                 :class="{'message-sent': isMyMessage(msg), 'message-received': !isMyMessage(msg)}">
-              {{ msg.content }}
-            </div>
-          </div>
-
-          <div class="chat-footer">
-            <input v-model="newMessage"
-                   :disabled="isSending"
-                   placeholder="Nhập tin nhắn..."
-                   @keyup.enter="sendMessage">
-            <button :disabled="isSending" @click="sendMessage">
-              <i v-if="!isSending" class="fas fa-paper-plane"></i>
-              <i v-else class="fas fa-spinner fa-spin"></i>
-            </button>
-          </div>
-
-          <div v-if="errorMessage" class="error-message">
-            {{ errorMessage }}
-          </div>
-        </div>
-      </div>
-
-      <div v-else class="no-chat-selected">
-        Chọn một người dùng để bắt đầu trò chuyện.
       </div>
     </div>
 
@@ -79,7 +81,6 @@ const errorMessage = ref('');
 const isSending = ref(false);
 const isMinimized = ref(true);
 
-// === THÊM BIẾN CACHE MỚI ===
 const messageCache = ref({});
 
 // --- DOM References ---
@@ -100,17 +101,14 @@ const fetchConversations = async () => {
   }
 };
 
-// === SỬA HÀM fetchMessages ĐỂ DÙNG CACHING ===
 const fetchMessages = async () => {
   if (!selectedConversationId.value) return;
 
-  // 1. Hiển thị dữ liệu từ cache ngay lập tức nếu có
   if (messageCache.value[selectedConversationId.value]) {
     messages.value = messageCache.value[selectedConversationId.value];
     await nextTick();
     scrollToBottom();
   } else {
-    // Nếu không có cache, xóa tin nhắn cũ để tránh nhầm lẫn khi chuyển đổi
     messages.value = [];
   }
 
@@ -119,7 +117,6 @@ const fetchMessages = async () => {
       params: { conversation_id: selectedConversationId.value }
     });
     
-    // 2. Cập nhật messages và lưu vào cache
     messages.value = response.data;
     messageCache.value[selectedConversationId.value] = response.data;
 
@@ -129,7 +126,6 @@ const fetchMessages = async () => {
   } catch (error) {
     console.error('Lỗi khi lấy tin nhắn:', error);
     errorMessage.value = 'Không thể lấy tin nhắn. Vui lòng thử lại sau.';
-    // Nếu lỗi, xóa cache cho cuộc trò chuyện này để lần sau tải lại
     delete messageCache.value[selectedConversationId.value];
   }
 };
@@ -157,14 +153,12 @@ const sendMessage = async () => {
       sender_id: adminId.value,
     });
     newMessage.value = '';
-    // Sau khi gửi tin nhắn thành công, gọi lại fetchMessages
-    // để cập nhật tin nhắn mới và lưu vào cache
     await fetchMessages();
     await fetchConversations();
   } catch (error) {
     console.error('Lỗi khi gửi tin nhắn:', error);
     errorMessage.value = 'Gửi tin nhắn thất bại. Vui lòng kiểm tra lại backend.';
-    messages.value = messages.value.filter(msg => msg.id !== tempMessage.id); // Xóa tin nhắn tạm
+    messages.value = messages.value.filter(msg => msg.id !== tempMessage.id);
   } finally {
     isSending.value = false;
   }
@@ -191,7 +185,6 @@ const selectConversation = async (conv) => {
     await updateConversationAdmin(conv);
   }
 
-  // fetchMessages() sẽ tự động sử dụng cache
   fetchMessages();
 };
 
@@ -239,7 +232,6 @@ watch(selectedConversationId, (newVal) => {
     messagePollingInterval = null;
   }
   if (newVal) {
-    // fetchMessages() sẽ tự động dùng cache, sau đó polling để lấy tin mới
     fetchMessages();
     messagePollingInterval = setInterval(fetchMessages, 3000);
   }
@@ -259,7 +251,9 @@ watch(selectedConversationId, (newVal) => {
   margin: 20px;
   z-index: 1000;
 }
-
+.admin-chat-container.hidden {
+  display: none;
+}
 .chat-main-panel {
   display: flex;
   width: 800px;
@@ -363,7 +357,18 @@ watch(selectedConversationId, (newVal) => {
   margin: 0;
 }
 
-.header-btn {
+.header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header-buttons button {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+.chat-panel .header-btn {
   background: none;
   border: none;
   color: white;
@@ -375,7 +380,7 @@ watch(selectedConversationId, (newVal) => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0; /* Crucial for flex + overflow to work */
+  min-height: 0;
   background-color: #f8f9fa;
 }
 
@@ -455,12 +460,20 @@ watch(selectedConversationId, (newVal) => {
 .no-chat-selected {
   flex-grow: 1;
   display: flex;
+  flex-direction: column; /* Thêm dòng này để sắp xếp nội dung và nút */
   align-items: center;
   justify-content: center;
   font-style: italic;
-  color: #6c757d;
+  color: #ffffff;
+  text-align: center;
+  gap: 20px; /* Thêm khoảng cách giữa text và nút */
 }
-
+.no-chat-selected .header-buttons {
+  position: absolute; 
+  top: 10px;
+  right: 15px;
+  color: black !important;
+}
 .error-message {
   padding: 10px;
   background-color: #ffe0e0;

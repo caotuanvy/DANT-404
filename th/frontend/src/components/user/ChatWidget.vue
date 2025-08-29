@@ -322,4 +322,14 @@ onUnmounted(() => {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+@media (max-width: 768px) {
+  /* Center the chat container horizontally */
+  
+
+  /* Adjust the chat widget size for mobile screens */
+  .chat-widget {
+    width: 90vw; /* Use viewport width for a more fluid layout */
+    max-width: 400px; /* Keep the max-width to prevent it from getting too wide on tablets */
+  }
+}
 </style>
