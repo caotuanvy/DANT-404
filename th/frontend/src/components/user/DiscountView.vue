@@ -114,7 +114,7 @@
         <div class="modal-body">
           <p><strong>Tên chương trình:</strong> {{ modalDiscount?.ten_chuong_trinh }}</p>
           <p><strong>Mã giảm giá:</strong> {{ modalDiscount?.ma_giam_gia }}</p>
-          <p><strong>Loại giảm giá:</strong> {{ modalDiscount?.loai_giam_gia }}</p>
+          <p><strong>Loại giảm giá:</strong> {{ getLoaiGiamGiaText(modalDiscount?.loai_giam_gia) }}</p>
           <p><strong>Giá trị:</strong> {{ formatValue(modalDiscount) }}</p>
           <p><strong>Số lượng còn lại:</strong> {{ modalDiscount?.so_luong }}</p>
           <p><strong>Ngày bắt đầu:</strong> {{ formatDate(modalDiscount?.ngay_bat_dau) }}</p>
@@ -134,6 +134,8 @@
 <script setup>
 import { ref, onMounted, reactive } from 'vue';
 import axios from 'axios';
+// Thêm import SweetAlert2
+import Swal from 'sweetalert2';
 
 // ==================== STATE MANAGEMENT ====================
 const discounts = ref([]);
@@ -182,7 +184,14 @@ async function fetchDiscounts() {
 async function claimVoucher(discount) {
   const discountId = discount.giam_gia_id;
   if (!isLoggedIn.value) {
-    alert("Vui lòng đăng nhập để lưu mã giảm giá.");
+    Swal.fire({
+      icon: 'warning',
+      title: 'Vui lòng đăng nhập để lưu mã giảm giá.',
+      toast: true,
+      position: 'top-end',
+      timer: 2000,
+      showConfirmButton: false
+    });
     return;
   }
   claimStatuses[discountId] = 'loading';
@@ -202,9 +211,34 @@ async function claimVoucher(discount) {
       }
     );
     claimStatuses[discountId] = 'success';
+    Swal.fire({
+      icon: 'success',
+      title: 'Lưu mã thành công!',
+      toast: true,
+      position: 'top-end',
+      timer: 2000,
+      showConfirmButton: false
+    });
   } catch (error) {
     if (error.response && error.response.status === 409) {
-      alert(error.response.data.message || 'Bạn đã lưu mã giảm giá này rồi.');
+      Swal.fire({
+        icon: 'info',
+        title: error.response.data.message || 'Bạn đã lưu mã giảm giá này rồi.',
+        toast: true,
+        position: 'top-end',
+        timer: 2000,
+        showConfirmButton: false
+      });
+    } else {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lưu mã thất bại!',
+        text: error.response?.data?.message || 'Có lỗi xảy ra.',
+        toast: true,
+        position: 'top-end',
+        timer: 2000,
+        showConfirmButton: false
+      });
     }
     claimStatuses[discountId] = 'error';
     setTimeout(() => {
@@ -219,12 +253,27 @@ async function copyCode(code) {
     const discountId = getDiscountIdByCode(code);
     if (discountId !== null) {
       buttonText.value[discountId] = 'Đã sao chép!';
+      Swal.fire({
+        icon: 'success',
+        title: 'Đã sao chép mã!',
+        toast: true,
+        position: 'top-end',
+        timer: 1500,
+        showConfirmButton: false
+      });
       setTimeout(() => {
         buttonText.value[discountId] = 'Sao chép';
       }, 2000);
     }
   } catch (err) {
-    console.error("Không thể sao chép mã:", err);
+    Swal.fire({
+      icon: 'error',
+      title: 'Không thể sao chép mã!',
+      toast: true,
+      position: 'top-end',
+      timer: 2000,
+      showConfirmButton: false
+    });
     const textarea = document.createElement('textarea');
     textarea.value = code;
     document.body.appendChild(textarea);
@@ -269,6 +318,16 @@ function formatValue(discount) {
 function formatCurrency(value) {
   if (value === null || value === 0) return '0 đ';
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+}
+
+// Hàm chuyển đổi loại giảm giá sang tiếng Việt
+function getLoaiGiamGiaText(loai) {
+  switch (loai) {
+    case 'percentage': return 'Giảm theo phần trăm';
+    case 'fixed_amount': return 'Giảm số tiền cố định';
+    case 'free_ship': return 'Miễn phí vận chuyển';
+    default: return loai || '';
+  }
 }
 
 // Hàm showDetails cũ đã được thay thế

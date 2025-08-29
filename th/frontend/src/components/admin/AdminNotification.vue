@@ -32,6 +32,7 @@ export default {
   },
   methods: {
     async fetchNotifications() {
+      console.log('fetchNotifications called'); // kiểm tra số lần gọi
       try {
         const res = await axios.get('/Notifications', {
           headers: {
@@ -71,8 +72,7 @@ export default {
     }
   },
   mounted() {
-    this.fetchNotifications();
-    setInterval(this.fetchNotifications, 1000);
+    console.log('AdminNotification mounted'); // kiểm tra mount lại
     window.addEventListener('click', this.handleClickOutside);
   },
   beforeUnmount() {

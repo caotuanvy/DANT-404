@@ -229,7 +229,9 @@ const menu = [
   },
   {
     label: 'Quản lý đơn hàng',
-    items: [{ to: '/admin/orders', label: 'Đơn hàng', icon: 'bi bi-receipt' }],
+    items: [{ to: '/admin/orders', label: 'Đơn hàng', icon: 'bi bi-receipt' },
+            { to: '/admin/coupons', label: 'Mã giảm giá', icon: 'bi bi-ticket-perforated' },
+    ],
   },
   {
     label: 'Quản lý Người dùng',
@@ -259,12 +261,6 @@ const menu = [
       { to: '/admin/slide', label: 'Slide Show', icon: 'bi bi-calendar-week' },
       { to: '/admin/introduce',label : 'Trang Tĩnh', icon: 'bi bi-info-circle' },
     ],
-  },
-  {
-    label: 'Quản lý mã giảm giá',
-    items: [
-      { to: '/admin/coupons', label: 'Mã giảm giá', icon: 'bi bi-ticket-perforated' }
-    ]
   },
 ];
 
