@@ -15,11 +15,11 @@
 
   <div class="order-list">
     <div v-if="loading" class="loading-message">Đang tải đơn hàng...</div>
-    <div v-else-if="filteredOrders.length === 0" class="no-orders-message">
+    <div v-else-if="paginatedOrders.length === 0" class="no-orders-message">
       Không có đơn hàng nào trong trạng thái này.
     </div>
     <div v-else>
-      <div v-for="order in filteredOrders" :key="order.id" class="order-item">
+      <div v-for="order in paginatedOrders" :key="order.id" class="order-item">
         <div class="order-header">
           <span class="order-current-status">{{ getStatusLabel(order.trang_thai_don_hang) }}</span>
           <span class="order-date">Ngày đặt: {{ formatDate(order.ngay_dat) }}</span>
@@ -31,11 +31,7 @@
           Địa chỉ: {{ order.dia_chi_giao_hang || "Không rõ địa chỉ" }}
         </div>
 
-        <div
-          v-for="item in order.order_items"
-          :key="item.id"
-          class="order-product-item"
-        >
+        <div v-for="item in order.order_items" :key="item.id" class="order-product-item">
           <img
             :src="getImageUrl(item.bien_the.san_pham.hinh_anh_san_pham)"
             alt="Product Image"
@@ -86,6 +82,20 @@
     </div>
   </div>
 
+  <div v-if="totalPages > 1" class="pagination-controls">
+    <button @click="prevPage" :disabled="currentPage === 1">Trước</button>
+    <div class="page-numbers">
+      <button
+        v-for="page in totalPages"
+        :key="page"
+        @click="goToPage(page)"
+        :class="{ active: currentPage === page }"
+      >
+        {{ page }}
+      </button>
+    </div>
+    <button @click="nextPage" :disabled="currentPage === totalPages">Tiếp</button>
+  </div>
   <div v-if="isModalOpen" class="modal-overlay">
     <div class="modal-content">
       <h2>Xác nhận hủy đơn hàng</h2>
@@ -111,7 +121,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import axios from "axios";
 import { useRouter } from "vue-router";
 import Swal from 'sweetalert2';
@@ -120,6 +130,10 @@ const router = useRouter();
 const allOrders = ref([]);
 const currentStatus = ref("all");
 const loading = ref(true);
+
+// Pagination state
+const currentPage = ref(1);
+const itemsPerPage = 5; // Số đơn hàng mỗi trang
 
 const isModalOpen = ref(false);
 const currentOrderId = ref(null);
@@ -168,9 +182,26 @@ const filteredOrders = computed(() => {
   return allOrders.value.filter((order) => order.trang_thai_don_hang === currentStatus.value);
 });
 
+// Computed property for pagination
+const paginatedOrders = computed(() => {
+  const startIndex = (currentPage.value - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  return filteredOrders.value.slice(startIndex, endIndex);
+});
+
+const totalPages = computed(() => {
+  return Math.ceil(filteredOrders.value.length / itemsPerPage);
+});
+
 const filterOrdersByStatus = (status) => {
   currentStatus.value = status;
+  currentPage.value = 1; // Reset to the first page when the filter changes
 };
+
+// Watch for changes in filteredOrders and reset page
+watch(filteredOrders, () => {
+  currentPage.value = 1;
+});
 
 const fetchOrders = async () => {
   loading.value = true;
@@ -262,7 +293,6 @@ const confirmCancelOrder = async () => {
     order.trang_thai_don_hang = 5;
     closeCancelModal();
 
-    // ✅ Kiểm tra phương thức thanh toán
     let successMessage = "Hủy đơn hàng thành công!";
     if (order.payment_method?.ten_pttt?.toLowerCase().includes("ngân hàng")) {
       successMessage = "Hủy đơn hàng thành công! Tiền sẽ được hoàn trả trong 3 ngày.";
@@ -298,6 +328,22 @@ const confirmCancelOrder = async () => {
   }
 };
 
+// Pagination functions
+const goToPage = (page) => {
+  currentPage.value = page;
+};
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
+};
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+  }
+};
 </script>
 
 <style scoped>
@@ -779,5 +825,49 @@ hr {
   .modal-actions .btn {
     width: 100%;
   }
+}
+
+/* --- Pagination Styles --- */
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 30px;
+  flex-wrap: wrap;
+}
+
+.pagination-controls button {
+  background-color: #f1f1f1;
+  border: 1px solid #ddd;
+  padding: 10px 15px;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 15px;
+  transition: all 0.2s ease;
+  min-width: 40px;
+  /* Đảm bảo các nút có kích thước đều */
+  text-align: center;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+  background-color: #ddd;
+}
+
+.pagination-controls button.active {
+  background-color: #33ccff;
+  color: white;
+  border-color: #33ccff;
+  font-weight: bold;
+}
+
+.pagination-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 5px;
 }
 </style>
