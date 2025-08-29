@@ -130,9 +130,10 @@ class GiamGiaController extends Controller
 
         return response()->json($users);
     }
-     // Đảm bảo phương thức này dùng cho route /api/giam-gia/homepage
+     // Đảm bảo phương thức này dùng cho route /api/giam-gia-home
     public function getForHomepage()
     {
+        // Chỉ trả về các mã giảm giá còn hiệu lực và đang hoạt động
         $activeDiscounts = GiamGia::where('trang_thai', 1)
                                    ->where('ngay_ket_thuc', '>=', now())
                                    ->orderBy('ngay_ket_thuc', 'asc')
