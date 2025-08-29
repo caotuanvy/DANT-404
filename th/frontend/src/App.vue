@@ -39,9 +39,9 @@
           </template>
 
           <div class="cart-info">
-            <router-link to="/cart">
+            <a href="#" @click.prevent="goToCart">
               <i class="fas fa-shopping-cart"></i> Giỏ hàng (0)
-            </router-link>
+            </a>
           </div>
           <div class="notification"><i class="fas fa-bell"></i> Thông báo</div>
         </div>
@@ -303,6 +303,19 @@ const fetchStaticPages = async () => {
   } catch (error) {
     console.error("Lỗi khi tải static pages:", error);
   }
+};
+
+const goToCart = () => {
+  if (!isLoggedIn.value) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Bạn chưa đăng nhập',
+      text: 'Vui lòng đăng nhập để xem giỏ hàng!',
+      confirmButtonColor: '#03A2DC'
+    });
+    return;
+  }
+  router.push("/cart");
 };
 
 onMounted(() => {
