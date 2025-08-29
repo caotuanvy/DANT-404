@@ -142,9 +142,9 @@
         <div class="footer-section footer-contact">
           <h3>LIÊN HỆ</h3>
           <ul>
-            <li>Facebook: <a href="#">anpham</a></li>
-            <li>Tik Tok: <a href="#">anpham</a></li>
-            <li>Website: <a href="#">anpham</a></li>
+            <li>Facebook: <a href="#">FoFMarket</a></li>
+            <li>Tik Tok: <a href="#">FoFMarket</a></li>
+            <li>Website: <a href="#">FoFMarket</a></li>
           </ul>
         </div>
       </div>
@@ -380,7 +380,7 @@ body {
   max-width: 600px;
   border-radius: 20px;
   overflow: hidden;
-  border: 1px solid #007bff;
+  border: 1px solid #33ccff;
 }
 
 .top-bar .search-box input {
@@ -396,7 +396,7 @@ body {
 }
 
 .top-bar .search-box button {
-  background-color: #007bff;
+  background-color: #33ccff;
   color: white;
   border: none;
   padding: 8px 16px;
@@ -406,7 +406,7 @@ body {
 }
 
 .top-bar .search-box button:hover {
-  background-color: #036cdc;
+  background-color: #33ccff;
 }
 
 .top-bar .header-right {
@@ -434,7 +434,7 @@ body {
 .top-bar .cart-info:hover,
 .top-bar .notification:hover,
 .top-bar .country-selector:hover {
-  color: #046fe1;
+  color: #33ccff;
 }
 
 .top-bar .cart-info {
@@ -457,7 +457,7 @@ body {
 }
 
 .top-bar .cart-info:hover {
-  color: #036bda;
+  color: #33ccff;
 }
 
 .top-bar .country-selector img.flag {
@@ -470,7 +470,7 @@ body {
 
 /* --- Main Navigation (Menu chính) --- */
 .main-nav {
-  background-color: #007bff;
+  background-color: #33ccff;
   padding: 10px 0;
   color: white;
 }
@@ -629,7 +629,7 @@ body {
     left: 0;
     bottom: 0;
     z-index: 1000;
-    background-color: #0173ed;
+    background-color: #33ccff;
     padding: 60px 20px 20px;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
     transform: translateX(-100%);
@@ -787,11 +787,11 @@ body {
 }
 
 .header-right .user-info:hover {
-  color: #046ee0;
+  color: #33ccff;
 }
 
 .user-info strong {
-  color: #007bff;
+  color: #33ccff;
   font-weight: bold;
 }
 
@@ -831,7 +831,7 @@ body {
 
 .user-dropdown-menu ul li:hover {
   background-color: #f0f0f0;
-  color: #0471e5;
+  color: #33ccff;
 }
 
 .user-info .fa-caret-down {
@@ -844,7 +844,7 @@ body {
 }
 
 .header-right .user-info span strong {
-  color: #007bff;
+  color: #33ccff;
   font-weight: bold;
 }
 

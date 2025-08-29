@@ -615,4 +615,75 @@ h1 {
     border-color: #dee2e6;
     opacity: 0.7;
 }
+/* --- RESPONSIVE MOBILE --- */
+@media (max-width: 767.98px) {
+  /* Input và Select xếp dọc */
+  .row.mb-3.g-2 {
+    flex-direction: column;
+  }
+  .row.mb-3.g-2 > div {
+    width: 100%;
+  }
+
+  /* Bảng có scroll ngang */
+  .table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  /* Thu gọn padding bảng */
+  .table tbody td,
+  .table thead th {
+    padding: 0.6rem;
+    font-size: 0.85rem;
+  }
+
+  /* Ẩn bớt cột trên mobile (Email, Vai trò) */
+  .table thead th:nth-child(3),
+  .table thead th:nth-child(5),
+  .table tbody td:nth-child(3),
+  .table tbody td:nth-child(5) {
+    display: none;
+  }
+
+  /* Nút xem chi tiết nhỏ gọn hơn */
+  .btn-custom-detail {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.75rem;
+  }
+
+  /* Modal body text nhỏ hơn */
+  .custom-modal-body {
+    font-size: 0.9rem;
+  }
+
+  /* Phân trang nhỏ gọn */
+  .custom-pagination .page-item .page-link {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.85rem;
+  }
+}
+/* Căn giữa mũi tên dropdown trong tất cả select */
+.form-select,
+.form-select-sm {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center; /* Căn giữa mũi tên */
+  background-size: 16px 12px;
+
+  padding-right: 2rem; /* Chừa khoảng cho mũi tên */
+  line-height: 1.5;    /* Đảm bảo căn giữa theo chiều dọc */
+}
+
+.form-select-sm {
+  padding: 0.45rem 2rem 0.45rem 0.75rem; /* fix padding nhỏ hơn nhưng vẫn đủ chỗ arrow */
+  font-size: 0.9rem;
+}
+
 </style>

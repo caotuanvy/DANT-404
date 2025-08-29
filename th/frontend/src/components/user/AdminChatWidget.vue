@@ -498,7 +498,7 @@ watch(selectedConversationId, (newVal) => {
 .restore-btn {
   width: 60px;
   height: 60px;
-  background-color: #007bff;
+  background-color: #33ccff;
   color: white;
   font-size: 1.5rem;
   border: none;
@@ -509,7 +509,7 @@ watch(selectedConversationId, (newVal) => {
 }
 
 .restore-btn:hover {
-  background-color: #007bffe4;
+  background-color: #2497d5;
   transform: scale(1.1);
 }
 
