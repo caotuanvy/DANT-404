@@ -62,7 +62,7 @@
 
           <div class="cart-info">
             <a href="#" @click.prevent="goToCart">
-              <i class="fas fa-shopping-cart"></i> Giỏ hàng (0)
+              <i class="fas fa-shopping-cart"></i> Giỏ hàng
             </a>
           </div>
           <div class="notification"><i class="fas fa-bell"></i> Thông báo</div>
