@@ -82,7 +82,7 @@ const editTenTrang = ref('')
 
 const fetchPages = async () => {
   try {
-    const res = await axios.get('http://localhost:8000/api/admin/trang-tinh', {
+    const res = await axios.get('https://api.sieuthi404.io.vn/api/admin/trang-tinh', {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`
       }
@@ -107,7 +107,7 @@ const deletePage = (id) => { // Bỏ async ở đây vì chúng ta sẽ xử lý
     if (result.isConfirmed) {
       // --- NẾU NGƯỜI DÙNG BẤM "Vâng, xóa nó!" THÌ CHẠY LOGIC DƯỚI ĐÂY ---
       try {
-        await axios.delete(`http://localhost:8000/api/admin/trang-tinh/${id}`, {
+        await axios.delete(`https://api.sieuthi404.io.vn/api/admin/trang-tinh/${id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
           }
@@ -150,7 +150,7 @@ const cancelEdit = () => {
 
 const saveEdit = async (id) => {
   try {
-    await axios.post(`http://localhost:8000/api/admin/trang-tinh/${id}`, {
+    await axios.post(`https://api.sieuthi404.io.vn/api/admin/trang-tinh/${id}`, {
       Tieu_de_trang: editTieuDe.value,
       Ten_trang: editTenTrang.value
     }, {

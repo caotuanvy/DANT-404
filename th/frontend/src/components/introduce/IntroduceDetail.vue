@@ -128,7 +128,7 @@ const initEditor = async (content = null) => {
 
 onMounted(async () => {
   try {
-    const res = await axios.get(`http://localhost:8000/api/admin/trang-tinh/${route.params.slug}`, {
+    const res = await axios.get(`https://api.sieuthi404.io.vn/api/admin/trang-tinh/${route.params.slug}`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`
       }
@@ -155,7 +155,7 @@ watch(isEditing, async (val) => {
 const save = async () => {
   try {
     const output = await editor.save()
-    await axios.post('http://localhost:8000/api/admin/trang-tinh/update', {
+    await axios.post('https://api.sieuthi404.io.vn/api/admin/trang-tinh/update', {
       Ten_trang: route.params.slug,
       Tieu_de_trang: page.value.Tieu_de_trang,
       Noi_dung_trang: JSON.stringify(output)

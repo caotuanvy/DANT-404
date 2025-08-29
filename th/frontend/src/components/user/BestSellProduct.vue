@@ -72,7 +72,7 @@
 
           <div class="card-actions">
             <label class="compare-checkbox-label" @click.stop.prevent="toggleCompare(sp)">
-              <input
+<input
                 type="checkbox"
                 :id="'compare-' + sp.san_pham_id"
                 class="compare-checkbox"
@@ -146,7 +146,7 @@
                             @click="currentImageIndex = index"
                         >
                             <img :src="image" :alt="selectedProduct.ten_san_pham" />
-                        </div>
+</div>
                     </div>
                 </div>
                 <div class="modal-right">
@@ -204,7 +204,7 @@
                     </div>
 
                     <div class="modal-actions">
-                        <button
+<button
                             class="add-to-cart-grid-btn"
                             @click="addToCart"
                             :disabled="selectedVariant?.so_luong_ton_kho <= 0"
@@ -290,7 +290,7 @@ const calculateDiscountedPrice = (originalPrice, promo) => {
  return isNaN(price) || percentage === 0 ? price : Math.round(price * (1 - percentage / 100))
 }
 const calculateDisplayPrice = (originalPrice, promo) => {
- return getValidDiscountPercentage(promo) > 0
+return getValidDiscountPercentage(promo) > 0
   ? calculateDiscountedPrice(originalPrice, promo)
   : parseFloat(originalPrice)
 }
@@ -382,7 +382,7 @@ const updateCountdown = () => {
   if (diff <= 0) {
    countdownTimers.value[p.san_pham_id] = '00:00:00'
   } else {
-   const d = moment.duration(diff)
+const d = moment.duration(diff)
    const days = Math.floor(d.asDays())
    const pad = (n) => String(n).padStart(2, '0')
    countdownTimers.value[p.san_pham_id] =
@@ -465,7 +465,7 @@ const normalizeGallery = (detail, fallbackCover) => {
     
     // Thêm các ảnh từ các trường khác nếu có
     if (detail?.hinh_anh_phu && typeof detail.hinh_anh_phu === 'string') {
-        detail.hinh_anh_phu.split(',').map(x => x.trim()).filter(Boolean).forEach(p => arr.push(getImageUrl(p)));
+detail.hinh_anh_phu.split(',').map(x => x.trim()).filter(Boolean).forEach(p => arr.push(getImageUrl(p)));
     }
     
     // Thêm ảnh chính nếu chưa có (phòng trường hợp API không trả về hinhAnhSanPham)
@@ -565,7 +565,8 @@ const addToCart = async () => {
   };
   
   try {
-    const response = await axios.post('https://api.sieuthi404.io.vn/api/cart/add',
+    
+const response = await axios.post('https://api.sieuthi404.io.vn/api/cart/add',
       payload,
       {
         headers: {
@@ -674,7 +675,7 @@ onUnmounted(() => {
 .section-title { font-size: 32px; font-weight: 700; color: #1a1a1a; margin: 0; text-align: center; }
 
 .tabs-container {
-  display: flex; justify-content: center; gap: 20px; margin-top: 25px;
+display: flex; justify-content: center; gap: 20px; margin-top: 25px;
   border-bottom: 2px solid #e0e0e0; padding-bottom: 10px;
 }
 .tab-button {
@@ -796,7 +797,7 @@ onUnmounted(() => {
 }
 .remove-compare-item {
   position: absolute; top: -10px; right: -10px; background-color: #ff4500; color: white; border: none; border-radius: 50%;
-  width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; line-height: 1;
+width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; line-height: 1;
 }
 .compare-button {
   padding: 12px 30px; font-size: 16px; font-weight: bold; color: white; background-color: #007bff; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s, transform 0.2s;
@@ -861,7 +862,6 @@ onUnmounted(() => {
 .qty { display: inline-flex; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; }
 .qty button { width: 36px; height: 36px; border: none; background: #f6f6f6; cursor: pointer; font-size: 18px; }
 .qty input { width: 60px; height: 36px; border: none; text-align: center; outline: none; }
-
 .modal-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
 .view-detail-btn {
   padding: 10px 16px; background-color: #f7f7f7; color: #222222; border: solid 1px #a7a7a7; border-radius: 8px; cursor: pointer; transition: 0.2s;

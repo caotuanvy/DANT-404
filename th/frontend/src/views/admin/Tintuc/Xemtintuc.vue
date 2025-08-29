@@ -35,7 +35,7 @@
       <div class="info-value">
         <img
           v-if="tintuc.hinh_anh"
-          :src="tintuc.hinh_anh.startsWith('http') ? tintuc.hinh_anh : `http://localhost:8000/storage/${tintuc.hinh_anh}`"
+          :src="tintuc.hinh_anh.startsWith('http') ? tintuc.hinh_anh : `https://api.sieuthi404.io.vn/storage/${tintuc.hinh_anh}`"
           alt="Hình ảnh"
           class="img-preview"
         />
@@ -111,7 +111,7 @@ function convertBlocksToHtml(data) {
 
 const fetchTintuc = async () => {
   try {
-    const res = await axios.get(`http://localhost:8000/api/xemtintuc-admin/${route.params.id}`, {
+    const res = await axios.get(`https://api.sieuthi404.io.vn/api/xemtintuc-admin/${route.params.id}`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },

@@ -171,7 +171,7 @@ const filteredLinks = computed(() => {
   );
 });
 
-const API_BASE_URL = 'http://localhost:8000/api/admin/social-links'; 
+const API_BASE_URL = 'https://api.sieuthi404.io.vn/api/admin/social-links'; 
 const getAuthHeaders = () => ({
   headers: {
     Authorization: `Bearer ${localStorage.getItem('token')}`,

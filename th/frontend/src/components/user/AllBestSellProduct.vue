@@ -71,7 +71,7 @@ const filteredProducts = computed(() => {
 
 const addToCart = async (product) => {
   try {
-    const detailRes = await axios.get(`http://localhost:8000/api/user/${product.slug}`);
+    const detailRes = await axios.get(`https://api.sieuthi404.io.vn/api/user/${product.slug}`);
     const productDetails = detailRes.data;
 
     if (!productDetails.variants || productDetails.variants.length === 0) {
@@ -93,7 +93,7 @@ const addToCart = async (product) => {
     
     const token = localStorage.getItem('token');
     
-    const cartRes = await axios.post('http://localhost:8000/api/cart/add', payload, {
+    const cartRes = await axios.post('https://api.sieuthi404.io.vn/api/cart/add', payload, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -123,7 +123,7 @@ const addToCart = async (product) => {
 
 onMounted(async () => {
   try {
-    const res = await axios.get('http://localhost:8000/api/admin/products-sell-top-all');
+    const res = await axios.get('https://api.sieuthi404.io.vn/api/admin/products-sell-top-all');
     products.value = res.data.map(product => {
       const ton_kho = parseInt(product.so_luong_ton_kho) || 0;
       const da_ban = parseInt(product.so_luong_ban) || 0;
@@ -144,7 +144,7 @@ onMounted(async () => {
 });
 
 const getImageUrl = (path) => {
-  return path ? `http://localhost:8000/storage/${path}` : '/images/default-grape.png';
+  return path ? `https://api.sieuthi404.io.vn/storage/${path}` : '/images/default-grape.png';
 };
 
 const getValidDiscountPercentage = (promo) => {

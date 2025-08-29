@@ -143,7 +143,7 @@ const getProducts = async () => {
   loading.value = true;
   errorMessage.value = '';
   try {
-    const res = await axios.get('http://localhost:8000/api/products', {
+    const res = await axios.get('https://api.sieuthi404.io.vn/api/products', {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
@@ -160,7 +160,7 @@ const getProducts = async () => {
 const toggleNoiBat = async (product) => {
   const newStatus = product.noi_bat === 1 ? 2 : 1;
   try {
-    await axios.put(`http://localhost:8000/api/products/${product.product_id}/toggle-noi-bat`, {
+    await axios.put(`https://api.sieuthi404.io.vn/api/products/${product.product_id}/toggle-noi-bat`, {
       noi_bat: newStatus,
     }, {
       headers: {
@@ -183,7 +183,7 @@ const toggleProductStatus = async (product) => {
   const action = product.trang_thai ? 'vô hiệu hóa' : 'kích hoạt';
   if (!confirm(`Bạn có chắc muốn ${action} sản phẩm này?`)) return;
   try {
-    await axios.put(`http://localhost:8000/api/products/${product.product_id}/toggle-status`, {}, {
+    await axios.put(`https://api.sieuthi404.io.vn/api/products/${product.product_id}/toggle-status`, {}, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     });
 

@@ -37,7 +37,7 @@ const toggleMenu = () => {
 
 const fetchActiveLinks = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/api/social-links/active');
+    const response = await axios.get('https://api.sieuthi404.io.vn/api/social-links/active');
     activeLinks.value = response.data;
   } catch (error) {
     console.error('Không thể tải danh sách mạng xã hội:', error);

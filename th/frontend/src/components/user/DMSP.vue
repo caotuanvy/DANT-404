@@ -37,7 +37,7 @@ const loading = ref(true)
 const error = ref(null)
 const router = useRouter()
 
-const API_BASE_URL = 'http://localhost:8000/api'
+const API_BASE_URL = 'https://api.sieuthi404.io.vn/api'
 
 /**
  * Hàm gọi API để lấy danh sách danh mục cha

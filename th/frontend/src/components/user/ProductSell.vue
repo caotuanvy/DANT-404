@@ -71,7 +71,7 @@ import axios from 'axios'
 const products = ref([])
 
 const getImageUrl = (path) => {
-  return path ? `http://localhost:8000/storage/${path}` : '/images/default-grape.png'
+  return path ? `https://api.sieuthi404.io.vn/storage/${path}` : '/images/default-grape.png'
 }
 
 const getValidDiscountPercentage = (promo) => {
@@ -111,7 +111,7 @@ const formatCurrency = (amount) => {
 
 onMounted(async () => {
   try {
-    const res = await axios.get('http://localhost:8000/api/admin/products-sell-top')
+    const res = await axios.get('https://api.sieuthi404.io.vn/api/admin/products-sell-top')
     products.value = res.data.map(product => {
       const ton_kho = parseInt(product.so_luong_ton_kho) || 0
       const da_ban = parseInt(product.so_luong_ban) || 0

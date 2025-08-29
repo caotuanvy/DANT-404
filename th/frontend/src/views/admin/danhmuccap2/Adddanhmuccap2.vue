@@ -81,7 +81,7 @@ const handleSubmit = async () => {
     formData.append('image', image.value);
   }
   try {
-    await axios.post('http://localhost:8000/api/danh-muc-cha', formData, {
+    await axios.post('https://api.sieuthi404.io.vn/api/danh-muc-cha', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
     success.value = 'Thêm danh mục thành công!';

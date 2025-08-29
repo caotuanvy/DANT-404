@@ -4,9 +4,31 @@
       <div class="container">
         <div class="logo-search">
           <img src="/favicon.png" alt="Logo" class="logo-404" />
-          <div class="search-box">
-            <input type="text" placeholder="Tìm kiếm sản phẩm..." />
-            <button><i class="fas fa-search"></i></button>
+          <div class="search-box-wrapper">
+            <div class="search-box">
+              <input
+                type="text"
+                placeholder="Tìm kiếm sản phẩm..."
+                v-model="q"
+                @input="search"
+                @keyup.enter="handleSearch"
+              />
+              <button @click="handleSearch"><i class="fas fa-search"></i></button>
+            </div>
+            
+            <ul v-if="results.length" class="suggestions">
+              <li
+                v-for="p in results"
+                :key="p.product_id"
+                @mousedown.prevent="go(p.slug)"
+              >
+                <img v-if="p.images?.length" :src="p.images[0]" />
+                <div>
+                  <b>{{ p.product_name }}</b>
+                  <small>{{ format(p.min_price) }} - {{ format(p.max_price) }} đ</small>
+                </div>
+              </li>
+            </ul>
           </div>
         </div>
         <div class="header-right">
@@ -98,11 +120,7 @@
       <router-view />
     </main>
 
-    <!-- Logic hiển thị Chat Widget: -->
-    <!-- - ChatWidget cho người dùng thông thường: Chỉ hiển thị khi đã đăng nhập, không phải admin và KHÔNG ở trang admin. -->
     <ChatWidget v-if="isLoggedIn && userRoleId !== 1 && !isAdminRoute" />
-    
-    <!-- - AdminChatWidget cho admin: Chỉ hiển thị khi đã đăng nhập VÀ là admin. -->
     <AdminChatWidget v-if="isLoggedIn && userRoleId === 1" />
     
     <footer class="footer" v-if="!isAdminRoute">
@@ -149,11 +167,9 @@
         </div>
       </div>
     </footer>
-
     <AuthModal :show="showLoginModal" @update:show="showLoginModal = $event" />
   </div>
 </template>
-
 <script setup>
 import { ref, computed, onMounted, watch, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
@@ -161,7 +177,7 @@ import AuthModal from "./components/user/AuthModal.vue";
 import Swal from "sweetalert2";
 import axios from "axios";
 import ChatWidget from './components/user/ChatWidget.vue';
-import AdminChatWidget from './components/user/AdminChatWidget.vue'; // Import component chat của admin
+import AdminChatWidget from './components/user/AdminChatWidget.vue';
 
 const router = useRouter();
 
@@ -174,6 +190,11 @@ const showUserMenu = ref(false);
 const staticPages = ref([]);
 const showMobileMenu = ref(false);
 
+const q = ref(""); // query
+const results = ref([]); // kết quả gợi ý
+const showSuggestions = ref(false); // Thêm biến này để kiểm soát hiển thị gợi ý
+let timer = null;
+
 const isAdminRoute = computed(() => {
   return router.currentRoute.value.path.startsWith("/admin");
 });
@@ -182,13 +203,10 @@ const toggleMobileMenu = () => {
   showMobileMenu.value = !showMobileMenu.value;
 };
 
-// Hàm mới để đóng menu khi click ra ngoài
 const closeMobileMenuOnClickOutside = (event) => {
   if (showMobileMenu.value) {
     const mobileMenuElement = document.querySelector('.main-nav ul');
     const menuToggleButton = document.querySelector('.menu-toggle');
-
-    // Kiểm tra xem vị trí click có nằm ngoài menu và nút mở menu không
     if (
       mobileMenuElement &&
       !mobileMenuElement.contains(event.target) &&
@@ -203,14 +221,12 @@ const closeMobileMenuOnClickOutside = (event) => {
 const checkLoginStatus = () => {
   const user = localStorage.getItem("user");
   const roleId = localStorage.getItem("vai_tro_id");
-
   if (user && roleId) {
     try {
       const parsedUser = JSON.parse(user);
       if (parsedUser && parsedUser.ho_ten) {
         isLoggedIn.value = true;
         userName.value = parsedUser.ho_ten;
-
         let defaultAvatarUrl = '';
         if (parsedUser.ho_ten) {
             const firstLetter = parsedUser.ho_ten.charAt(0).toUpperCase();
@@ -218,7 +234,6 @@ const checkLoginStatus = () => {
         } else {
             defaultAvatarUrl = `https://placehold.co/40x40/33ccff/FFFFFF?text=AV`;
         }
-
         userAvatar.value = parsedUser.anh_dai_dien || defaultAvatarUrl;
         userRoleId.value = parseInt(roleId);
       }
@@ -253,15 +268,12 @@ const handleLogout = () => {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       localStorage.removeItem("vai_tro_id");
-
       isLoggedIn.value = false;
       userName.value = "";
       userAvatar.value = '';
       userRoleId.value = null;
       showUserMenu.value = false;
-
       router.push("/");
-
       Swal.fire({
         toast: true,
         position: "top-end",
@@ -274,6 +286,50 @@ const handleLogout = () => {
     }
   });
 };
+
+const search = () => {
+  clearTimeout(timer);
+  if (q.value.length < 2) {
+    results.value = [];
+    showSuggestions.value = false; // Ẩn gợi ý nếu query quá ngắn
+    return;
+  }
+  timer = setTimeout(async () => {
+    try {
+      const res = await axios.get(`https://api.sieuthi404.io.vn/api/products?search=${q.value}`);
+      results.value = res.data;
+      showSuggestions.value = true; // Hiển thị gợi ý nếu có kết quả
+    } catch (err) {
+      console.error("Search error:", err);
+      results.value = [];
+      showSuggestions.value = false; // Ẩn gợi ý nếu có lỗi
+    }
+  }, 300);
+};
+
+const go = (slug) => {
+  results.value = [];
+  q.value = "";
+  showSuggestions.value = false; // Ẩn gợi ý sau khi chọn
+  // Đã sửa lại đường dẫn theo đúng định dạng URL
+  router.push(`/san-pham/${slug}`);
+};
+
+const handleSearch = () => {
+  if (q.value.trim() !== '') {
+    showSuggestions.value = false; // Ẩn gợi ý khi thực hiện tìm kiếm chính thức
+    router.push({ path: '/tim-kiem', query: { q: q.value } });
+  } else {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Thông báo',
+      text: 'Vui lòng nhập từ khóa để tìm kiếm sản phẩm!',
+      confirmButtonColor: '#33ccff'
+    });
+  }
+};
+
+const format = (n) => new Intl.NumberFormat("vi-VN").format(n || 0);
 
 const navigateToAdmin = () => {
   showUserMenu.value = false;
@@ -291,14 +347,23 @@ const toggleUserMenu = () => {
 
 const closeUserMenuOnClickOutside = (event) => {
   const userMenuWrapper = document.querySelector(".user-menu-wrapper");
+  const searchBoxWrapper = document.querySelector(".search-box-wrapper"); // Lấy search box wrapper
+  
+  // Đóng user menu nếu click ra ngoài user menu
   if (userMenuWrapper && !userMenuWrapper.contains(event.target) && showUserMenu.value) {
     showUserMenu.value = false;
   }
+
+  // Đóng gợi ý tìm kiếm nếu click ra ngoài search box wrapper
+  if (searchBoxWrapper && !searchBoxWrapper.contains(event.target) && showSuggestions.value) {
+    showSuggestions.value = false;
+  }
 };
+
 
 const fetchStaticPages = async () => {
   try {
-    const response = await axios.get("http://localhost:8000/api/static-pages");
+    const response = await axios.get("https://api.sieuthi404.io.vn/api/static-pages");
     staticPages.value = response.data;
   } catch (error) {
     console.error("Lỗi khi tải static pages:", error);
@@ -322,13 +387,11 @@ onMounted(() => {
   checkLoginStatus();
   fetchStaticPages();
   document.addEventListener("click", closeUserMenuOnClickOutside);
-  // Thêm event listener cho menu di động
   document.addEventListener('click', closeMobileMenuOnClickOutside);
 });
 
 onUnmounted(() => {
   document.removeEventListener("click", closeUserMenuOnClickOutside);
-  // Gỡ bỏ event listener khi component bị hủy
   document.removeEventListener('click', closeMobileMenuOnClickOutside);
 });
 
@@ -338,7 +401,7 @@ watch(showLoginModal, (newVal) => {
   }
 });
 </script>
-<style>
+<style scoped>
 /* Global styles (cơ bản) */
 body {
   margin: 0;
@@ -387,16 +450,22 @@ body {
   flex-shrink: 0;
 }
 
-.top-bar .search-box {
-  display: flex;
-  width: 100%;
+/* --- Search Box và Gợi ý --- */
+.search-box-wrapper {
+  position: relative;
+  flex-grow: 1;
   max-width: 600px;
-  border-radius: 20px;
-  overflow: hidden;
-  border: 1px solid #33ccff;
 }
 
-.top-bar .search-box input {
+.search-box {
+  display: flex;
+  width: 100%;
+  border-radius: 20px;
+  border: 1px solid #33ccff;
+  overflow: hidden;
+}
+
+.search-box input {
   padding: 8px 20px;
   width: 100%;
   border: none;
@@ -408,7 +477,7 @@ body {
   color: #aaa;
 }
 
-.top-bar .search-box button {
+.search-box button {
   background-color: #33ccff;
   color: white;
   border: none;
@@ -418,10 +487,70 @@ body {
   font-size: 16px;
 }
 
-.top-bar .search-box button:hover {
+.search-box button:hover {
   background-color: #33ccff;
 }
 
+/* Suggestions dropdown */
+.suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  margin-top: 4px;
+  list-style: none;
+  padding: 4px 0;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.suggestions li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.suggestions li:hover {
+  background: #f0f8ff;
+}
+
+.suggestions img {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid #eee;
+}
+
+.suggestion-info {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.suggestion-info strong {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 2px;
+}
+
+.suggestion-info span {
+  font-size: 13px;
+  color: #888;
+}
+
+
+/* --- Phần CSS cũ đã được gộp lại --- */
 .top-bar .header-right {
   display: flex;
   align-items: center;
@@ -481,7 +610,6 @@ body {
   vertical-align: middle;
 }
 
-/* --- Main Navigation (Menu chính) --- */
 .main-nav {
   background-color: #33ccff;
   padding: 10px 0;
@@ -502,7 +630,6 @@ body {
   gap: 20px;
 }
 
-/* Hiệu ứng hover cho các menu item */
 .main-nav ul li a {
   color: white;
   text-decoration: none;
@@ -514,21 +641,19 @@ body {
 }
 
 .main-nav ul li a:hover {
-  color: white; /* Màu xanh lá cây khi hover */
+  color: white;
 }
 
-/* Các quy tắc mới để vô hiệu hóa hover cho trang hiện tại */
 .main-nav ul li a.router-link-active,
 .main-nav ul li a.router-link-exact-active {
-  color: white; /* Luôn hiển thị màu xanh lá cây cho trang hiện tại */
-  font-weight: bold; /* Thêm hiệu ứng nổi bật */
-  cursor: default; /* Thay đổi con trỏ chuột để người dùng biết không thể nhấp */
+  color: white;
+  font-weight: bold;
+  cursor: default;
 }
 
-/* Vô hiệu hóa hiệu ứng hover trên liên kết của trang hiện tại */
 .main-nav ul li a.router-link-active:hover,
 .main-nav ul li a.router-link-exact-active:hover {
-  color: white; /* Giữ nguyên màu, không thay đổi khi hover */
+  color: white;
 }
 
 .main-nav .contact-info {
@@ -537,16 +662,17 @@ body {
   gap: 30px;
   font-size: 14px;
 }
+
 .main-nav .contact-info-chil {
   display: flex;
   gap: 5px;
   font-size: 14px;
 }
+
 .main-nav .contact-info-chil i {
   margin: auto;
 }
 
-/* --- Footer --- */
 .footer {
   background-color: #343a40;
   color: #f8f9fa;
@@ -614,7 +740,6 @@ body {
   line-height: 1.6;
 }
 
-/* --- Responsive adjustments --- */
 @media (max-width: 992px) {
   .top-bar .logo-search {
     flex-direction: column;
@@ -652,7 +777,7 @@ body {
   .main-nav ul.mobile-menu-active {
     transform: translateX(0);
   }
-  
+
   .main-nav ul li a {
     padding: 10px 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
@@ -688,8 +813,7 @@ body {
   .main-nav .contact-info {
     display: none;
   }
-  
-  /* Style cho nút đóng menu */
+
   .menu-close {
     display: flex;
     justify-content: flex-end;
@@ -698,7 +822,7 @@ body {
     top: 15px;
     right: 15px;
   }
-  
+
   .menu-close-icon {
     font-size: 24px;
     color: white;
@@ -715,18 +839,16 @@ body {
   .main-nav .logo-mobile {
     display: none;
   }
-  
+
   .main-nav .nav-mobile-header {
     display: none;
   }
 
-  /* Ẩn nút đóng trên màn hình desktop */
   .menu-close {
     display: none;
   }
 }
 
-/* Các thay đổi để khắc phục lỗi tràn trên màn hình nhỏ */
 @media (max-width: 768px) {
   .top-bar .container {
     flex-wrap: wrap;
@@ -752,7 +874,7 @@ body {
   .top-bar .notification span {
     display: none;
   }
-  
+
   .top-bar .cart-info a,
   .top-bar .notification {
     display: flex;

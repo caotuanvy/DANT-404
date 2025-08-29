@@ -21,7 +21,7 @@ export default {
     const partners = ref([]);
     const fetchPartners = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/api/partners/active');
+        const response = await axios.get('https://api.sieuthi404.io.vn/api/partners/active');
         partners.value = response.data;
       } catch (error) {
         console.error("Lỗi khi tải đối tác:", error);

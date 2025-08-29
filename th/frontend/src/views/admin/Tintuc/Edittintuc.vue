@@ -91,7 +91,7 @@
                   <button type="button" @click="removeImage" class="remove-image-button">&times;</button>
                 </div>
                 <div v-else-if="hinh_anh" class="image-preview">
-                  <img :src="hinh_anh.startsWith('http') ? hinh_anh : `http://localhost:8000/storage/${hinh_anh}`" alt="Hình ảnh hiện tại" />
+                  <img :src="hinh_anh.startsWith('http') ? hinh_anh : `https://api.sieuthi404.io.vn/storage/${hinh_anh}`" alt="Hình ảnh hiện tại" />
                   <button type="button" @click="removeImage" class="remove-image-button">&times;</button>
                 </div>
               </div>
@@ -181,7 +181,7 @@ export default {
             headers['Authorization'] = `Bearer ${token}`;
           }
 
-          axios.post('http://localhost:8000/api/tinymce/upload-image', formData, {
+          axios.post('https://api.sieuthi404.io.vn/api/tinymce/upload-image', formData, {
             headers: headers,
             onUploadProgress: (event) => {
               progress(event.loaded / event.total * 100);
@@ -243,7 +243,7 @@ export default {
         convert_urls: false,
         relative_urls: false,
         remove_script_host: false,
-        document_base_url: 'http://localhost:8000/'
+        document_base_url: 'https://api.sieuthi404.io.vn/'
       },
       seoCriteria: [
         { label: "Tiêu đề chứa từ khóa chính", passed: false },
@@ -295,7 +295,7 @@ export default {
   methods: {
     async getDanhMucs() {
       try {
-        const res = await axios.get("http://localhost:8000/api/danh-muc-tin-tuc");
+        const res = await axios.get("https://api.sieuthi404.io.vn/api/danh-muc-tin-tuc");
         this.danhMucs = res.data.filter(dm => dm.trang_thai === 1);
       } catch (error) {
         Swal.fire({
@@ -327,7 +327,7 @@ export default {
           return;
         }
 
-        const res = await axios.get(`http://localhost:8000/api/tintuc/${this.$route.params.id}`, {
+        const res = await axios.get(`https://api.sieuthi404.io.vn/api/tintuc/${this.$route.params.id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const data = res.data;
@@ -446,7 +446,7 @@ export default {
         }
 
         const res = await axios.post(
-          `http://localhost:8000/api/tintuc/${this.$route.params.id}?_method=PUT`,
+          `https://api.sieuthi404.io.vn/api/tintuc/${this.$route.params.id}?_method=PUT`,
           formData,
           {
             headers: {
@@ -500,7 +500,7 @@ export default {
       this.globalError = "";
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.post("http://localhost:8000/api/tintuc/generate-seo", {
+        const response = await axios.post("https://api.sieuthi404.io.vn/api/tintuc/generate-seo", {
           tieude: this.tieude,
           noidung: this.newsDescriptionLong || this.tieude,
         }, {

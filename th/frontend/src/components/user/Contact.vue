@@ -37,7 +37,7 @@ const convertBlocksToHtml = (data) => {
 }
 
 onMounted(async () => {
-const res = await axios.get('http://localhost:8000/api/admin/trang-tinh/lien-he')
+const res = await axios.get('https://api.sieuthi404.io.vn/api/admin/trang-tinh/lien-he')
   content.value = res.data
   const parsed = parse(content.value.Noi_dung_trang)
   html.value = convertBlocksToHtml(parsed)

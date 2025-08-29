@@ -207,7 +207,7 @@ const handleUpdatePersonal = async () => {
         return;
     }
     try {
-        const response = await axios.put(`http://localhost:8000/api/users/${userId}`, {
+        const response = await axios.put(`https://api.sieuthi404.io.vn/api/users/${userId}`, {
             ho_ten: tempUserName.value.trim(),
             sdt: tempUserPhone.value.trim()
         });
@@ -299,7 +299,7 @@ const handleUpdateAvatar = async () => {
     formData.append('anh_dai_dien', newAvatarFile.value);
 
     try {
-        const response = await axios.post(`http://localhost:8000/api/users/${userId}/avatar`, formData, {
+        const response = await axios.post(`https://api.sieuthi404.io.vn/api/users/${userId}/avatar`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },

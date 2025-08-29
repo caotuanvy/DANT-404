@@ -82,7 +82,7 @@ export default {
         }
 
         const response = await axios.post(
-          "http://localhost:8000/api/danh-muc-tin-tuc",
+          "https://api.sieuthi404.io.vn/api/danh-muc-tin-tuc",
           formData,
           {
             headers: {

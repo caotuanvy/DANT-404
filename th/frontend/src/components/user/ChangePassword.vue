@@ -54,7 +54,7 @@ const handleChangePassword = async () => {
     isLoading.value = true;
 
     try {
-        const response = await axios.put(`http://localhost:8000/api/users/${userId}/change-password`, {
+        const response = await axios.put(`https://api.sieuthi404.io.vn/api/users/${userId}/change-password`, {
             old_password: oldPassword.value,
             new_password: newPassword.value,
             new_password_confirmation: confirmNewPassword.value,

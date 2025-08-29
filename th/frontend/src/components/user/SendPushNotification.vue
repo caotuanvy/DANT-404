@@ -83,7 +83,7 @@ export default {
         }
 
         // Gọi API Laravel để lấy danh sách người dùng
-        const response = await axios.get('http://localhost:8000/api/admin/users-for-notification', {
+        const response = await axios.get('https://api.sieuthi404.io.vn/api/admin/users-for-notification', {
           headers: {
             'Authorization': `Bearer ${authToken}`, // Sử dụng authToken đã lấy được
             'Accept': 'application/json',
@@ -126,7 +126,7 @@ export default {
         }
 
         // Gọi API Laravel để gửi thông báo
-        const response = await axios.post('http://localhost:8000/api/admin/notifications/send', payload, {
+        const response = await axios.post('https://api.sieuthi404.io.vn/api/admin/notifications/send', payload, {
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',

@@ -205,7 +205,7 @@ export default {
     async fetchUsers() {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:8000/api/users', {
+        const response = await axios.get('https://api.sieuthi404.io.vn/api/users', {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -226,7 +226,7 @@ export default {
 
     async updateRole(user) {
       try {
-        await axios.put(`http://localhost:8000/api/users/${user.nguoi_dung_id}`, {
+        await axios.put(`https://api.sieuthi404.io.vn/api/users/${user.nguoi_dung_id}`, {
           vai_tro_id: user.vai_tro_id,
           trang_thai: user.trang_thai_checked ? 1 : 0 // Gửi trạng thái hiện tại của checkbox
         });
@@ -241,7 +241,7 @@ export default {
     async toggleUserStatus(user, checked) {
       try {
         user.trang_thai = checked ? 1 : 0; // Cập nhật trạng thái trong model trước khi gửi
-        await axios.put(`http://localhost:8000/api/users/${user.nguoi_dung_id}`, {
+        await axios.put(`https://api.sieuthi404.io.vn/api/users/${user.nguoi_dung_id}`, {
           vai_tro_id: user.vai_tro_id, // Gửi cả vai trò hiện tại
           trang_thai: user.trang_thai
         });

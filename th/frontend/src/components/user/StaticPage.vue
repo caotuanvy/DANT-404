@@ -9,7 +9,7 @@ const page = ref(null) // đây là state lưu nội dung trang
 async function fetchPageContent(slug) {
   try {
     const token = localStorage.getItem('token');
-    const res = await axios.get('http://localhost:8000/api/user', {
+    const res = await axios.get('https://api.sieuthi404.io.vn/api/user', {
       headers: {
         Authorization: `Bearer ${token}`
       }

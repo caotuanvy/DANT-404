@@ -80,7 +80,7 @@ export default {
       try {
         const token = localStorage.getItem("token");
         const res = await axios.get(
-          `http://localhost:8000/api/categories/${this.$route.params.id}`,
+          `https://api.sieuthi404.io.vn/api/categories/${this.$route.params.id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -101,7 +101,7 @@ export default {
     async fetchParentCategories() {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get(`http://localhost:8000/api/danh-muc-cha`, {
+        const res = await axios.get(`https://api.sieuthi404.io.vn/api/danh-muc-cha`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -135,7 +135,7 @@ export default {
         }
 
         const res = await axios.post(
-          `http://localhost:8000/api/categories/${this.$route.params.id}`,
+          `https://api.sieuthi404.io.vn/api/categories/${this.$route.params.id}`,
           formData,
           {
             headers: {

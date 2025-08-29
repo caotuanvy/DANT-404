@@ -99,7 +99,7 @@ const fetchProductsByCategory = async () => {
   const categoryId = route.params.category_id;
 
   try {
-    const response = await axios.get(`http://localhost:8000/api/categories/${categoryId}/products`, {
+    const response = await axios.get(`https://api.sieuthi404.io.vn/api/categories/${categoryId}/products`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
@@ -126,7 +126,7 @@ const removeProductFromCategory = async (productId) => {
   }
 
   try {
-    await axios.delete(`http://localhost:8000/api/categories/${categoryId}/products`, {
+    await axios.delete(`https://api.sieuthi404.io.vn/api/categories/${categoryId}/products`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },

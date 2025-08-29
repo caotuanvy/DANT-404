@@ -71,7 +71,7 @@ export default {
     async fetchParentCategories() {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get("http://localhost:8000/api/danh-muc-cha", {
+        const res = await axios.get("https://api.sieuthi404.io.vn/api/danh-muc-cha", {
           headers: { Authorization: `Bearer ${token}` },
         });
         this.parentCategories = res.data;
@@ -111,7 +111,7 @@ export default {
         }
 
         const response = await axios.post(
-          "http://localhost:8000/api/categories",
+          "https://api.sieuthi404.io.vn/api/categories",
           formData,
           {
             headers: {

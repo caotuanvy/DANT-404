@@ -197,7 +197,7 @@ const fetchDanhMuc = async () => {
   loading.value = true;
   errorMessage.value = '';
   try {
-    const response = await axios.get('http://localhost:8000/api/danh-muc-tin-tuc', {
+    const response = await axios.get('https://api.sieuthi404.io.vn/api/danh-muc-tin-tuc', {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
@@ -231,7 +231,7 @@ const toggleTrangThai = async (item) => {
     try {
       item.trang_thai = newStatus;
       await axios.put(
-        `http://localhost:8000/api/danh-muc-tin-tuc/${item.id_danh_muc_tin_tuc}/toggle-status`,
+        `https://api.sieuthi404.io.vn/api/danh-muc-tin-tuc/${item.id_danh_muc_tin_tuc}/toggle-status`,
         {
           trang_thai: newStatus,
         },
@@ -260,7 +260,7 @@ const toggleTrangThai = async (item) => {
 
 const getImageUrl = (url) => {
   if (!url) return 'https://placehold.co/80x60?text=No+Image';
-  return url.startsWith('http') ? url : `http://localhost:8000/storage/${url}`;
+  return url.startsWith('http') ? url : `https://api.sieuthi404.io.vn/storage/${url}`;
 };
 
 onMounted(() => {

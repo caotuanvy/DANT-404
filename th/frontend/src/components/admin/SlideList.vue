@@ -144,11 +144,11 @@ const addImageForm = ref({ loai_anh: '', hinh_anh: null });
 const addImageInputRef = ref(null);
 
 // --- API & Data Fetching ---
-const getImageUrl = (url) => url ? `http://localhost:8000/storage/${url}` : 'https://placehold.co/100x60?text=No+Image';
+const getImageUrl = (url) => url ? `https://api.sieuthi404.io.vn/storage/${url}` : 'https://placehold.co/100x60?text=No+Image';
 
 const fetchSlides = async () => {
   try {
-    const res = await axios.get('http://localhost:8000/api/admin/slide');
+    const res = await axios.get('https://api.sieuthi404.io.vn/api/admin/slide');
     slides.value = res.data;
   } catch (error) {
     console.error("Lỗi khi tải slide:", error);
@@ -171,7 +171,7 @@ const addSlide = async () => {
   newImages.value.forEach(f => fd.append('hinh_anh[]', f));
   
   try {
-    await axios.post('http://localhost:8000/api/admin/slide', fd);
+    await axios.post('https://api.sieuthi404.io.vn/api/admin/slide', fd);
     newSlideName.value = '';
     newImages.value = [];
     document.getElementById('new-slide-images').value = '';
@@ -201,13 +201,13 @@ const closeModal = () => {
 const handleSave = async () => {
     if (!editableSlide.value) return;
     try {
-        await axios.post('http://localhost:8000/api/admin/slide/rename', { 
+        await axios.post('https://api.sieuthi404.io.vn/api/admin/slide/rename', { 
             slide_id: editableSlide.value.slide_id, 
             ten_slide: editableSlide.value.ten_slide 
         });
         
         if (editableSlide.value.hien_thi !== originalSlideStatus.value) {
-            await axios.post('http://localhost:8000/api/admin/slide-hienthi', { slide_id: editableSlide.value.slide_id });
+            await axios.post('https://api.sieuthi404.io.vn/api/admin/slide-hienthi', { slide_id: editableSlide.value.slide_id });
         }
         
         showToast('Đã cập nhật slide thành công!');
@@ -235,9 +235,9 @@ const addImageToExistingSlide = async () => {
     fd.append('hinh_anh', addImageForm.value.hinh_anh);
 
     try {
-        await axios.post('http://localhost:8000/api/admin/slide/add-image', fd);
+        await axios.post('https://api.sieuthi404.io.vn/api/admin/slide/add-image', fd);
         
-        const res = await axios.get(`http://localhost:8000/api/admin/slide/${editableSlide.value.slide_id}`);
+        const res = await axios.get(`https://api.sieuthi404.io.vn/api/admin/slide/${editableSlide.value.slide_id}`);
         
         // [FIX] Dùng Object.assign để cập nhật đối tượng hiện tại một cách an toàn
         if(res.data) {
@@ -269,11 +269,11 @@ const handleFileChange = async e => {
     const fd = new FormData();
     fd.append('hinh_anh', file);
     try {
-        await axios.post(`http://localhost:8000/api/admin/slide/image/update-image/${selectedImageId.value}`, fd, {
+        await axios.post(`https://api.sieuthi404.io.vn/api/admin/slide/image/update-image/${selectedImageId.value}`, fd, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
 
-        const res = await axios.get(`http://localhost:8000/api/admin/slide/${editableSlide.value.slide_id}`);
+        const res = await axios.get(`https://api.sieuthi404.io.vn/api/admin/slide/${editableSlide.value.slide_id}`);
 
         // [FIX] Dùng Object.assign để đảm bảo tính nhất quán
         if(res.data) {
@@ -306,9 +306,9 @@ const deleteImage = (imageId, slideId) => {
     if (result.isConfirmed) {
       // ---- Bắt đầu logic xóa ----
       try {
-        await axios.delete(`http://localhost:8000/api/admin/slide/image/${imageId}`);
+        await axios.delete(`https://api.sieuthi404.io.vn/api/admin/slide/image/${imageId}`);
         
-        const res = await axios.get(`http://localhost:8000/api/admin/slide/${slideId}`);
+        const res = await axios.get(`https://api.sieuthi404.io.vn/api/admin/slide/${slideId}`);
         
         if (res.data) {
           Object.assign(editableSlide.value, res.data);
@@ -335,7 +335,7 @@ const deleteImage = (imageId, slideId) => {
 const updateLink = async (image) => {
     const trimmed = image.dieu_huong ? image.dieu_huong.trim() : '';
     try {
-        await axios.post('http://localhost:8000/api/admin/slide/update-link', {
+        await axios.post('https://api.sieuthi404.io.vn/api/admin/slide/update-link', {
             id: image.id,
             dieu_huong: trimmed
         });
@@ -349,7 +349,7 @@ const updateLink = async (image) => {
 const deleteSlide = async id => {
   if (!confirm('Bạn có chắc chắn muốn xóa slide này? Hành động này không thể hoàn tác.')) return;
   try {
-    await axios.delete(`http://localhost:8000/api/admin/slide/${id}`);
+    await axios.delete(`https://api.sieuthi404.io.vn/api/admin/slide/${id}`);
     fetchSlides();
     showToast('Đã xóa slide');
     

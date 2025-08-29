@@ -37,11 +37,11 @@ import { Autoplay, Navigation, Pagination } from 'swiper/modules'
 const slides = ref([])
 const slideName = ref('')
 const getImageUrl = (path) => {
-  return path ? `http://localhost:8000/storage/${path}` : ''
+  return path ? `https://api.sieuthi404.io.vn/storage/${path}` : ''
 }
 const fetchSlides = async () => {
   try {
-    const res = await axios.get('http://localhost:8000/api/admin/slide-hienthi')
+    const res = await axios.get('https://api.sieuthi404.io.vn/api/admin/slide-hienthi')
     slides.value = res.data?.hinh_anh || []
     slideName.value = res.data?.ten_slide || ''
   } catch (err) {
