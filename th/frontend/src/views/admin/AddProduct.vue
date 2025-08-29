@@ -14,6 +14,14 @@
                 <small v-if="errors.ten_san_pham" class="form-error">{{ errors.ten_san_pham[0] }}</small>
               </div>
               <div class="form-group">
+                <label for="partner" class="form-label">Đối tác & Nhà Cung Cấp:</label>
+                <select v-model="product.partner_id" class="form-control">
+                  <option :value="null">-- Chọn --</option>
+                  <option v-for="partner in partners" :key="partner.id" :value="partner.id">{{ partner.tenDoiTac }}</option>
+                </select>
+                <small v-if="errors.doi_tac_id" class="form-error">{{ errors.doi_tac_id[0] }}</small>
+              </div>
+              <div class="form-group">
                 <label for="slug" class="form-label">Đường Dẫn (Slug):*</label>
                 <input type="text" id="slug" v-model="product.slug" class="form-control"/>
                 <small v-if="errors.slug" class="form-error">{{ errors.slug[0] }}</small>
@@ -333,6 +341,7 @@
                 <input type="text" id="aiProductName" v-model="aiInput.product_name" class="form-control" />
                 <small class="form-text">Đây là tên chính AI sẽ dùng để tạo nội dung.</small>
             </div>
+            
             <div class="form-group">
                 <label for="aiKeywords" class="form-label">Các từ khóa liên quan (phân cách bởi dấu phẩy):</label>
                 <input type="text" id="aiKeywords" v-model="aiInput.keywords" class="form-control" placeholder="VD: bánh ngọt, bánh kem, sinh nhật" />
@@ -407,7 +416,9 @@ const product = reactive({
  ngay_bat_dau_giam_gia: null,
  ngay_ket_thuc_giam_gia: null,
  variants: [],
+ partner_id: null,
 });
+const partners = ref([]);
 const isGeneratingSeo = ref(false);
 const isGeneratingAiContent = ref(false);
 const newVariant = reactive({
@@ -433,9 +444,12 @@ onMounted(async () => {
   try {
     const response = await axios.get('categories');
     categories.value = response.data;
+    const partnersResponse = await axios.get('partners');
+    partners.value = partnersResponse.data;
   } catch (error) {
     console.error("Không thể tải danh mục:", error);
   }
+  
 });
 
 watch(() => product.ten_san_pham, (newVal) => {

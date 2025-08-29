@@ -16,6 +16,15 @@
                 <small v-if="errors.ten_san_pham" class="form-error">{{ errors.ten_san_pham[0] }}</small>
               </div>
               <div class="form-group">
+                <label for="partner" class="form-label">Đối tác:</label>
+               <select v-model="product.partner_id" class="form-control">
+                    <option value="">-- Chọn đối tác --</option>
+                    <option v-for="partner in partners" :key="partner.id" :value="partner.id">
+                        {{ partner.tenDoiTac }}
+                    </option>
+                </select>
+                <small v-if="errors.partner_id" class="form-error">{{ errors.partner_id[0] }}</small>                </div>
+              <div class="form-group">
                 <label for="slug" class="form-label">Đường Dẫn (Slug):*</label>
                 <input type="text" id="slug" v-model="product.slug" class="form-control" @input="userEditedSlug = true" />
                 <small v-if="errors.slug" class="form-error">{{ errors.slug[0] }}</small>
@@ -315,6 +324,7 @@ const product = reactive({
     slug: '',
     ten_danh_muc_id: null,
     mo_ta: '',
+    partner_id: null,
     noi_bat: false,
     trang_thai: true,
     khuyen_mai: null,
@@ -333,7 +343,7 @@ const newVariant = reactive({
     so_luong_ton_kho: null,
 });
 const newVariantErrors = reactive({});
-
+const partners = ref([]);
 const categories = ref([]);
 const existingImages = ref([]);
 const newImageFiles = ref([]); 
@@ -346,6 +356,7 @@ onMounted(async () => {
     try {
         await getCategories();
         await getProduct();
+        await getPartners();
     } catch (error) {
         console.error("Lỗi khi tải dữ liệu:", error);
         globalError.value = "Không thể tải dữ liệu sản phẩm. Vui lòng thử lại.";
@@ -362,6 +373,7 @@ const getProduct = async () => {
     product.slug = data.slug;
     product.ten_danh_muc_id = data.danh_muc?.category_id; 
     product.mo_ta = data.description || '';
+    product.partner_id = data.partner?.id || null;
     product.noi_bat = !!data.noi_bat;
     product.trang_thai = !!data.trang_thai;
     product.khuyen_mai = data.khuyen_mai;
@@ -373,7 +385,11 @@ const getProduct = async () => {
     existingImages.value = data.images || [];
     console.log("Dữ liệu API trả về:", response.data); 
 };
-
+const getPartners = async () => {
+    const response = await axios.get('partners');
+    partners.value = response.data;
+    console.log("Partners API:", response.data);
+};
 const getCategories = async () => {
     const response = await axios.get('categories');
     categories.value = response.data;

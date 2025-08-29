@@ -280,6 +280,13 @@ import GiamGiaManager from '@/components/admin/GiamGiaManager.vue';const routes 
         component: () => import('../components/admin/SocialList.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       },
+      {
+        path: 'partner',
+        name: 'Partner',
+        component: () => import('../components/admin/PartnerList.vue'),
+        meta: { requiresAuth: true, role: 'admin' }
+      },
+      
        {
         path: 'coupons', // Sẽ khớp với URL /admin/coupons
         name: 'AdminCoupons',
