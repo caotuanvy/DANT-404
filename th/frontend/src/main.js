@@ -15,7 +15,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import './assets/mobile.css';
 import { createHead } from '@vueuse/head';
 
-axios.defaults.baseURL = 'http://localhost:8000/api';
+axios.defaults.baseURL = 'https://api.sieuthi404.io.vn/api';
 axios.defaults.withCredentials = true;
 const token = localStorage.getItem('token');
 if (token) {

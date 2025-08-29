@@ -56,7 +56,7 @@ const convertToStructuredItems = (blocks) => {
 }
 
 onMounted(async () => {
-  const res = await axios.get('http://localhost:8000/api/admin/trang-tinh/tam-nhin-su-menh')
+  const res = await axios.get('https://api.sieuthi404.io.vn/api/admin/trang-tinh/tam-nhin-su-menh')
   content.value = res.data
   const parsed = parse(content.value.Noi_dung_trang)
   if (parsed?.blocks) {

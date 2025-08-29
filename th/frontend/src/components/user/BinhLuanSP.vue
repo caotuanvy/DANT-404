@@ -333,7 +333,7 @@ async function getProductIdAndFetchData() {
 async function getProductIdFromSlug(slug) {
     try {
         if (!slug) return null;
-        const response = await axios.get(`http://localhost:8000/api/san-pham-cong-khai/slug/${slug}`);
+        const response = await axios.get(`https://api.sieuthi404.io.vn/api/san-pham-cong-khai/slug/${slug}`);
         return response.data.san_pham_id;
     } catch (error) {
         console.error("Lỗi khi lấy ID sản phẩm từ slug:", error);
@@ -353,12 +353,12 @@ async function fetchComments(page = 1) {
             sort_order: 'desc',
         };
 
-        let url = `http://localhost:8000/api/comments`;
+        let url = `https://api.sieuthi404.io.vn/api/comments`;
 
         // Thêm tham số và đổi URL nếu đang lọc theo sao
         if (currentFilterRating.value) {
             params.rating = currentFilterRating.value;
-            url = `http://localhost:8000/api/comments-by-rating`;
+            url = `https://api.sieuthi404.io.vn/api/comments-by-rating`;
         }
         
         const response = await axios.get(url, { params });
@@ -376,7 +376,7 @@ async function fetchComments(page = 1) {
 async function fetchRatings() {
     if (!newComment.value.san_pham_id) return;
     try {
-        const response = await axios.get(`http://localhost:8000/api/ratings/statistics`, {
+        const response = await axios.get(`https://api.sieuthi404.io.vn/api/ratings/statistics`, {
             params: {
                 san_pham_id: newComment.value.san_pham_id
             }
@@ -527,7 +527,7 @@ async function uploadImageToServer(base64Data) {
     const formData = new FormData();
     formData.append('file', blob, 'image.png');
     const token = localStorage.getItem('token'); 
-    const response = await axios.post('http://localhost:8000/api/tinymce/upload-image', formData, {
+    const response = await axios.post('https://api.sieuthi404.io.vn/api/tinymce/upload-image', formData, {
         headers: {
             'Content-Type': 'multipart/form-data',
             'Authorization': token ? `Bearer ${token}` : '',
@@ -598,7 +598,7 @@ async function submitComment() {
             noidung: finalContent,
             danh_gia: newComment.value.danh_gia > 0 ? newComment.value.danh_gia : null,
         };
-        await axios.post(`http://localhost:8000/api/comments/add`, payload, {
+        await axios.post(`https://api.sieuthi404.io.vn/api/comments/add`, payload, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -628,7 +628,7 @@ async function toggleLike(comment) {
   }
   if (comment.liked) return;
   try {
-      const response = await axios.post(`http://localhost:8000/api/binh-luan/${comment.binh_luan_id}/toggle-like`, {}, {
+      const response = await axios.post(`https://api.sieuthi404.io.vn/api/binh-luan/${comment.binh_luan_id}/toggle-like`, {}, {
           headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -647,7 +647,7 @@ async function toggleDislike(comment) {
   }
   if (comment.disliked) return;
   try {
-      const response = await axios.post(`http://localhost:8000/api/binh-luan/${comment.binh_luan_id}/toggle-dislike`, {}, {
+      const response = await axios.post(`https://api.sieuthi404.io.vn/api/binh-luan/${comment.binh_luan_id}/toggle-dislike`, {}, {
           headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -662,7 +662,7 @@ async function toggleDislike(comment) {
 async function setBaoCao(commentId, baoCaoValue) {
   try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:8000/api/admin/binhluan/${commentId}/set-bao-cao`, {
+      await axios.put(`https://api.sieuthi404.io.vn/api/admin/binhluan/${commentId}/set-bao-cao`, {
           bao_cao: baoCaoValue
       }, {
           headers: {

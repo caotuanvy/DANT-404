@@ -234,7 +234,7 @@ const getNews = async () => {
   loading.value = true;
   errorMessage.value = '';
   try {
-    const res = await axios.get('http://localhost:8000/api/tintuc', {
+    const res = await axios.get('https://api.sieuthi404.io.vn/api/tintuc', {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
@@ -249,7 +249,7 @@ const getNews = async () => {
 
 const getCategories = async () => {
   try {
-    const res = await axios.get('http://localhost:8000/api/danh-muc-tin-tuc');
+    const res = await axios.get('https://api.sieuthi404.io.vn/api/danh-muc-tin-tuc');
     categories.value = res.data;
   } catch (error) {
     // Xử lý lỗi nếu cần
@@ -276,7 +276,7 @@ const toggleNoiBat = async (news) => {
   if (result.isConfirmed) {
     try {
       news.noi_bat = newStatus;
-      await axios.put(`http://localhost:8000/api/tintuc/${news.id}`, {
+      await axios.put(`https://api.sieuthi404.io.vn/api/tintuc/${news.id}`, {
         noi_bat: newStatus,
       }, {
         headers: {
@@ -319,7 +319,7 @@ const toggleDuyet = async (news) => {
   if (result.isConfirmed) {
     try {
       news.duyet_tin_tuc = newStatus;
-      await axios.put(`http://localhost:8000/api/tintuc/${news.id}`, {
+      await axios.put(`https://api.sieuthi404.io.vn/api/tintuc/${news.id}`, {
         duyet_tin_tuc: newStatus,
       }, {
         headers: {
@@ -362,7 +362,7 @@ const toggleTrangThai = async (news) => {
   if (result.isConfirmed) {
     try {
       news.trang_thai = newStatus;
-      await axios.put(`http://localhost:8000/api/tintuc/${news.id}`, {
+      await axios.put(`https://api.sieuthi404.io.vn/api/tintuc/${news.id}`, {
         trang_thai: newStatus,
       }, {
         headers: {
@@ -388,7 +388,7 @@ const toggleTrangThai = async (news) => {
 
 const getImageUrl = (url) => {
   if (!url) return 'https://placehold.co/80x60?text=No+Image';
-  return url.startsWith('http') ? url : `http://localhost:8000/storage/${url}`;
+  return url.startsWith('http') ? url : `https://api.sieuthi404.io.vn/storage/${url}`;
 };
 
 onMounted(() => {

@@ -194,7 +194,7 @@ export default {
       try {
         const token = localStorage.getItem('token');
         // Gọi đúng endpoint API để lấy chi tiết đơn hàng
-        const res = await axios.get(`http://localhost:8000/api/orders/${id}`, {
+        const res = await axios.get(`https://api.sieuthi404.io.vn/api/orders/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.data) {
@@ -230,7 +230,7 @@ export default {
           qty: item.so_luong,
           price: parseFloat(item.don_gia),
           image: item.bien_the?.san_pham?.hinh_anh_san_pham && item.bien_the.san_pham.hinh_anh_san_pham.length > 0
-                ? `http://localhost:8000/storage/${item.bien_the.san_pham.hinh_anh_san_pham[0].duongdan}`
+                ? `https://api.sieuthi404.io.vn/storage/${item.bien_the.san_pham.hinh_anh_san_pham[0].duongdan}`
                 : '/images/no-image.png',
             })),
         subtotal: subtotalCalc,

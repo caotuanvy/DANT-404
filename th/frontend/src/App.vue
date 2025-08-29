@@ -296,7 +296,7 @@ const search = () => {
   }
   timer = setTimeout(async () => {
     try {
-      const res = await axios.get(`http://localhost:8000/api/products?search=${q.value}`);
+      const res = await axios.get(`https://api.sieuthi404.io.vn/api/products?search=${q.value}`);
       results.value = res.data;
       showSuggestions.value = true; // Hiển thị gợi ý nếu có kết quả
     } catch (err) {
@@ -363,7 +363,7 @@ const closeUserMenuOnClickOutside = (event) => {
 
 const fetchStaticPages = async () => {
   try {
-    const response = await axios.get("http://localhost:8000/api/static-pages");
+    const response = await axios.get("https://api.sieuthi404.io.vn/api/static-pages");
     staticPages.value = response.data;
   } catch (error) {
     console.error("Lỗi khi tải static pages:", error);

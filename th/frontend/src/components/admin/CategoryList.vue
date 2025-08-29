@@ -159,7 +159,7 @@ const getCategories = async () => {
   loading.value = true;
   errorMessage.value = '';
   try {
-    const response = await axios.get('http://localhost:8000/api/categories', {
+    const response = await axios.get('https://api.sieuthi404.io.vn/api/categories', {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
@@ -189,7 +189,7 @@ const toggleCategoryStatus = async (categoryId) => {
   }
 
   try {
-    const response = await axios.put(`http://localhost:8000/api/categories/${categoryId}/toggle-status`, {}, {
+    const response = await axios.put(`https://api.sieuthi404.io.vn/api/categories/${categoryId}/toggle-status`, {}, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },

@@ -43,7 +43,7 @@ const newsList = ref([])
 
 const getImageUrl = (path) => {
   if (!path) return 'https://via.placeholder.com/400x225/f0f0f0/888888?text=Image+Not+Found'
-  return path.startsWith('http') ? path : `http://localhost:8000/storage/${path}`
+  return path.startsWith('http') ? path : `https://api.sieuthi404.io.vn/storage/${path}`
 }
 
 const formatDate = (dateStr) => {
@@ -66,7 +66,7 @@ function getNoiDungSnippet(noidung, maxLength = 100) {
 
 onMounted(async () => {
   try {
-    const res = await axios.get('http://localhost:8000/api/tintuc-cong-khai');
+    const res = await axios.get('https://api.sieuthi404.io.vn/api/tintuc-cong-khai');
     // Giả định API trả về thêm luot_xem và luot_thich
     newsList.value = res.data.slice(0, 3).map(news => ({
       ...news,

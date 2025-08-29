@@ -104,7 +104,7 @@ const showMauSacRow = computed(() => hasValue('mau_sac_display'));
 const showVariantsRow = computed(() => props.products.some(p => p.san_pham_bien_the && p.san_pham_bien_the.length > 0));
 const getImageUrl = (path) => {
    console.log('Đường dẫn ảnh:', path);
- return `http://localhost:8000/storage/${path}`;
+ return `https://api.sieuthi404.io.vn/storage/${path}`;
 };
 const formatCurrency = (amount) => {
   if (amount == null) return '';

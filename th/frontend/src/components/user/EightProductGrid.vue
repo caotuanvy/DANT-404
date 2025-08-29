@@ -94,7 +94,7 @@ const selectedProduct = ref(null)
 const quickViewQty = ref(1)
 
 const getImageUrl = (path) => {
-  return path ? `http://localhost:8000/storage/${path}` : '/images/default-grape.png'
+  return path ? `https://api.sieuthi404.io.vn/storage/${path}` : '/images/default-grape.png'
 }
 
 const getValidDiscountPercentage = (promo) => {
@@ -131,7 +131,7 @@ const addToCart = async (product) => {
   }
 
   try {
-    const response = await axios.post('http://localhost:8000/api/cart/add', 
+    const response = await axios.post('https://api.sieuthi404.io.vn/api/cart/add', 
       {
         san_pham_bien_the_id: product.san_pham_bien_the_id,
         quantity: 1
@@ -201,7 +201,7 @@ const addToCartFromModal = () => {
 };
 
 onMounted(async () => {
-  const res = await axios.get('http://localhost:8000/api/admin/products-featured')
+  const res = await axios.get('https://api.sieuthi404.io.vn/api/admin/products-featured')
   products.value = res.data
 })
 </script>

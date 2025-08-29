@@ -267,7 +267,7 @@ const getBinhLuans = async () => {
     if (filterLoai.value) params.loai = filterLoai.value;
     if (filterBaoCao.value !== '') params.bao_cao = filterBaoCao.value;
 
-    const res = await axios.get('http://localhost:8000/api/admin/binhluan', {
+    const res = await axios.get('https://api.sieuthi404.io.vn/api/admin/binhluan', {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
@@ -322,7 +322,7 @@ const toggleTrangThai = async (binhLuan) => {
     );
     if (!confirmed) return;
     await axios.put(
-      `http://localhost:8000/api/admin/binhluan/${binhLuan.binh_luan_id}/toggle`,
+      `https://api.sieuthi404.io.vn/api/admin/binhluan/${binhLuan.binh_luan_id}/toggle`,
       {},
       {
         headers: {
@@ -355,7 +355,7 @@ const setBaoCao = async (binhLuan, newStatus) => {
   const originalBaoCao = binhLuan.bao_cao;
   try {
     await axios.put(
-      `http://localhost:8000/api/admin/binhluan/${binhLuan.binh_luan_id}/set-bao-cao`,
+      `https://api.sieuthi404.io.vn/api/admin/binhluan/${binhLuan.binh_luan_id}/set-bao-cao`,
       { bao_cao: newStatus },
       {
         headers: {

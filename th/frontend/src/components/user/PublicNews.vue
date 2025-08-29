@@ -14,7 +14,7 @@
               :src="item.hinh_anh
                 ? (item.hinh_anh.startsWith('http')
                     ? item.hinh_anh
-                    : `http://localhost:8000/storage/${item.hinh_anh}`)
+                    : `https://api.sieuthi404.io.vn/storage/${item.hinh_anh}`)
                 : 'https://via.placeholder.com/400x225'"
               alt="Hình ảnh tin tức"
             />
@@ -64,7 +64,7 @@
         <div class="vohop-popular-post" v-for="tin in tinNoiBatList" :key="tin.id" @click="goToNewsDetail(tin)">
           <div class="vohop-post-image">
             <img
-              :src="tin.hinh_anh ? (tin.hinh_anh.startsWith('http') ? tin.hinh_anh : `http://localhost:8000/storage/${tin.hinh_anh}`) : 'https://via.placeholder.com/60x60'"
+              :src="tin.hinh_anh ? (tin.hinh_anh.startsWith('http') ? tin.hinh_anh : `https://api.sieuthi404.io.vn/storage/${tin.hinh_anh}`) : 'https://via.placeholder.com/60x60'"
               alt=""
             />
           </div>
@@ -137,7 +137,7 @@ onMounted(async () => {
 // Hàm mới: Tải danh sách tags từ API
 async function fetchTags() {
   try {
-    const res = await fetch('http://localhost:8000/api/tags')
+    const res = await fetch('https://api.sieuthi404.io.vn/api/tags')
     const data = await res.json()
     allTags.value = data
   } catch (err) {
@@ -155,7 +155,7 @@ async function handleSelectTag(tag) {
     activeTag.value = tag
     activeDanhMuc.value = null
     try {
-      const res = await fetch(`http://localhost:8000/api/tin-tuc-theo-tag/${tag}`)
+      const res = await fetch(`https://api.sieuthi404.io.vn/api/tin-tuc-theo-tag/${tag}`)
       allNews.value = await res.json()
     } catch (err) {
       console.error("Lỗi khi tải tin tức theo tag:", err)
@@ -183,7 +183,7 @@ function getFirstTag(tagsStr) {
 // Hàm cũ: Lấy danh mục
 async function fetchDanhMucList() {
     try {
-        const res = await fetch('http://localhost:8000/api/danh-muc-cong-khai');
+        const res = await fetch('https://api.sieuthi404.io.vn/api/danh-muc-cong-khai');
         danhMucList.value = await res.json();
     } catch (err) {
         console.error("Lỗi khi tải danh mục:", err);
@@ -194,7 +194,7 @@ async function fetchDanhMucList() {
 // Hàm cũ: Lấy tất cả tin tức
 async function fetchAllNews() {
   try {
-    const res = await fetch('http://localhost:8000/api/tintuc-cong-khai')
+    const res = await fetch('https://api.sieuthi404.io.vn/api/tintuc-cong-khai')
     allNews.value = await res.json()
     activeDanhMuc.value = null
     activeTag.value = null
@@ -209,7 +209,7 @@ async function handleSelectDanhMuc(id) {
   activeDanhMuc.value = id
   activeTag.value = null
   try {
-    const res = await fetch(`http://localhost:8000/api/tintuc-cong-khai/danh-muc/${id}`)
+    const res = await fetch(`https://api.sieuthi404.io.vn/api/tintuc-cong-khai/danh-muc/${id}`)
     allNews.value = await res.json()
   } catch (err) {
     console.error("Lỗi khi tải tin tức theo danh mục:", err)
@@ -220,7 +220,7 @@ async function handleSelectDanhMuc(id) {
 // Hàm cũ: Lấy tin nổi bật
 async function fetchTinNoiBat() {
   try {
-    const res = await fetch('http://localhost:8000/api/tin-noi-bat')
+    const res = await fetch('https://api.sieuthi404.io.vn/api/tin-noi-bat')
     tinNoiBatList.value = await res.json()
   } catch (err) {
     console.error("Lỗi khi tải tin nổi bật:", err)

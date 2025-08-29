@@ -7,7 +7,7 @@
         <div v-html="renderedHtml" />
       </div>
       <div class="image">
-        <img src="http://localhost:8000/storage/slides/EaPThZeOlCfbUusOHsX3xfvU9bhKL9J9A9Bq502l.png" alt="FoF Mart Giới Thiệu" />
+        <img src="https://api.sieuthi404.io.vn/storage/slides/EaPThZeOlCfbUusOHsX3xfvU9bhKL9J9A9Bq502l.png" alt="FoF Mart Giới Thiệu" />
       </div>
     </div>
   </section>
@@ -74,7 +74,7 @@ const convertBlocksToHtml = async (data) => {
 onMounted(async () => {
   try {
     const slug = 'gioi-thieu' 
-    const res = await axios.get(`http://localhost:8000/api/admin/trang-tinh/${slug}`)
+    const res = await axios.get(`https://api.sieuthi404.io.vn/api/admin/trang-tinh/${slug}`)
     page.value = res.data
 
     if (isJSON(page.value.Noi_dung_trang)) {

@@ -63,7 +63,7 @@ const loaded = ref(false);
 
 const fetchData = async () => {
   try {
-    const res = await axios.get(`http://localhost:8000/api/danh-muc-cha/${id}`);
+    const res = await axios.get(`https://api.sieuthi404.io.vn/api/danh-muc-cha/${id}`);
     ten_danh_muc.value = res.data.ten_danh_muc;
     mo_ta.value = res.data.mo_ta;
     image_url.value = res.data.image_url;
@@ -101,7 +101,7 @@ const handleSubmit = async () => {
   }
   try {
     await axios.post(
-      `http://localhost:8000/api/danh-muc-cha/${id}?_method=PUT`,
+      `https://api.sieuthi404.io.vn/api/danh-muc-cha/${id}?_method=PUT`,
       formData,
       { headers: { 'Content-Type': 'multipart/form-data' } }
     );

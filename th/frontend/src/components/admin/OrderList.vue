@@ -304,7 +304,7 @@ export default {
                 delete params[key];
             }
         });
-        const res = await axios.get(`http://localhost:8000/api/orders`, {
+        const res = await axios.get(`https://api.sieuthi404.io.vn/api/orders`, {
           params,
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
@@ -324,7 +324,7 @@ export default {
     async fetchStatusCounts() {
       try {
         // Bạn cần tạo endpoint này ở backend
-        const res = await axios.get(`http://localhost:8000/api/orders/status-counts`, {
+        const res = await axios.get(`https://api.sieuthi404.io.vn/api/orders/status-counts`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         this.statusCounts = res.data;
@@ -336,7 +336,7 @@ export default {
 
     async fetchPaymentMethods() {
       try {
-        const res = await axios.get('http://localhost:8000/api/payment-methods', {
+        const res = await axios.get('https://api.sieuthi404.io.vn/api/payment-methods', {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         this.paymentMethods = res.data;
@@ -348,7 +348,7 @@ export default {
     async confirmPayment(order) {
       this.isSubmittingUpdate = true;
       try {
-        await axios.patch(`http://localhost:8000/api/orders/${order.id}/payment`,
+        await axios.patch(`https://api.sieuthi404.io.vn/api/orders/${order.id}/payment`,
           { is_paid: 1 },
           { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
         );
@@ -364,7 +364,7 @@ export default {
     async updateOrderStatus(order, newStatus) {
       this.isSubmittingUpdate = true;
       try {
-        await axios.patch(`http://localhost:8000/api/orders/${order.id}/status`,
+        await axios.patch(`https://api.sieuthi404.io.vn/api/orders/${order.id}/status`,
           { trang_thai_don_hang: String(newStatus) },
           { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
         );
@@ -431,7 +431,7 @@ export default {
     toggleExpand(orderId) { this.expandedOrderId = this.expandedOrderId === orderId ? null : orderId; },
     
     getUserAvatarUrl(user) {
-      if (user && user.anh_dai_dien) return `http://localhost:8000/storage/${user.anh_dai_dien}`;
+      if (user && user.anh_dai_dien) return `https://api.sieuthi404.io.vn/storage/${user.anh_dai_dien}`;
       const name = user?.ho_ten || 'Khách Lạ';
       const encodedName = encodeURIComponent(name);
       return `https://ui-avatars.com/api/?name=${encodedName}&background=cfe2ff&color=052c65&font-size=0.5`;
@@ -552,7 +552,7 @@ export default {
     handleExpandClick(orderId) { this.toggleExpand(orderId); this.closeActionMenu(); },
     toggleExpand(orderId) { this.expandedOrderId = this.expandedOrderId === orderId ? null : orderId; },
     getUserAvatarUrl(user) {
-      if (user && user.anh_dai_dien) return `http://localhost:8000/storage/${user.anh_dai_dien}`; // Giả sử path đúng
+      if (user && user.anh_dai_dien) return `https://api.sieuthi404.io.vn/storage/${user.anh_dai_dien}`; // Giả sử path đúng
       const name = user?.ho_ten || 'Khách Lạ';
       const encodedName = encodeURIComponent(name);
       return `https://ui-avatars.com/api/?name=${encodedName}&background=cfe2ff&color=052c65&font-size=0.5`;
@@ -648,7 +648,7 @@ export default {
     },
     async updateOrderStatus(order, newStatus) {
       try {
-        await axios.patch(`http://localhost:8000/api/orders/${order.id}/status`,
+        await axios.patch(`https://api.sieuthi404.io.vn/api/orders/${order.id}/status`,
           { trang_thai_don_hang: String(newStatus) },
           { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
         );

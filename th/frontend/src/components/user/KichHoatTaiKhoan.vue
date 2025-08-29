@@ -12,7 +12,7 @@ onMounted(async () => {
 
   if (token) {
     try {
-      const response = await axios.get(`http://localhost:8000/api/kich-hoat/${token}`)
+      const response = await axios.get(`https://api.sieuthi404.io.vn/api/kich-hoat/${token}`)
 
       await Swal.fire({
       icon: 'success',

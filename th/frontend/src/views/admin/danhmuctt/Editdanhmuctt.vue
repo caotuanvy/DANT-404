@@ -61,7 +61,7 @@ export default {
       try {
         const token = localStorage.getItem("token");
         const res = await axios.get(
-          `http://localhost:8000/api/danh-muc-tin-tuc/${this.$route.params.id}`,
+          `https://api.sieuthi404.io.vn/api/danh-muc-tin-tuc/${this.$route.params.id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -74,7 +74,7 @@ export default {
         if (this.hinh_anh) {
           this.previewImage = this.hinh_anh.startsWith('http')
             ? this.hinh_anh
-            : `http://localhost:8000/storage/${this.hinh_anh}`;
+            : `https://api.sieuthi404.io.vn/storage/${this.hinh_anh}`;
         }
       } catch (error) {
         console.error("Lỗi khi lấy danh mục:", error);
@@ -103,7 +103,7 @@ export default {
         }
 
         const res = await axios.post(
-          `http://localhost:8000/api/danh-muc-tin-tuc/${this.$route.params.id}?_method=PUT`,
+          `https://api.sieuthi404.io.vn/api/danh-muc-tin-tuc/${this.$route.params.id}?_method=PUT`,
           formData,
           {
             headers: {

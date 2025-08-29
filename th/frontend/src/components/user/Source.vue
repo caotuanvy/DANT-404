@@ -3,7 +3,7 @@
     <div class="content-split-wrapper">
       <div class="visual-side-block">
         
-         <img class="cover-image-fit" src="http://localhost:8000/storage/slides/omqc4DxXDEMD5tpNlDTTwhuF8JKK80m4YHbauknD.png?t=1751008577270" alt="FoF Mart Giới Thiệu" />
+         <img class="cover-image-fit" src="https://api.sieuthi404.io.vn/storage/slides/omqc4DxXDEMD5tpNlDTTwhuF8JKK80m4YHbauknD.png?t=1751008577270" alt="FoF Mart Giới Thiệu" />
       </div>
       <div class="textual-info-box">
         <h2 class="section-title-text">{{ content.Tieu_de_trang }}</h2>
@@ -47,7 +47,7 @@ const convertBlocksToHtml = (data) => {
 }
 
 onMounted(async () => {
-  const res = await axios.get('http://localhost:8000/api/admin/trang-tinh/khoi-nguon')
+  const res = await axios.get('https://api.sieuthi404.io.vn/api/admin/trang-tinh/khoi-nguon')
   content.value = res.data
   const parsed = parse(content.value.Noi_dung_trang)
   html.value = convertBlocksToHtml(parsed)

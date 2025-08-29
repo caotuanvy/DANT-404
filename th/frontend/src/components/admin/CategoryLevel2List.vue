@@ -112,7 +112,7 @@ const editDesc = ref('');
 const router = useRouter();
 
 const getCategories = async () => {
-  const res = await axios.get('http://localhost:8000/api/danh-muc-cha');
+  const res = await axios.get('https://api.sieuthi404.io.vn/api/danh-muc-cha');
   categories.value = res.data;
 };
 
@@ -121,7 +121,7 @@ const addCategory = async () => {
     alert('Vui lòng nhập tên danh mục!');
     return;
   }
-  await axios.post('http://localhost:8000/api/danh-muc-cha', {
+  await axios.post('https://api.sieuthi404.io.vn/api/danh-muc-cha', {
     ten_danh_muc: newName.value,
     mo_ta: newDesc.value,
   });
@@ -143,7 +143,7 @@ const startEdit = (cat) => {
   editDesc.value = cat.mo_ta;
 };
 const saveEdit = async (id) => {
-  await axios.put(`http://localhost:8000/api/danh-muc-cha/${id}`, {
+  await axios.put(`https://api.sieuthi404.io.vn/api/danh-muc-cha/${id}`, {
     ten_danh_muc: editName.value,
     mo_ta: editDesc.value,
   });
@@ -160,7 +160,7 @@ const cancelEdit = () => {
 
 // Ẩn/hiện
 const toggleStatus = async (id) => {
-  await axios.put(`http://localhost:8000/api/danh-muc-cha/${id}/toggle-status`);
+  await axios.put(`https://api.sieuthi404.io.vn/api/danh-muc-cha/${id}/toggle-status`);
   getCategories();
 };
 

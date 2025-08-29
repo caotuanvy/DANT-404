@@ -113,7 +113,7 @@ const startEditVariant = (variant) => {
 const getVariants = async () => {
   loading.value = true;
   try {
-    const res = await axios.get(`http://localhost:8000/api/products/${productId}/variants`, {
+    const res = await axios.get(`https://api.sieuthi404.io.vn/api/products/${productId}/variants`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
@@ -128,7 +128,7 @@ const getVariants = async () => {
 };
 const updateVariant = async () => {
   try {
-   await axios.put(`http://localhost:8000/api/products/${productId}/variants/${editingVariantId.value}`, editVariant.value, {
+   await axios.put(`https://api.sieuthi404.io.vn/api/products/${productId}/variants/${editingVariantId.value}`, editVariant.value, {
 
   headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -146,7 +146,7 @@ const updateVariant = async () => {
 
 const addVariant = async () => {
   try {
-    await axios.post(`http://localhost:8000/api/products/${productId}/variants`, newVariant.value, {
+    await axios.post(`https://api.sieuthi404.io.vn/api/products/${productId}/variants`, newVariant.value, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
@@ -163,7 +163,7 @@ const deleteVariant = async (variantId) => {
   if (!confirm('Bạn có chắc muốn xóa biến thể này không?')) return;
 
   try {
-    await axios.delete(`http://localhost:8000/api/variants/${variantId}`, {
+    await axios.delete(`https://api.sieuthi404.io.vn/api/variants/${variantId}`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },

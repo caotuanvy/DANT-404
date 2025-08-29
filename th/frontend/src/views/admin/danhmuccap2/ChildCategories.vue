@@ -139,7 +139,7 @@ const fetchSubcategories = async () => {
   console.log('Fetching subcategories for categoryId:', categoryId);
 
   try {
-    const response = await axios.get(`http://localhost:8000/api/categories/${categoryId}/children`, {
+    const response = await axios.get(`https://api.sieuthi404.io.vn/api/categories/${categoryId}/children`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
@@ -166,7 +166,7 @@ const toggleSubcategoryStatus = async (subcategoryId) => {
   }
 
   try {
-    const response = await axios.put(`http://localhost:8000/api/categories/${subcategoryId}/toggle-status`, {}, {
+    const response = await axios.put(`https://api.sieuthi404.io.vn/api/categories/${subcategoryId}/toggle-status`, {}, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
@@ -206,7 +206,7 @@ const detachSubcategory = async (subcategoryId) => {
   }
 
   try {
-    await axios.patch(`http://localhost:8000/api/child-categories/${subcategoryId}/detach`, {}, {
+    await axios.patch(`https://api.sieuthi404.io.vn/api/child-categories/${subcategoryId}/detach`, {}, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },

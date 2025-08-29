@@ -287,7 +287,7 @@ export default {
     },
     async getDanhMucs() {
       try {
-        const res = await axios.get("http://localhost:8000/api/danh-muc-tin-tuc");
+        const res = await axios.get("https://api.sieuthi404.io.vn/api/danh-muc-tin-tuc");
         this.danhMucs = res.data.filter(dm => dm.trang_thai === 1);
       } catch (error) {
         Swal.fire({
@@ -349,7 +349,7 @@ export default {
           formData.append("hinh_anh", this.file);
         }
 
-        const res = await axios.post("http://localhost:8000/api/tintuc", formData, {
+        const res = await axios.post("https://api.sieuthi404.io.vn/api/tintuc", formData, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
@@ -400,7 +400,7 @@ export default {
 
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.post("http://localhost:8000/api/tintuc/generate-seo", {
+        const response = await axios.post("https://api.sieuthi404.io.vn/api/tintuc/generate-seo", {
           tieude: this.tieude,
           noidung: noidungInput,
         }, {

@@ -91,7 +91,7 @@ const products = ref([]);
 const isLoading = ref(true);
 const error = ref(null);
 const getImageUrl = (path) => {
-return `http://localhost:8000/storage/${path}`;
+return `https://api.sieuthi404.io.vn/storage/${path}`;
 };
 const formatCurrency = (amount) => {
   if (amount == null) return '';
@@ -112,7 +112,7 @@ onMounted(async () => {
     if (!slugs) {
       throw new Error('Không tìm thấy sản phẩm để so sánh.');
     }
-    const response = await axios.get(`http://localhost:8000/api/user/product/details-by-slugs?slugs=${slugs}`);
+    const response = await axios.get(`https://api.sieuthi404.io.vn/api/user/product/details-by-slugs?slugs=${slugs}`);
     products.value = response.data;
 
   } catch (err) {

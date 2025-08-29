@@ -232,7 +232,7 @@ export default {
     const couponErrorMessage = ref("");
     const myCoupons = ref([]);
     const showCouponModal = ref(false);
-    const imageBaseUrl = 'http://localhost:8000/storage/';
+    const imageBaseUrl = 'https://api.sieuthi404.io.vn/storage/';
     const isPlacingOrder = ref(false);
 
     // Computed properties
@@ -282,7 +282,7 @@ export default {
         const userId = user?.nguoi_dung_id || user?.id;
         if (!userId) { return; }
         try {
-            const response = await axios.get(`http://localhost:8000/api/dia_chi/nguoi_dung/${userId}`);
+            const response = await axios.get(`https://api.sieuthi404.io.vn/api/dia_chi/nguoi_dung/${userId}`);
             const addresses = response.data;
             let defaultAddress = addresses && Array.isArray(addresses) && addresses.length > 0 ? addresses[0] : null;
             if (defaultAddress) {
@@ -434,7 +434,7 @@ localStorage.setItem('provinces', JSON.stringify(provinces.value));
       if (!product) return;
 
       try {
-        const response = await axios.post(`http://localhost:8000/api/cart/add`, {
+        const response = await axios.post(`https://api.sieuthi404.io.vn/api/cart/add`, {
           san_pham_bien_the_id: product.id,
           quantity: quantityChange
         });
@@ -476,7 +476,7 @@ localStorage.setItem('provinces', JSON.stringify(provinces.value));
         try {
           const user = JSON.parse(localStorage.getItem("user"));
           const userId = user?.nguoi_dung_id || user?.id;
-          await axios.delete(`http://localhost:8000/api/cart/${userId}/${productId}`);
+          await axios.delete(`https://api.sieuthi404.io.vn/api/cart/${userId}/${productId}`);
           products.value = products.value.filter(p => p.id !== productId);
           Swal.fire({
             toast: true, position: 'top-end', icon: 'success',
@@ -491,7 +491,7 @@ localStorage.setItem('provinces', JSON.stringify(provinces.value));
 
     const fetchMyCoupons = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/api/my-coupons');
+        const response = await axios.get('https://api.sieuthi404.io.vn/api/my-coupons');
         myCoupons.value = response.data;
       } catch (error) {
         console.error("Lỗi khi tải mã giảm giá của tôi:", error);
@@ -519,7 +519,7 @@ localStorage.setItem('provinces', JSON.stringify(provinces.value));
       }));
 
       try {
-        const response = await axios.post('http://localhost:8000/api/coupon/apply', {
+        const response = await axios.post('https://api.sieuthi404.io.vn/api/coupon/apply', {
           ma_giam_gia: couponCode.value,
           cart_items: cartItemsPayload
         });
@@ -546,7 +546,7 @@ localStorage.setItem('provinces', JSON.stringify(provinces.value));
                 const user = JSON.parse(localStorage.getItem("user") || "null");
                 const userId = user?.nguoi_dung_id || user?.id;
                 if (userId) {
-                    axios.delete(`http://localhost:8000/api/cart/clear/${userId}`)
+                    axios.delete(`https://api.sieuthi404.io.vn/api/cart/clear/${userId}`)
                         .catch(err => console.error("Lỗi khi xóa giỏ hàng:", err));
                 }
                 products.value = [];
@@ -600,7 +600,7 @@ localStorage.setItem('provinces', JSON.stringify(provinces.value));
             thanh_tien: p.total_item_price ?? p.price * p.quantity
           }));
           
-          const { data } = await axios.post('http://localhost:8000/api/create-vnpay-payment', {
+          const { data } = await axios.post('https://api.sieuthi404.io.vn/api/create-vnpay-payment', {
             ...payload, 
             cart: cartPayload,
             total: totalAmount.value,
@@ -613,7 +613,7 @@ localStorage.setItem('provinces', JSON.stringify(provinces.value));
             throw new Error("Không lấy được URL thanh toán");
           }
         } else if (paymentMethod.value === 'cod') {
-          const response = await axios.post('http://localhost:8000/api/orders/store', payload, {
+          const response = await axios.post('https://api.sieuthi404.io.vn/api/orders/store', payload, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem('token')}`
             }
@@ -689,8 +689,8 @@ localStorage.setItem('provinces', JSON.stringify(provinces.value));
 
         try {
             const [cartRes, addressRes] = await Promise.all([
-                axios.get(`http://localhost:8000/api/cart/${userId}`),
-                axios.get(`http://localhost:8000/api/dia_chi/nguoi_dung/${userId}`),
+                axios.get(`https://api.sieuthi404.io.vn/api/cart/${userId}`),
+                axios.get(`https://api.sieuthi404.io.vn/api/dia_chi/nguoi_dung/${userId}`),
                 fetchMyCoupons(),
             ]);
 

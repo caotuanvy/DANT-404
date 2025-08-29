@@ -17,7 +17,7 @@
       <div class="info-value">
         <img
           v-if="danhmuc.hinh_anh"
-          :src="danhmuc.hinh_anh.startsWith('http') ? danhmuc.hinh_anh : `http://localhost:8000/storage/${danhmuc.hinh_anh}`"
+          :src="danhmuc.hinh_anh.startsWith('http') ? danhmuc.hinh_anh : `https://api.sieuthi404.io.vn/storage/${danhmuc.hinh_anh}`"
           alt="Hình ảnh"
           class="img-preview"
         />
@@ -48,7 +48,7 @@ const route = useRoute();
 
 const fetchDanhMuc = async () => {
   try {
-    const res = await axios.get(`http://localhost:8000/api/xemdanhmuc-admin/${route.params.id}`, {
+    const res = await axios.get(`https://api.sieuthi404.io.vn/api/xemdanhmuc-admin/${route.params.id}`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },

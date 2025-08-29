@@ -34,7 +34,7 @@
         </div>
         <img
           class="news-image-main"
-          :src="news.hinh_anh ? (news.hinh_anh.startsWith('http') ? news.hinh_anh : `http://localhost:8000/storage/${news.hinh_anh}`) : 'https://via.placeholder.com/800x450/f0f0f0/888888?text=Image+Not+Found'"
+          :src="news.hinh_anh ? (news.hinh_anh.startsWith('http') ? news.hinh_anh : `https://api.sieuthi404.io.vn/storage/${news.hinh_anh}`) : 'https://via.placeholder.com/800x450/f0f0f0/888888?text=Image+Not+Found'"
           alt="Hình ảnh bài viết"
           @error="handleImageError"
         >
@@ -86,7 +86,7 @@
           >
             <div class="vohop-post-image">
               <img
-                :src="item.hinh_anh ? (item.hinh_anh.startsWith('http') ? item.hinh_anh : `http://localhost:8000/storage/${item.hinh_anh}`) : 'https://via.placeholder.com/60x60'"
+                :src="item.hinh_anh ? (item.hinh_anh.startsWith('http') ? item.hinh_anh : `https://api.sieuthi404.io.vn/storage/${item.hinh_anh}`) : 'https://via.placeholder.com/60x60'"
                 alt=""
                 @error="handleImageError"
               />
@@ -117,7 +117,7 @@
           >
             <div class="vohop-post-image">
               <img
-                :src="item.hinh_anh ? (item.hinh_anh.startsWith('http') ? item.hinh_anh : `http://localhost:8000/storage/${item.hinh_anh}`) : 'https://via.placeholder.com/60x60'"
+                :src="item.hinh_anh ? (item.hinh_anh.startsWith('http') ? item.hinh_anh : `https://api.sieuthi404.io.vn/storage/${item.hinh_anh}`) : 'https://via.placeholder.com/60x60'"
                 alt=""
                 @error="handleImageError"
               />
@@ -175,7 +175,7 @@ async function fetchNewsDetails(slug) {
   hasLiked.value = false;
 
   try {
-    const newsResponse = await axios.get(`http://localhost:8000/api/tintuc-cong-khai/slug/${slug}`)
+    const newsResponse = await axios.get(`https://api.sieuthi404.io.vn/api/tintuc-cong-khai/slug/${slug}`)
     news.value = newsResponse.data;
 
     // Kiểm tra trạng thái đã thích từ LocalStorage
@@ -208,7 +208,7 @@ async function fetchNewsDetails(slug) {
 
 async function fetchRelatedNews(currentNewsId, categoryId) {
   try {
-    const response = await axios.get(`http://localhost:8000/api/tin-lien-quan/${currentNewsId}/${categoryId}`);
+    const response = await axios.get(`https://api.sieuthi404.io.vn/api/tin-lien-quan/${currentNewsId}/${categoryId}`);
     relatedNews.value = response.data;
   } catch (err) {
     console.error("Lỗi khi tải tin liên quan:", err);
@@ -222,7 +222,7 @@ function goToNewsDetail(newsSlug) {
 
 async function fetchImportantNews() {
   try {
-    const response = await axios.get('http://localhost:8000/api/tin-tuc-quan-trong'); // <-- Hãy kiểm tra kỹ URL này
+    const response = await axios.get('https://api.sieuthi404.io.vn/api/tin-tuc-quan-trong'); // <-- Hãy kiểm tra kỹ URL này
     importantNews.value = response.data;
   } catch (err) {
     console.error("Lỗi khi tải tin tức quan trọng:", err);
@@ -275,7 +275,7 @@ async function handleLike() {
 
   try {
     // Gọi API tăng lượt thích
-    const response = await axios.post(`http://localhost:8000/api/tin-tuc/tang-like/${news.value.id}`);
+    const response = await axios.post(`https://api.sieuthi404.io.vn/api/tin-tuc/tang-like/${news.value.id}`);
     
     if (response.data) {
       // Cập nhật trạng thái và lưu vào LocalStorage

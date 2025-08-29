@@ -178,7 +178,7 @@ const childCategoryKeyword = ref('');
 const minProductPrice = ref(null);
 const maxProductPrice = ref(null);
 
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = 'https://api.sieuthi404.io.vn/api';
 
 const fetchProducts = async (categoryId, page = 1) => {
   loading.value = true;

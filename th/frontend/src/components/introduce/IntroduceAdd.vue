@@ -29,7 +29,7 @@ const tenTrang = ref('')
 
 const addPage = async () => {
   try {
-    await axios.post('http://localhost:8000/api/admin/trang-tinh', {
+    await axios.post('https://api.sieuthi404.io.vn/api/admin/trang-tinh', {
       Tieu_de_trang: tieuDe.value,
       Ten_trang: tenTrang.value
     }, {

@@ -32,7 +32,7 @@
             <td data-label="Hình ảnh">
               <img
                 v-if="tintuc.hinh_anh"
-                :src="tintuc.hinh_anh.startsWith('http') ? tintuc.hinh_anh : `http://localhost:8000/storage/${tintuc.hinh_anh}`"
+                :src="tintuc.hinh_anh.startsWith('http') ? tintuc.hinh_anh : `https://api.sieuthi404.io.vn/storage/${tintuc.hinh_anh}`"
                 alt="Hình ảnh"
                 class="tintuc-thumbnail"
               />
@@ -84,7 +84,7 @@ const getTintucs = async () => {
   loading.value = true;
   errorMessage.value = '';
   try {
-    const res = await axios.get('http://localhost:8000/api/tintuc', {
+    const res = await axios.get('https://api.sieuthi404.io.vn/api/tintuc', {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
@@ -102,7 +102,7 @@ const deleteTintuc = async (id) => {
   if (!confirm('Bạn có chắc muốn xóa tin tức này không?')) return;
 
   try {
-    await axios.delete(`http://localhost:8000/api/tintuc/${id}`, {
+    await axios.delete(`https://api.sieuthi404.io.vn/api/tintuc/${id}`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
@@ -117,7 +117,7 @@ const deleteTintuc = async (id) => {
 const toggleNoiBat = async (tintuc) => {
   const newNoiBat = tintuc.noi_bat == 1 ? 0 : 1;
   try {
-    await axios.put(`http://localhost:8000/api/tintuc/${tintuc.id}`, {
+    await axios.put(`https://api.sieuthi404.io.vn/api/tintuc/${tintuc.id}`, {
       noi_bat: newNoiBat
     }, {
       headers: {
@@ -133,7 +133,7 @@ const toggleNoiBat = async (tintuc) => {
 const toggleDuyet = async (tintuc) => {
   const newDuyet = tintuc.duyet_tin_tuc == 1 ? 0 : 1;
   try {
-    await axios.put(`http://localhost:8000/api/tintuc/${tintuc.id}`, {
+    await axios.put(`https://api.sieuthi404.io.vn/api/tintuc/${tintuc.id}`, {
       duyet_tin_tuc: newDuyet
     }, {
       headers: {
