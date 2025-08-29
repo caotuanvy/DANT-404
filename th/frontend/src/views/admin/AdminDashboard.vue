@@ -181,19 +181,20 @@
             </tr>
           </tbody>
           <tfoot>
-            <tr>
-              <th scope="col" class="table-footer-header">
-                Tổng cộng
-              </th>
-              <th scope="col" class="table-footer-value">
-                {{ formatCurrency(detailedTableData.reduce((sum, item) => sum + (item.revenue || 0), 0)) }}
-              </th>
-              <th scope="col" class="table-footer-value">
-                {{ detailedTableData.reduce((sum, item) => sum + (item.orders || 0), 0) }}
-              </th>
-              <th colspan="2"></th>
-            </tr>
-          </tfoot>
+  <tr>
+    <th scope="col" class="table-footer-header">
+      Tổng cộng
+    </th>
+    <th scope="col" class="table-footer-value">
+      {{ formatCurrency(detailedTableData.reduce((sum, item) => sum + Number(item.revenue || 0), 0)) }}
+    </th>
+    <th scope="col" class="table-footer-value">
+      {{ detailedTableData.reduce((sum, item) => sum + Number(item.orders || 0), 0) }}
+    </th>
+    <th colspan="2"></th>
+  </tr>
+</tfoot>
+
         </table>
       </div>
     </div>
