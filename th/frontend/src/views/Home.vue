@@ -3,8 +3,6 @@
     <ImageSlider />
     <DiscountView />
     <!-- <IntroduceView /> -->
-
-   
     <BestSellProduct />
      <Category/>
     <EightProductGrid />

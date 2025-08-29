@@ -142,9 +142,9 @@
         <div class="footer-section footer-contact">
           <h3>LIÊN HỆ</h3>
           <ul>
-            <li>Facebook: <a href="#">anpham</a></li>
-            <li>Tik Tok: <a href="#">anpham</a></li>
-            <li>Website: <a href="#">anpham</a></li>
+            <li>Facebook: <a href="#">FoFMarket</a></li>
+            <li>Tik Tok: <a href="#">FoFMarket</a></li>
+            <li>Website: <a href="#">FoFMarket</a></li>
           </ul>
         </div>
       </div>
@@ -342,7 +342,7 @@ watch(showLoginModal, (newVal) => {
 /* Global styles (cơ bản) */
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
+  font-family: "Lora", serif;
   background-color: #ffffff;
   color: #333;
 }
@@ -419,7 +419,7 @@ body {
 }
 
 .top-bar .search-box button:hover {
-  background-color: #00a8e1;
+  background-color: #33ccff;
 }
 
 .top-bar .header-right {
@@ -804,7 +804,7 @@ body {
 }
 
 .user-info strong {
-  color: #007bff;
+  color: #33ccff;
   font-weight: bold;
 }
 
@@ -857,7 +857,7 @@ body {
 }
 
 .header-right .user-info span strong {
-  color: #007bff;
+  color: #33ccff;
   font-weight: bold;
 }
 
@@ -865,6 +865,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 150vh;
+  font-family: "Lora", serif !important;
 }
 
 .page-content {

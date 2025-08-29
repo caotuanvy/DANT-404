@@ -168,12 +168,12 @@
                 <span class="username">{{ comment.nguoi_dung.ho_ten || 'Người dùng' }}</span>
                 <span class="timestamp">{{ timeAgo(comment.ngay_binh_luan) }}</span>
                 <div v-if="comment.danh_gia > 0" class="user-rating-display">
-                  <i 
+                <i 
                     v-for="star in 5"
                     :key="star"
                     class="fa-solid fa-star"
                     :class="{ 'filled': star <= comment.danh_gia }"
-                  ></i>
+                ></i>
                 </div>
               </div>
             </div>
@@ -596,7 +596,7 @@ async function submitComment() {
             san_pham_id: newComment.value.san_pham_id,
             nguoi_dung_id: newComment.value.nguoi_dung_id,
             noidung: finalContent,
-            danh_gia: newComment.value.danh_gia,
+            danh_gia: newComment.value.danh_gia > 0 ? newComment.value.danh_gia : null,
         };
         await axios.post(`http://localhost:8000/api/comments/add`, payload, {
             headers: {
