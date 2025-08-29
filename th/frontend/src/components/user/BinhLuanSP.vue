@@ -334,7 +334,7 @@ async function getProductIdFromSlug(slug) {
     try {
         if (!slug) return null;
         const response = await axios.get(`http://localhost:8000/api/san-pham-cong-khai/slug/${slug}`);
-        return response.data.product_id;
+        return response.data.san_pham_id;
     } catch (error) {
         console.error("Lỗi khi lấy ID sản phẩm từ slug:", error);
         return null;
