@@ -124,21 +124,19 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
-import Swal from 'sweetalert2'; // import SweetAlert2
-import BinhLuanSP from './BinhLuanSP.vue'; // Import component for product reviews
+import Swal from 'sweetalert2';
+import BinhLuanSP from './BinhLuanSP.vue';
 
 // --- STATE ---
 const product = ref(null);
 const selectedImage = ref(null);
 const quantity = ref(1);
 const route = useRoute();
-// Xóa router, không cần nữa
 const selectedSize = ref(null);
 const selectedColor = ref(null);
 const showFullDescription = ref(false);
-// Xóa showLoginWarning, không cần nữa
-// --- COMPUTED PROPERTIES ---
 
+// --- COMPUTED PROPERTIES ---
 const uniqueSizes = computed(() => {
   if (!product.value?.variants) return [];
   const sizes = product.value.variants.map(v => v.kich_thuoc).filter(Boolean);
@@ -155,11 +153,9 @@ const selectedVariant = computed(() => {
   if (!product.value?.variants) {
     return null;
   }
-  // TRƯỜNG HỢP 1: Sản phẩm chỉ có 1 biến thể (không có size/color để chọn)
   if (product.value.variants.length === 1) {
     return product.value.variants[0];
   }
-  // TRƯỜG HỢP 2: Sản phẩm có nhiều biến thể, yêu cầu chọn đủ
   if (uniqueSizes.value.length > 0 && !selectedSize.value) {
     return null;
   }
@@ -185,7 +181,6 @@ const canAddToCart = computed(() => {
 });
 
 // --- METHODS ---
-
 const formatCurrency = (value) => {
   if (isNaN(value)) return 'N/A';
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
@@ -245,65 +240,89 @@ const decreaseQuantity = () => {
 const addToCart = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Bạn chưa đăng nhập',
-            text: 'Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.',
-            confirmButtonColor: '#0d6efd',
-            showCancelButton: true,
-            cancelButtonText: 'Đóng'
-        });
-        return;
+      Swal.fire({
+        icon: 'warning',
+        title: 'Bạn chưa đăng nhập',
+        text: 'Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.',
+        confirmButtonColor: '#0d6efd',
+        showCancelButton: true,
+        cancelButtonText: 'Đóng'
+      });
+      return;
     }
     if (!selectedVariant.value) {
-        Swal.fire({
-            icon: 'info',
-            title: 'Thiếu thông tin',
-            text: 'Vui lòng chọn đầy đủ thuộc tính của sản phẩm.',
-            confirmButtonColor: '#0d6efd'
-        });
-        return;
+      Swal.fire({
+        icon: 'info',
+        title: 'Thiếu thông tin',
+        text: 'Vui lòng chọn đầy đủ thuộc tính của sản phẩm.',
+        confirmButtonColor: '#0d6efd'
+      });
+      return;
     }
     if (quantity.value > selectedVariant.value.so_luong_ton_kho) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Số lượng vượt quá tồn kho',
-            text: 'Số lượng yêu cầu vượt quá số lượng tồn kho.',
-            confirmButtonColor: '#0d6efd'
-        });
-        return;
+      Swal.fire({
+        icon: 'error',
+        title: 'Số lượng vượt quá tồn kho',
+        text: 'Số lượng yêu cầu vượt quá số lượng tồn kho.',
+        confirmButtonColor: '#0d6efd'
+      });
+      return;
     }
     try {
-        const payload = {
-          san_pham_bien_the_id: selectedVariant.value.bien_the_id,
-          quantity: quantity.value,
-        };
-        const response = await axios.post('/cart/add', payload, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        Swal.fire({
-            icon: 'success',
-            title: 'Thành công',
-            text: response.data.message || 'Đã thêm sản phẩm vào giỏ hàng!',
-            confirmButtonColor: '#0d6efd'
-        });
+      const payload = {
+        san_pham_bien_the_id: selectedVariant.value.bien_the_id,
+        quantity: quantity.value,
+      };
+      const response = await axios.post('/cart/add', payload, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công',
+        text: response.data.message || 'Đã thêm sản phẩm vào giỏ hàng!',
+        confirmButtonColor: '#0d6efd'
+      });
     } catch (error) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Lỗi',
-            text: (error.response && error.response.data && error.response.data.message)
-                ? error.response.data.message
-                : 'Có lỗi xảy ra, vui lòng thử lại sau.',
-            confirmButtonColor: '#0d6efd'
-        });
-        console.error("Lỗi khi thêm vào giỏ hàng:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: (error.response && error.response.data && error.response.data.message)
+          ? error.response.data.message
+          : 'Có lỗi xảy ra, vui lòng thử lại sau.',
+        confirmButtonColor: '#0d6efd'
+      });
+      console.error("Lỗi khi thêm vào giỏ hàng:", error);
     }
 };
 
-// --- WATCHERS & LIFECYCLE ---
+const fetchProductData = async (slug) => {
+  try {
+    const response = await axios.get(`/user/${slug}`);
+    product.value = response.data;
+    if (product.value.images?.length > 0) {
+      selectedImage.value = product.value.images[0];
+    }
+    // Tự động chọn nếu có lựa chọn
+    if (uniqueSizes.value.length > 0) {
+      selectedSize.value = uniqueSizes.value[0];
+    } else {
+      selectedSize.value = null;
+    }
+    if (uniqueColors.value.length > 0) {
+      selectedColor.value = uniqueColors.value[0];
+    } else {
+      selectedColor.value = null;
+    }
+    quantity.value = 1;
+  } catch (error) {
+    console.error("Lỗi khi tải dữ liệu sản phẩm:", error);
+    product.value = null;
+  }
+};
 
+// --- WATCHERS & LIFECYCLE ---
 watch(selectedVariant, (newVariant) => {
   if (newVariant && quantity.value > newVariant.so_luong_ton_kho) {
     quantity.value = newVariant.so_luong_ton_kho > 0 ? 1 : 0;
@@ -314,27 +333,12 @@ watch(selectedVariant, (newVariant) => {
   }
 });
 
-onMounted(async () => {
-  const productSlug = route.params.slug;
-  try {
-    const response = await axios.get(`/user/${productSlug}`);
-    product.value = response.data;
-
-    if (product.value.images?.length > 0) {
-      selectedImage.value = product.value.images[0];
-    }
-    // Tự động chọn nếu có lựa chọn
-    if (uniqueSizes.value.length > 0) {
-      selectSize(uniqueSizes.value[0]);
-    }
-    if (uniqueColors.value.length > 0) {
-      selectColor(uniqueColors.value[0]);
-    }
-  } catch (error) {
-    console.error("Lỗi khi tải dữ liệu sản phẩm:", error);
-    product.value = null;
+// Thêm watcher để theo dõi sự thay đổi của slug trên URL
+watch(() => route.params.slug, async (newSlug) => {
+  if (newSlug) {
+    await fetchProductData(newSlug);
   }
-});
+}, { immediate: true }); // `immediate: true` để chạy watcher ngay lập tức khi component được mount
 </script>
 <style scoped>
 /* === General & Layout === */

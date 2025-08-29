@@ -254,7 +254,7 @@ Route::patch('child-categories/{subcategoryId}/detach', [ChildCategoryController
         Route::get('/my-coupons', 'myCoupons');
     });
 
-
+Route::get('/products-list', [ProductController::class, 'getList']);
     Route::post('/giam-gia/{giamGia}/claim', [GiamGiaController::class, 'claim'])->middleware('auth:sanctum'); // Chỉ hỗ trợ POST
     Route::get('/my-vouchers', [GiamGiaController::class, 'myVouchers'])->middleware('auth:sanctum'); // Hoặc 'auth:sanctum'
 
