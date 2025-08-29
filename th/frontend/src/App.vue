@@ -329,7 +329,7 @@ watch(showLoginModal, (newVal) => {
 /* Global styles (cơ bản) */
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
+  font-family: "Lora", serif;
   background-color: #ffffff;
   color: #333;
 }
@@ -380,7 +380,7 @@ body {
   max-width: 600px;
   border-radius: 20px;
   overflow: hidden;
-  border: 1px solid #33ccff;
+  border: 1px solid #007bff;
 }
 
 .top-bar .search-box input {
@@ -396,7 +396,7 @@ body {
 }
 
 .top-bar .search-box button {
-  background-color: #33ccff;
+  background-color: #007bff;
   color: white;
   border: none;
   padding: 8px 16px;
@@ -406,7 +406,7 @@ body {
 }
 
 .top-bar .search-box button:hover {
-  background-color: #00a8e1;
+  background-color: #036cdc;
 }
 
 .top-bar .header-right {
@@ -434,7 +434,7 @@ body {
 .top-bar .cart-info:hover,
 .top-bar .notification:hover,
 .top-bar .country-selector:hover {
-  color: #33ccff;
+  color: #046fe1;
 }
 
 .top-bar .cart-info {
@@ -457,7 +457,7 @@ body {
 }
 
 .top-bar .cart-info:hover {
-  color: #33ccff;
+  color: #036bda;
 }
 
 .top-bar .country-selector img.flag {
@@ -470,7 +470,7 @@ body {
 
 /* --- Main Navigation (Menu chính) --- */
 .main-nav {
-  background-color: #33ccff;
+  background-color: #007bff;
   padding: 10px 0;
   color: white;
 }
@@ -629,7 +629,7 @@ body {
     left: 0;
     bottom: 0;
     z-index: 1000;
-    background-color: #33ccff;
+    background-color: #0173ed;
     padding: 60px 20px 20px;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
     transform: translateX(-100%);
@@ -787,7 +787,7 @@ body {
 }
 
 .header-right .user-info:hover {
-  color: #33ccff;
+  color: #046ee0;
 }
 
 .user-info strong {
@@ -831,7 +831,7 @@ body {
 
 .user-dropdown-menu ul li:hover {
   background-color: #f0f0f0;
-  color: #33ccff;
+  color: #0471e5;
 }
 
 .user-info .fa-caret-down {
@@ -852,6 +852,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 150vh;
+  font-family: "Lora", serif !important;
 }
 
 .page-content {
