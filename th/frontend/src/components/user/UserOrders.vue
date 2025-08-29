@@ -351,17 +351,17 @@ hr {
 }
 
 .order-status-tabs button:hover {
-  background-color: #cfe2ff;
+  background-color: #d4f4ff;
   border-color: #a7d9ff;
-  color: #0056b3;
+  color: #33ccff;
   transform: translateY(-3px);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .order-status-tabs button.active {
-  background-color: #007bff;
+  background-color: #33ccff;
   color: white;
-  border-color: #007bff;
+  border-color: #33ccff;
   font-weight: bold;
   box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
   transform: translateY(-2px);
