@@ -172,7 +172,7 @@
 </template>
 <script setup>
 import { ref, computed, onMounted, watch, onUnmounted } from "vue";
-import { useRouter, useRoute } from "vue-router"; // Import useRoute
+import { useRouter } from "vue-router";
 import AuthModal from "./components/user/AuthModal.vue";
 import Swal from "sweetalert2";
 import axios from "axios";
@@ -180,7 +180,6 @@ import ChatWidget from './components/user/ChatWidget.vue';
 import AdminChatWidget from './components/user/AdminChatWidget.vue';
 
 const router = useRouter();
-const route = useRoute(); // Sử dụng useRoute để lấy thông tin route hiện tại
 
 const showLoginModal = ref(false);
 const isLoggedIn = ref(false);
@@ -292,42 +291,33 @@ const search = () => {
   clearTimeout(timer);
   if (q.value.length < 2) {
     results.value = [];
-    showSuggestions.value = false;
+    showSuggestions.value = false; // Ẩn gợi ý nếu query quá ngắn
     return;
   }
   timer = setTimeout(async () => {
     try {
       const res = await axios.get(`http://localhost:8000/api/products?search=${q.value}`);
       results.value = res.data;
-      showSuggestions.value = true;
+      showSuggestions.value = true; // Hiển thị gợi ý nếu có kết quả
     } catch (err) {
       console.error("Search error:", err);
       results.value = [];
-      showSuggestions.value = false;
+      showSuggestions.value = false; // Ẩn gợi ý nếu có lỗi
     }
   }, 300);
 };
 
 const go = (slug) => {
-  // Lấy slug của sản phẩm hiện tại
-  const currentSlug = route.params.slug;
-  const newPath = `/san-pham/${slug}`;
-
-  // Kiểm tra nếu đường dẫn mới giống đường dẫn cũ, buộc tải lại trang
-  if (route.path === newPath || (route.name === 'ProductDetail' && currentSlug === slug)) {
-    window.location.reload();
-  } else {
-    router.push(newPath);
-  }
-
   results.value = [];
   q.value = "";
-  showSuggestions.value = false;
+  showSuggestions.value = false; // Ẩn gợi ý sau khi chọn
+  // Đã sửa lại đường dẫn theo đúng định dạng URL
+  router.push(`/san-pham/${slug}`);
 };
 
 const handleSearch = () => {
   if (q.value.trim() !== '') {
-    showSuggestions.value = false;
+    showSuggestions.value = false; // Ẩn gợi ý khi thực hiện tìm kiếm chính thức
     router.push({ path: '/tim-kiem', query: { q: q.value } });
   } else {
     Swal.fire({
@@ -357,12 +347,14 @@ const toggleUserMenu = () => {
 
 const closeUserMenuOnClickOutside = (event) => {
   const userMenuWrapper = document.querySelector(".user-menu-wrapper");
-  const searchBoxWrapper = document.querySelector(".search-box-wrapper");
+  const searchBoxWrapper = document.querySelector(".search-box-wrapper"); // Lấy search box wrapper
   
+  // Đóng user menu nếu click ra ngoài user menu
   if (userMenuWrapper && !userMenuWrapper.contains(event.target) && showUserMenu.value) {
     showUserMenu.value = false;
   }
 
+  // Đóng gợi ý tìm kiếm nếu click ra ngoài search box wrapper
   if (searchBoxWrapper && !searchBoxWrapper.contains(event.target) && showSuggestions.value) {
     showSuggestions.value = false;
   }
@@ -409,7 +401,7 @@ watch(showLoginModal, (newVal) => {
   }
 });
 </script>
-<style>
+<style scoped>
 /* Global styles (cơ bản) */
 body {
   margin: 0;
