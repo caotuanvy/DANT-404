@@ -564,7 +564,6 @@ const handleGoogleCredentialResponse = async (response) => {
     }
 };
 
-
 // Facebook Login
 const waitForFacebookSdk = () => {
     return new Promise((resolve, reject) => {
@@ -1314,4 +1313,101 @@ body {
 .form-group input.is-invalid {
     border-color: #dc3545 !important;
 }
+@media (max-width: 1024px) {
+  .login-modal-content {
+    max-width: 760px;
+  }
+  .login-right {
+    padding: 20px;
+  }
+}
+
+/* ===== Mobile (<= 768px) ===== */
+@media (max-width: 768px) {
+  .login-modal-content {
+    flex-direction: column;
+    width: 100%;
+    max-width: 95%;
+    height: auto;
+    max-height: 92vh;
+    border-radius: 12px;
+  }
+
+  /* Ẩn ảnh hoàn toàn trên mobile */
+  .login-left {
+    display: none;
+  }
+
+  .login-right {
+    flex: 1;
+    padding: 18px;
+    max-height: 92vh;
+  }
+
+  .modal-header h2 {
+    font-size: 20px;
+  }
+  .modal-description {
+    font-size: 13px;
+  }
+
+  .social-login-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .social-btn {
+    width: 100%;
+    justify-content: center;
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  .form-group {
+    margin-bottom: 12px;
+  }
+
+  .login-btn {
+    width: 100%;
+    font-size: 15px;
+    padding: 12px;
+  }
+
+  .close-button {
+    top: 8px;
+    right: 10px;
+    font-size: 26px;
+    line-height: 1;
+    padding: 4px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.6);
+  }
+}
+
+/* ===== Small Mobile (<= 480px) ===== */
+@media (max-width: 480px) {
+  .login-right {
+    padding: 14px;
+  }
+
+  .modal-header h2 {
+    font-size: 18px;
+  }
+  .modal-description {
+    font-size: 12px;
+  }
+
+  .divider {
+    font-size: 11px;
+    margin: 6px 0;
+  }
+  .form-footer {
+    font-size: 12px;
+    gap: 4px;
+  }
+
+  .close-button {
+    font-size: 24px;
+  }
+}
+
 </style>
