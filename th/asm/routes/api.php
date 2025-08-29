@@ -160,6 +160,7 @@ Route::post('/Notifications/read-all', [NotificationsController::class, 'markAll
 Route::get('/orders', [OrderController::class, 'index']);
 Route::patch('/orders/{order}/payment', [OrderController::class, 'confirmPayment']);
 Route::get('/orders/status-counts', [OrderController::class, 'getStatusCounts'])->middleware('auth:sanctum');
+Route::get('/giam-gia-home', [GiamGiaController::class, 'getForHomepage']);
 
 //payment methods
 Route::get('/payment-methods', [PaymentMethodController::class, 'index']);// Slide Show (admin)
@@ -254,7 +255,6 @@ Route::patch('child-categories/{subcategoryId}/detach', [ChildCategoryController
     });
 
 
-    Route::get('/giam-gia-home', [GiamGiaController::class, 'getForHomepage']);
     Route::post('/giam-gia/{giamGia}/claim', [GiamGiaController::class, 'claim'])->middleware('auth:sanctum'); // Chỉ hỗ trợ POST
     Route::get('/my-vouchers', [GiamGiaController::class, 'myVouchers'])->middleware('auth:sanctum'); // Hoặc 'auth:sanctum'
 

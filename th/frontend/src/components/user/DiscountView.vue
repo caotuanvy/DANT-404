@@ -62,29 +62,26 @@
 
         <div class="discount-app-card-actions">
           <div v-if="!isExpired(discount.ngay_ket_thuc)">
-            <button
-              v-if="isLoggedIn"
-              @click="claimVoucher(discount)"
-              :disabled="getClaimStatus(discount.giam_gia_id) !== 'idle'"
-              class="discount-app-apply-button"
-              :class="{
-                'is-loading': getClaimStatus(discount.giam_gia_id) === 'loading',
-                'is-success': getClaimStatus(discount.giam_gia_id) === 'success'
-              }"
-            >
+            <button v-if="isLoggedIn"
+                    @click="claimVoucher(discount)"
+                    :disabled="getClaimStatus(discount.giam_gia_id) !== 'idle'"
+                    class="discount-app-apply-button"
+                    :class="{ 
+                      'is-loading': getClaimStatus(discount.giam_gia_id) === 'loading',
+                      'is-success': getClaimStatus(discount.giam_gia_id) === 'success' 
+                    }">
               <span v-if="getClaimStatus(discount.giam_gia_id) === 'idle'">Lưu mã</span>
               <span v-if="getClaimStatus(discount.giam_gia_id) === 'loading'">Đang lưu...</span>
               <span v-if="getClaimStatus(discount.giam_gia_id) === 'success'">Đã lưu</span>
               <span v-if="getClaimStatus(discount.giam_gia_id) === 'error'">Thử lại</span>
             </button>
-            <button
-              v-else
-              @click="Swal.fire({icon: 'info', title: 'Vui lòng đăng nhập để lưu mã giảm giá.', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false})"
-              class="discount-app-apply-button"
-            >
-              Đăng nhập để lưu mã
+            <button v-else
+                    @click="copyCode(discount.ma_giam_gia)"
+                    class="discount-app-apply-button">
+              {{ buttonText[discount.giam_gia_id] || 'Sao chép' }}
             </button>
           </div>
+          
           <button v-else disabled class="discount-app-expired-button">
             Hết hạn
           </button>
@@ -137,13 +134,14 @@
 <script setup>
 import { ref, onMounted, reactive } from 'vue';
 import axios from 'axios';
+// Thêm import SweetAlert2
 import Swal from 'sweetalert2';
 
 // ==================== STATE MANAGEMENT ====================
 const discounts = ref([]);
 const loading = ref(true);
 const buttonText = ref({});
-const isLoggedIn = ref(false); // Sửa thành false mặc định
+const isLoggedIn = ref(true); 
 const authToken = ref(localStorage.getItem('token') || '');
 const claimStatuses = reactive({}); 
 const getClaimStatus = (id) => claimStatuses[id] || 'idle';
@@ -154,8 +152,6 @@ const modalDiscount = ref(null);
 
 // ==================== LIFECYCLE HOOKS ====================
 onMounted(() => {
-  // Kiểm tra đăng nhập khi mount
-  isLoggedIn.value = !!localStorage.getItem('token');
   fetchDiscounts();
 });
 
