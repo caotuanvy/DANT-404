@@ -31,14 +31,7 @@ Quận 12, Hồ Chí Minh, Việt Nam</span>
     <div class="contact-form-section">
       <h2 class="title">Gửi Tin Nhắn</h2>
       <form @submit.prevent="submitForm">
-        <div class="form-group">
-          <label for="name">Họ và Tên</label>
-          <input type="text" id="name" v-model="form.name" required placeholder="Nhập họ và tên của bạn">
-        </div>
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" v-model="form.email" required placeholder="Nhập địa chỉ email của bạn">
-        </div>
+        
         <div class="form-group">
           <label for="subject">Tiêu đề</label>
           <input type="text" id="subject" v-model="form.subject" required placeholder="Tiêu đề của tin nhắn">
@@ -80,7 +73,7 @@ const submitForm = async () => {
   statusType.value = '';
 
   try {
-    const response = await axios.post('https://api.sieuthi404.io.vn/send-email', form.value);
+    const response = await axios.post('https://api.sieuthi404.io.vn/send-mail.php', form.value);
     
     statusMessage.value = response.data.message;
     statusType.value = 'success';
