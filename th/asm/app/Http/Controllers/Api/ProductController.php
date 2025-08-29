@@ -20,6 +20,7 @@ use PhpParser\Node\Scalar\Float_;
 use App\Models\Order;
 use App\Models\User;
 use App\Models\Notifications;
+use App\Models\Partner;
 
 class ProductController extends Controller
 {
@@ -151,6 +152,7 @@ class ProductController extends Controller
             'khuyen_mai'            => 'nullable|numeric|min:0|max:100',
             'images'                => 'nullable|array',
             'images.*'              => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'partner_id'               => 'nullable|string|max:255',
 
 
             'variants'              => 'required|array|min:1',
@@ -164,6 +166,7 @@ class ProductController extends Controller
             'variants.*.chieu_rong'         => 'nullable|numeric|min:0',
             'variants.*.chieu_cao'          => 'nullable|numeric|min:0',
             'variants.*.hinh_anh'           => 'nullable|string|max:255',
+
         ]);
 
         // Bắt đầu transaction để đảm bảo toàn vẹn dữ liệu
@@ -185,6 +188,7 @@ class ProductController extends Controller
                 'Mo_ta_seo'      => $validatedData['Mo_ta_seo'] ?? null,
                 'ngay_bat_dau_giam_gia' => $validatedData['ngay_bat_dau_giam_gia'] ?? null,
                 'ngay_ket_thuc_giam_gia'=> $validatedData['ngay_ket_thuc_giam_gia'] ?? null,
+                'partner_id'            => $validatedData['partner_id'] ?? null,
 
             ]);
 
@@ -201,6 +205,7 @@ class ProductController extends Controller
                     'chieu_dai'         => $variantData['chieu_dai'] ?? null,
                     'chieu_rong'        => $variantData['chieu_rong'] ?? null,
                     'chieu_cao'         => $variantData['chieu_cao'] ?? null,
+
 
                 ]);
             }
@@ -264,6 +269,7 @@ public function update(Request $request, $id)
             'ten_san_pham'          => 'sometimes|required|string|max:255',
             'ten_danh_muc_id'       => 'nullable|integer|exists:danh_muc_san_pham,category_id',
             'mo_ta'                 => 'nullable|string',
+            'partner_id'            => 'nullable|integer|exists:doitac,id',
             'noi_bat'               => 'sometimes|boolean',
             'trang_thai'            => 'sometimes|boolean',
             'khuyen_mai'            => 'nullable|numeric|min:0|max:100',

@@ -30,13 +30,14 @@ use App\Http\Controllers\Api\GiamGiaController;
 use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ChatController;
+use App\Http\Controllers\Api\PartnerController;
 
 Route::get('/social-links/active', [SocialLinkController::class, 'getActiveLinks']);
 Route::patch('/admin/social-links/{id}/status', [SocialLinkController::class, 'updateStatus']);
 Route::apiResource('/admin/social-links', SocialLinkController::class);
 Route::get('/orders/{id}', [OrderController::class, 'show']);
 // Route::post('/create-vnpay-payment', [PaymentController::class, 'createPayment']);
-
+Route::get('/partners/active', [PartnerController::class, 'getActivePartners']);
 Route::get('/payment/vnpay/return', [PaymentController::class, 'vnpayReturn'])->name('vnpay.return');
 
 Route::put('/products/{productId}/variants/{id}', [SanPhamBienTheController::class, 'update']);
@@ -308,5 +309,13 @@ Route::put('/categories/{id}', [CategoryController::class, 'update']);
 
 
 Route::get('/parent-categories/{id}/products', [ParentCategoryProductController::class, 'getProductsByParentCategory']);
+
+
+Route::get('/partners', [PartnerController::class, 'index']);
+Route::post('/partners', [PartnerController::class, 'store']);
+Route::get('/partners/{tenDoiTac}', [PartnerController::class, 'show']);
+Route::put('/partners/{tenDoiTac}', [PartnerController::class, 'update']);
+Route::delete('/partners/{id}', [PartnerController::class, 'destroy']);
+Route::patch('/partners/{id}/status', [PartnerController::class, 'updateStatus']);
 
 

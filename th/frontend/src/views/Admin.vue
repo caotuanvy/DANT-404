@@ -214,6 +214,13 @@ const selectedSearchResultIndex = ref(-1); // Index của kết quả được c
 // Danh sách menu (giữ nguyên, nhưng tôi sẽ đưa ra ngoài để tiện sử dụng cho tìm kiếm)
 const menu = [
   {
+    label: 'Thống Kê',
+    items: [
+      { to: '/admin', label: 'Thống Kê', icon: 'bi bi-box' },
+     
+    ]
+  },
+  {
     label: 'Quản lý sản phẩm',
     items: [
       { to: '/admin/products', label: 'Sản phẩm', icon: 'bi bi-box' },
@@ -229,8 +236,8 @@ const menu = [
     items: [{ to: '/admin/customers', label: 'Người Dùng', icon: 'bi bi-person' }],
   },
   {
-    label: 'Quản lý thuộc tính',
-    items: [{ to: '/admin/attributes', label: 'Thuộc tính', icon: 'bi bi-sliders' }],
+    label: 'Quản lý đối tác',
+    items: [{ to: '/admin/partner', label: 'Thuộc tính', icon: 'bi bi-sliders' }],
   },
   {
     label: 'Quản lý bài viết',

@@ -86,10 +86,10 @@ onMounted(getCategories);
 <style scoped>
 /* CSS đã được tối ưu và chỉnh sửa */
 .page-wrapper {
-  
+  font-family: "Lora", serif;
   padding: 2rem;
   min-height: auto;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  
 }
 .page-header {
   display: flex;
@@ -173,12 +173,13 @@ onMounted(getCategories);
   left: 50%;
   transform: translate(-50%, -50%);
   font-weight: 700;
-  font-size: 1.2em;
+  font-size: 1.4em;
   text-align: center;
   z-index: 10;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
   word-break: break-word;
   padding: 0 10px;
+
 }
 
 .is-inactive {

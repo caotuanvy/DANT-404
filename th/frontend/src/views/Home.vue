@@ -8,6 +8,7 @@
     <BestSellProduct />
      <Category/>
     <EightProductGrid />
+    <Partner />
     <TintucHome />
     <FloatingSocialLinks />
   </div>
@@ -15,7 +16,7 @@
 
 <script setup>
 import DiscountView from '@/components/user/DiscountView.vue';
-
+import Partner from '@/components/user/Partner.vue';
 import BestSellProduct from '@/components/user/BestSellProduct.vue';
 import Category from '@/components/user/Category.vue';
 import EightProductGrid from '@/components/user/EightProductGrid.vue';

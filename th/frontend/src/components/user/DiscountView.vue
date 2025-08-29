@@ -51,7 +51,7 @@
           </p>
           <div class="discount-app-card-details">
             <p class="discount-app-expiration-date">Ngày kết thúc: {{ formatDate(discount.ngay_ket_thuc) }}</p>
-            <a href="#" @click.prevent="showDetails(discount)" class="discount-app-details-link">
+            <a href="#" @click.prevent="openModal(discount)" class="discount-app-details-link">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="discount-app-details-icon">
                 <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75S17.385 21.75 12 21.75 2.25 17.385 2.25 12zm8.706-1.556a.75.75 0 10-1.412 1.03l.439.44a.75.75 0 001.06 1.06l.44-.44a.75.75 0 10-1.06-1.06l-.44.44-.44-.44zm2.844-3.568a.75.75 0 00-.85-.145.75.75 0 00-.638.638.75.75 0 00.145.85l.44.44a.75.75 0 001.06-1.06l-.44-.44zm-2.844 5.378a.75.75 0 00-.85.145.75.75 0 00-.638-.638.75.75 0 00-.145-.85l-.44-.44a.75.75 0 00-1.06 1.06l.44.44.44.44z" clip-rule="evenodd" />
               </svg>
@@ -100,8 +100,37 @@
       </div>
       <p v-else>Không có mã giảm giá nào.</p>
     </div>
-  </div>
+
+    <div v-if="isModalOpen" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Thông tin chi tiết</h3>
+          <button class="modal-close-button" @click="closeModal">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p><strong>Tên chương trình:</strong> {{ modalDiscount?.ten_chuong_trinh }}</p>
+          <p><strong>Mã giảm giá:</strong> {{ modalDiscount?.ma_giam_gia }}</p>
+          <p><strong>Loại giảm giá:</strong> {{ modalDiscount?.loai_giam_gia }}</p>
+          <p><strong>Giá trị:</strong> {{ formatValue(modalDiscount) }}</p>
+          <p><strong>Số lượng còn lại:</strong> {{ modalDiscount?.so_luong }}</p>
+          <p><strong>Ngày bắt đầu:</strong> {{ formatDate(modalDiscount?.ngay_bat_dau) }}</p>
+          <p><strong>Ngày kết thúc:</strong> {{ formatDate(modalDiscount?.ngay_ket_thuc) }}</p>
+          <p><strong>Đơn hàng tối thiểu:</strong> {{ formatCurrency(modalDiscount?.gia_tri_don_hang_toi_thieu) }}</p>
+          <p><strong>Giảm tối đa:</strong> {{ formatCurrency(modalDiscount?.gia_tri_giam_toi_da) }}</p>
+          <p><strong>Trạng thái:</strong> {{ modalDiscount?.trang_thai ? 'Hoạt động' : 'Không hoạt động' }}</p>
+        </div>
+        <div class="modal-footer">
+          <button class="modal-close-button-footer" @click="closeModal">Đóng</button>
+        </div>
+      </div>
+    </div>
+    </div>
 </template>
+
 <script setup>
 import { ref, onMounted, reactive } from 'vue';
 import axios from 'axios';
@@ -110,10 +139,14 @@ import axios from 'axios';
 const discounts = ref([]);
 const loading = ref(true);
 const buttonText = ref({});
-const isLoggedIn = ref(true); // giả lập, thực tế lấy từ store hoặc localStorage
-const authToken = ref(localStorage.getItem('token') || ''); // Lấy token từ localStorage
-const claimStatuses = reactive({}); // { id: 'idle' | 'loading' | 'success' | 'error' }
+const isLoggedIn = ref(true); 
+const authToken = ref(localStorage.getItem('token') || '');
+const claimStatuses = reactive({}); 
 const getClaimStatus = (id) => claimStatuses[id] || 'idle';
+
+// =============== Thêm state mới cho Modal ===============
+const isModalOpen = ref(false);
+const modalDiscount = ref(null);
 
 // ==================== LIFECYCLE HOOKS ====================
 onMounted(() => {
@@ -121,6 +154,18 @@ onMounted(() => {
 });
 
 // ==================== METHODS ====================
+// Hàm mở modal, thay thế cho hàm showDetails cũ
+function openModal(discount) {
+  modalDiscount.value = discount;
+  isModalOpen.value = true;
+}
+
+// Hàm đóng modal
+function closeModal() {
+  isModalOpen.value = false;
+  modalDiscount.value = null;
+}
+
 async function fetchDiscounts() {
   loading.value = true;
   try {
@@ -142,7 +187,6 @@ async function claimVoucher(discount) {
   }
   claimStatuses[discountId] = 'loading';
   try {
-    // Lấy user từ localStorage
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const userId = user.nguoi_dung_id;
     if (!userId) throw new Error('Không tìm thấy thông tin người dùng.');
@@ -159,7 +203,6 @@ async function claimVoucher(discount) {
     );
     claimStatuses[discountId] = 'success';
   } catch (error) {
-    // Nếu lỗi 409 (Conflict) thì thông báo đã lưu rồi
     if (error.response && error.response.status === 409) {
       alert(error.response.data.message || 'Bạn đã lưu mã giảm giá này rồi.');
     }
@@ -182,7 +225,6 @@ async function copyCode(code) {
     }
   } catch (err) {
     console.error("Không thể sao chép mã:", err);
-    // Fallback cho các trình duyệt cũ, nếu cần
     const textarea = document.createElement('textarea');
     textarea.value = code;
     document.body.appendChild(textarea);
@@ -213,6 +255,7 @@ function formatDate(dateString) {
 }
 
 function formatValue(discount) {
+  if (!discount) return '';
   if (discount.loai_giam_gia === 'percentage') {
     return `${discount.gia_tri}%`;
   }
@@ -228,21 +271,10 @@ function formatCurrency(value) {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
 }
 
-function showDetails(discount) {
-  const details = `
-    Tên chương trình: ${discount.ten_chuong_trinh}
-    Mã giảm giá: ${discount.ma_giam_gia}
-    Loại giảm giá: ${discount.loai_giam_gia}
-    Giá trị: ${formatValue(discount)}
-    Số lượng còn lại: ${discount.so_luong}
-    Ngày bắt đầu: ${formatDate(discount.ngay_bat_dau)}
-    Ngày kết thúc: ${formatDate(discount.ngay_ket_thuc)}
-    Đơn hàng tối thiểu: ${formatCurrency(discount.gia_tri_don_hang_toi_thieu)}
-    Giảm tối đa: ${formatCurrency(discount.gia_tri_giam_toi_da)}
-    Trạng thái: ${discount.trang_thai ? 'Hoạt động' : 'Không hoạt động'}
-  `;
-  alert('Thông tin chi tiết:\n' + details);
-}
+// Hàm showDetails cũ đã được thay thế
+// function showDetails(discount) {
+//   ...
+// }
 </script>
 
 <style scoped>
@@ -399,7 +431,7 @@ function showDetails(discount) {
   color: #666;
   margin: 0.5rem 0;
   line-height: 1.4;
-  height: 3rem; /* Fixed height to prevent CLS */
+  height: 3rem; 
 }
 
 .discount-app-card-details {
@@ -525,5 +557,108 @@ function showDetails(discount) {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* ==================== MODAL STYLES ==================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s forwards;
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  transform: scale(0.95);
+  animation: zoomIn 0.3s forwards ease-out;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #1a1a1a;
+}
+
+.modal-close-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  padding: 0;
+  transition: color 0.3s;
+}
+
+.modal-close-button svg {
+  width: 24px;
+  height: 24px;
+}
+
+.modal-close-button:hover {
+  color: #333;
+}
+
+.modal-body {
+  padding-top: 15px;
+  line-height: 1.6;
+}
+
+.modal-body p {
+  margin: 0 0 10px;
+  color: #333;
+}
+
+.modal-footer {
+  border-top: 1px solid #eee;
+  padding-top: 15px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.modal-close-button-footer {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.modal-close-button-footer:hover {
+  background-color: #0056b3;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes zoomIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 </style>
