@@ -239,7 +239,7 @@ moment.locale('vi')
 const router = useRouter()
 
 /** ====== CONFIG ====== */
-const API_BASE = 'http://localhost:8000'
+const API_BASE = 'https://api.sieuthi404.io.vn'
 
 /** ====== STATE (LIST) ====== */
 const allProducts = ref([])
@@ -323,7 +323,7 @@ const addToCartDirectly = async (product) => {
   };
 
   try {
-    await axios.post('http://localhost:8000/api/cart/add',
+    await axios.post('https://api.sieuthi404.io.vn/api/cart/add',
       payload,
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -565,7 +565,7 @@ const addToCart = async () => {
   };
   
   try {
-    const response = await axios.post('http://localhost:8000/api/cart/add',
+    const response = await axios.post('https://api.sieuthi404.io.vn/api/cart/add',
       payload,
       {
         headers: {
