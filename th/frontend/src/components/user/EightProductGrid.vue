@@ -160,9 +160,9 @@ const addToCart = async (product) => {
     } else {
       console.error('Lỗi khi thêm vào giỏ hàng:', err);
       Swal.fire({
-        icon: 'error',
-        title: 'Lỗi',
-        text: 'Đã xảy ra lỗi khi thêm sản phẩm vào giỏ hàng.',
+        icon: 'warning',
+        title: 'Hết hàng',
+        text: 'Đã hết hàng xin hãy chọn sản phẩm khác.',
         confirmButtonColor: '#03A2DC'
       });
     }

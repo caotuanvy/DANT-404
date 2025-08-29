@@ -82,7 +82,7 @@ const addToCart = async (product) => {
     const variantToAdd = productDetails.variants[0];
 
     if (variantToAdd.so_luong_ton_kho < 1) {
-        alert(`Rất tiếc, phiên bản "${variantToAdd.ten_bien_the}" đã hết hàng.`);
+        alert('Sản phẩm đã hết hàng.');
         return;
     }
 
@@ -102,7 +102,20 @@ const addToCart = async (product) => {
     alert(cartRes.data.message || 'Thêm vào giỏ hàng thành công!');
 
   } catch (error) {
-    const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại sau.';
+    let errorMessage = 'Không thể thêm sản phẩm vào giỏ hàng.';
+    if (
+      error.response &&
+      error.response.data &&
+      typeof error.response.data.message === 'string' &&
+      (
+        error.response.data.message.toLowerCase().includes('hết hàng') ||
+        error.response.data.message.toLowerCase().includes('out of stock')
+      )
+    ) {
+      errorMessage = 'Sản phẩm đã hết hàng.';
+    } else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    }
     alert(errorMessage);
     console.error("Lỗi khi thêm vào giỏ hàng:", error);
   }

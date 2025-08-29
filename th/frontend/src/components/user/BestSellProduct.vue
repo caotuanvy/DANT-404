@@ -333,8 +333,23 @@ const addToCartDirectly = async (product) => {
       text: `Đã thêm "${product.ten_san_pham}" vào giỏ hàng!`,
       confirmButtonColor: '#03A2DC'
     });
-  } catch (err) {
-    console.error('Lỗi khi thêm vào giỏ hàng:', err.response || err);
+   } catch (error) {
+    let errorMessage = 'Không thể thêm sản phẩm vào giỏ hàng.';
+    if (
+      error.response &&
+      error.response.data &&
+      typeof error.response.data.message === 'string' &&
+      (
+        error.response.data.message.toLowerCase().includes('hết hàng') ||
+        error.response.data.message.toLowerCase().includes('out of stock')
+      )
+    ) {
+      errorMessage = 'Sản phẩm đã hết hàng.';
+    } else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    }
+    alert(errorMessage);
+    console.error("Lỗi khi thêm vào giỏ hàng:", error);
     Swal.fire({ 
       icon: 'error',
       title: 'Lỗi',
