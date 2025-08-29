@@ -667,8 +667,8 @@ const handleLogout = () => {
     width: 100%;
     padding: 12px 15px;
     background-color: #f8f9fa;
-    color: #007bff;
-    border: 1px solid #007bff;
+    color: #33ccff;
+    border: 1px solid #33ccff;
     border-radius: 5px;
     cursor: pointer;
     font-size: 16px;
@@ -678,9 +678,9 @@ const handleLogout = () => {
 }
 
 .sidebar .logout-btn:hover {
-    background-color: #007bff;
+    background-color: #33ccff;
     color: #ffffff;
-    border-color: #007bff;
+    border-color: #33ccff;
 }
 
 .sidebar .logout-btn:active {
@@ -729,7 +729,7 @@ const handleLogout = () => {
 }
 
 .account-details-section .edit-link {
-    color: blue;
+    color: #33ccff;
     text-decoration: none;
     margin-left: 10px;
     font-size: 14px;
@@ -737,7 +737,7 @@ const handleLogout = () => {
 
 .account-details-section .edit-link i {
     margin-right: 5px;
-    color: blue;
+    color: #33ccff;
 }
 
 /* --- STYLE MỚI CHO FORM CHỈNH SỬA THÔNG TIN CÁ NHÂN --- */
@@ -856,7 +856,7 @@ const handleLogout = () => {
     display: block;
     margin: 40px auto 0 auto;
     padding: 12px 80px;
-    background-color: #4a90e2;
+    background-color: #33ccff;
     color: white;
     border: none;
     border-radius: 5px;
@@ -867,7 +867,7 @@ const handleLogout = () => {
 }
 
 .shipping-address-section .update-btn:hover {
-    background-color: #145eb1;
+    background-color: #2497d5;
 }
 
 /* Style cho nút khi disabled */
@@ -973,8 +973,8 @@ body {
     width: 100%;
     padding: 12px 15px;
     background-color: #f8f9fa;
-    color: #007bff;
-    border: 1px solid #007bff;
+    color: #33ccff;
+    border: 1px solid #33ccff;
     border-radius: 5px;
     cursor: pointer;
     font-size: 16px;
@@ -1034,7 +1034,7 @@ body {
 }
 
 .account-details-section .edit-link {
-    color: blue;
+    color: #33ccff;
     text-decoration: none;
     margin-left: 10px;
     font-size: 14px;
@@ -1042,7 +1042,7 @@ body {
 
 .account-details-section .edit-link i {
     margin-right: 5px;
-    color: blue;
+    color: #33ccff;
 }
 
 /* --- STYLE MỚI CHO FORM CHỈNH SỬA THÔNG TIN CÁ NHÂN --- */
@@ -1133,7 +1133,7 @@ body {
 
 .user-avatar-section .edit-link {
     font-size: 14px;
-    color: #007bff;
+    color: #33ccff;
     text-decoration: none;
     display: flex;
     align-items: center;

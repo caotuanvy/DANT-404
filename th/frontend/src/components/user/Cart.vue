@@ -232,7 +232,7 @@ export default {
     const couponErrorMessage = ref("");
     const myCoupons = ref([]);
     const showCouponModal = ref(false);
-    const imageBaseUrl = import.meta.env.VITE_IMAGE_BASE_URL;
+    const imageBaseUrl = 'http://localhost:8000/storage/';
     const isPlacingOrder = ref(false);
 
     // Computed properties
@@ -998,16 +998,24 @@ localStorage.setItem('provinces', JSON.stringify(provinces.value));
   margin-top: 16px
 }
 .address-edit-form .save-btn {
-  background-color: #007bff;
+  background-color: #33ccff;
   color: white;
-  border-color: #007bff;
+  border-color: #33ccff;
 }
+.address-edit-form .save-btn:hover {
+    background-color: #2497d5;
+    border-color: #2497d5;
+  }
+
 .address-edit-form .cancel-btn {
   background-color: #f8f9fa;
   color: #343a40;
   border-color: #ced4da;
 }
-
+.address-edit-form .cancel-btn:hover {
+    background-color: #d5d5d5;
+    border-color: #d5d5d5;
+  }
 /* Delivery & Payment Options */
 .delivery-option, .payment-method {
   display: flex;
@@ -1078,7 +1086,7 @@ localStorage.setItem('provinces', JSON.stringify(provinces.value));
   margin: 0;
 }
 .select-coupon-btn {
-    background: none; border: none; color: #007bff;
+    background: none; border: none; color: #33ccff;
     font-size: 14px; font-weight: 500; cursor: pointer;
 }
 .discount-input-group { display: flex; }
@@ -1152,7 +1160,7 @@ localStorage.setItem('provinces', JSON.stringify(provinces.value));
 .place-order-button {
   width: 100%;
   padding: 12px;
-  background-color: #007bff;
+  background-color: #33ccff;
   color: white;
   border: none;
   border-radius: 6px;
@@ -1161,7 +1169,7 @@ localStorage.setItem('provinces', JSON.stringify(provinces.value));
   cursor: pointer;
   margin-top: 10px;
 }
-.place-order-button:hover { background-color: #0056b3; }
+.place-order-button:hover { background-color: #2497d5; }
 .place-order-button:disabled { background-color: #6c757d; cursor: not-allowed; }
 
 .terms-text {

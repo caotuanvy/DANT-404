@@ -199,8 +199,8 @@ body {
     width: 100%;
     padding: 12px 15px;
     background-color: #f8f9fa;
-    color: var(--primary-blue);
-    border: 1px solid var(--primary-blue);
+    color: #33ccff;
+    border: 1px solid #33ccff;
     border-radius: 5px;
     cursor: pointer;
     font-size: 16px;

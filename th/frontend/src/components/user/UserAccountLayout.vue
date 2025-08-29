@@ -192,8 +192,8 @@ onUnmounted(() => {
   width: 100%;
   padding: 12px 15px;
   background-color: #f8f9fa;
-  color: #007bff;
-  border: 1px solid #007bff;
+  color: #33ccff;
+  border: 1px solid #33ccff;
   border-radius: 5px;
   cursor: pointer;
   font-size: 16px;
@@ -203,9 +203,9 @@ onUnmounted(() => {
 }
 
 .sidebar .logout-btn:hover {
-  background-color: #007bff;
+  background-color: #2497d5;
   color: #ffffff;
-  border-color: #007bff;
+  border-color: #2497d5;
 }
 
 .main-content {
