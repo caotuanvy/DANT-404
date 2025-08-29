@@ -199,7 +199,7 @@
                 <i class="fa-solid fa-triangle-exclamation" style="color: #f39c12;"></i> Spam
               </button>
               <button class="action-button" @click="reportComment(comment, 2)">
-                <i class="fa-solid fa-user-slash" style="color: #e74c3c;"></i> Lăng mạ
+                <i class="fa-solid fa-user-slash" style="color: #e74c3c;"></i> tố cáo
               </button>
             </div>
           </div>
