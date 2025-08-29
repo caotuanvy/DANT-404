@@ -10,11 +10,11 @@ Quận 12, Hồ Chí Minh, Việt Nam</span>
       </div>
       <div class="info-item">
           <i class="fas fa-phone-alt"></i>
-          <span>Điện thoại: +84 987 654 321</span>
+          <span>Điện thoại: +84 938 229 022</span>
       </div>
       <div class="info-item">
           <i class="fas fa-envelope"></i>
-          <span>Email: contact@example.com</span>
+          <span>Email: 404notfound@gmail.com</span>
       </div>
       <div class="info-item">
           <i class="fas fa-clock"></i>

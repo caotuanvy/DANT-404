@@ -143,8 +143,8 @@
             Địa chỉ: Công viên phần mềm Quang Trung , <br />
             Quận 12, Hồ Chí Minh, Việt Nam
           </p>
-          <p>Điện thoại: 00091005</p>
-          <p>Fax (028) 199982005</p>
+          <p>Điện thoại: 0938229022</p>
+          <p>Fax (028) 0938229022</p>
           <p>Mã số doanh nghiệp: 404 NOT FOUND</p>
         </div>
         <div class="footer-section footer-benefits">
