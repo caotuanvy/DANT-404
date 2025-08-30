@@ -3,7 +3,7 @@
     <nav class="breadcrumbs">
       <a href="/">Trang chủ</a>
       <span>/</span>
-      <a href="/products">{{ product.danh_muc.ten_danh_muc }}</a>
+      <a href="/products">{{ product.danh_muc?.ten_danh_muc }}</a>
       <span>/</span>
       <span class="current">{{ product.product_name }}</span>
     </nav>

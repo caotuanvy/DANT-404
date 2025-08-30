@@ -38,12 +38,12 @@ Route::apiResource('/admin/social-links', SocialLinkController::class);
 Route::get('/orders/{id}', [OrderController::class, 'show']);
 // Route::post('/create-vnpay-payment', [PaymentController::class, 'createPayment']);
 Route::get('/partners/active', [PartnerController::class, 'getActivePartners']);
-Route::get('/payment/vnpay/return', [PaymentController::class, 'vnpayReturn'])->name('vnpay.return');
+
 
 Route::put('/products/{productId}/variants/{id}', [SanPhamBienTheController::class, 'update']);
 Route::get('products/summary/{slug}', [ProductController::class, 'showSummaryBySlug']);
 Route::middleware('auth:sanctum')->post('/checkout', [PaymentController::class, 'createVnPayPayment']);
-Route::post('/create-vnpay-payment', [PaymentController::class, 'createVnpayPayment']);
+
 // Route::post('/api/create-vnpay-payment', [OrderController::class, 'createVnPayPayment']);
 Route::post('/create-cod-order', [PaymentController::class, 'createCodOrder']);
 Route::get('/vnpay/callback', [PaymentController::class, 'handleCallback']);
@@ -144,6 +144,9 @@ Route::get('/cart/{nguoiDungId?}', [CartController::class, 'getCart']);
 Route::post('/cart/add', [CartController::class, 'addItem']);
 Route::delete('/cart/{userId}/{sanPhamBienTheId}', [CartController::class, 'deleteItem']);
 Route::get('/carts/all', [CartController::class, 'getAllCartsAndItems']);
+Route::post('/orders/store', [OrderController::class, 'store']);
+Route::post('/create-vnpay-payment', [PaymentController::class, 'createVnpayPayment']);
+Route::get('/payment/vnpay/return', [PaymentController::class, 'vnpayReturn'])->name('vnpay.return');
 });
 Route::get('/cart', [CartController::class, 'index']);
 Route::get('/san-pham-cong-khai/slug/{slug}', [ProductController::class, 'getProductDetailsBySlug']);
@@ -216,7 +219,7 @@ Route::patch('/orders/{id}/approve', [OrderController::class, 'approve']);
 Route::patch('/orders/{id}/reject', [OrderController::class, 'reject']);
 Route::patch('/orders/{id}/hide', [OrderController::class, 'hideOrder']);
 Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
-Route::post('/orders/store', [OrderController::class, 'store']);
+
 
 Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
 // Thống Kê
