@@ -10,12 +10,14 @@ import UserOrders from '../components/user/UserOrders.vue';
 import ChangePassword from '../components/user/ChangePassword.vue';
 import Cart from '../components/user/Cart.vue';
 import axios from 'axios';
+import LienHe from "../components/user/LienHe.vue";
 import StaticPage from "@/components/user/StaticPage.vue";  
 import PaymentSuccess from '@/views/PaymentSuccess.vue'; // Hoặc đường dẫn component của bạn
 import GiamGiaManager from '@/components/admin/GiamGiaManager.vue';const routes = [
   { path: '/', component: Home },
   { path: '/cart', component: Cart, meta: { requiresAuth: true } },
   { path: '/infor', component: Infor },
+  { path: '/lien-he', component: LienHe },
   {
     path: '/admin/test',
     name: 'test',

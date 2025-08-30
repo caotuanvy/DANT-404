@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\PartnerController;
+use App\Http\Controllers\MailController;
 
 Route::get('/social-links/active', [SocialLinkController::class, 'getActiveLinks']);
 Route::patch('/admin/social-links/{id}/status', [SocialLinkController::class, 'updateStatus']);
@@ -58,7 +59,7 @@ Route::post('/resend-activation', [AuthController::class, 'resendActivationEmail
 Route::post('/send-reset-code', [AuthController::class, 'sendResetCode']);
 Route::post('/verify-reset-code', [AuthController::class, 'verifyResetCode']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
-
+Route::post('/send-email', [MailController::class, 'sendEmail']);
 // Public Product Routes
 Route::get('user/product/details-by-slugs', [ProductController::class, 'getDetailsBySlugs']);
 Route::apiResource('products', ProductController::class);
